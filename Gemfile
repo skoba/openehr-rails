@@ -46,7 +46,6 @@ group :test do
   gem 'spork-rails'
   gem 'libnotify'
   gem 'simplecov'
-  gem 'guard-livereload'
   gem 'database_cleaner'
   gem 'rails3-generators' #mainly for factory_girl & simple_form at this point
   gem 'rspec-rails'
