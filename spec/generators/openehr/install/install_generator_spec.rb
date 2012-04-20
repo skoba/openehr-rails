@@ -1,8 +1,9 @@
 require 'spec_helper'
-require 'generators/archetype/install/install_generator'
+require 'generators/openehr/install/install_generator'
 
-describe Archtype::Generator::InstallGenerator do
+describe OpenEHR::Generators::InstallGenerator do
   destination File.expand_path('../../../../tmp', __FILE__)
+
   before { prepare_destination }
 
   it 'should create app/archetype directory' do
