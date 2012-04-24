@@ -10,13 +10,13 @@
 # Ignore the default SQLite database.
 /db/*.sqlite3
 
-# Ignore emacs file
+# For emacs:
 *~
-*#
 \#*
 .\#*
 
 # sinplecov generate file
+coverage.data
 coverage
 
 # jewerler generalted
@@ -29,3 +29,21 @@ pkg
 #bundler
 .bundle
 *.lock
+
+#
+# For MacOS:
+#
+.DS_Store
+
+# For TextMate
+#*.tmproj
+#tmtags
+
+# For vim:
+#*.swp
+
+# For redcar:
+#.redcar
+
+# For rubinius:
+#*.rbc

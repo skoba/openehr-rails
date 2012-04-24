@@ -7,6 +7,8 @@ gem 'rails', '3.2.3'
 
 gem 'sqlite3'
 
+# Using edge openehr package
+#gem 'openehr', :git => 'git@github.com:skoba/ruby-impl-openehr.git'
 
 # Gems used only for assets and not required
 # in production environments by default.
@@ -36,6 +38,14 @@ gem 'jquery-rails'
 
 # To use debugger
 # gem 'ruby-debug19', :require => 'ruby-debug'
+
+# For jeweler
+group :development do
+  gem "rspec" #, "~> 2.8.0"
+#  gem "rdoc", "~> 3.12"
+  gem "jeweler"# , "~> 1.8.3"
+#  gem "rcov", ">= 0"
+end
 
 group :test do
   gem 'spork', "~> 1.0rc"
