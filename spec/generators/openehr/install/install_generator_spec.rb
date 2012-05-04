@@ -6,8 +6,13 @@ describe OpenEHR::Generators::InstallGenerator do
 
   before { prepare_destination }
 
-  it 'should create app/archetype directory' do
+  it 'creates app/archetype directory' do
     run_generator
     file('app/archetype').should exist
+  end
+
+  it 'creates initializer' do 
+    run_generator
+    file('config/initializer')
   end
 end
