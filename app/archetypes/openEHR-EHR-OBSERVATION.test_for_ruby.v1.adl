@@ -1,0 +1,71 @@
+archetype (adl_version=1.4)
+        openEHR-EHR-OBSERVATION.test_for_ruby.v1
+
+concept
+       [at0000]       -- *Test archetype for Ruby
+language
+       original_language = <[ISO_639-1::ja]>
+       translations = <
+                ["en"] = <
+                        language = <[ISO_639-1::en]>
+                        author = <
+                               ["name"] = <"Shinji Kobayashi">
+                         >
+                >
+        >
+description
+        original_author = <
+                 ["name"] = ["小林慎治"]
+        >
+        details = <
+                ["en"] = <
+                        language = <[ISO_639-1::en]>
+                        purpose = <"test">
+                        use = <"for test">
+                        misuse = <"not for test">
+                        copyright = <"Shinji Kobayashi">
+                >
+                ["ja"] = <
+                        language = <[ISO_639-1::ja]>
+                        purpose = <"テスト">
+			use = <"テスト用">
+			misuse = <"テスト以外の用途">
+			copyright = <"小林慎治">
+		>
+	>
+	lifecycle_state = <"0">
+	other_contributors = <>
+	other_details = <>
+
+definition
+	OBSERVATION[at0000] matches {      - * Ruby
+		data matches {
+		        HISTORY[at00001] matches {
+        			events cardinality matches {1..*; unordered} matches { -- 任意のイベント
+				        data matches {
+					        ITEM_TREE[at0003] matches {   -- ツリー
+							items cardinality matches {0..*; unordered} matches {
+							      	ELEMENT[at0004] occurrences matches {0..1} matches {
+									value matches {
+									        DV_TEXT matches {*}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+ontology
+        term_definitions = <
+		["en"] = <
+		        items = <
+			      	["at0000"] = <
+					  text = <"Test archetype for Ruby">
+					  description = <"Test archetype for Ruby implementation">
+				>
+				["at0001"] = <
+					  text = <"イベントシリーズ">
+					  description = <"
