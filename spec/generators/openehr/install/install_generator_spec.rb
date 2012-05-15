@@ -1,18 +1,15 @@
 require 'spec_helper'
-require 'openehr-rails'
+require 'generators/openehr/install/install_generator'
 
-describe OpenEHR::Rails::Generators::InstallGenerator do
-  destination File.expand_path('../../../../tmp', __FILE__)
+describe OpenEHR::Generators::InstallGenerator do
+  destination File.expand_path('../../../../../tmp', __FILE__)
 
-  before { prepare_destination }
-
-  it 'creates app/archetype directory' do
+  before do 
+    prepare_destination
     run_generator
-    file('app/archetype').should exist
   end
 
-  it 'creates initializer' do 
-    run_generator
-    file('config/initializer')
-  end
+  subject{ file('app/archetypes') }
+
+  it { should exist }
 end

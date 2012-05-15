@@ -27,6 +27,7 @@ group :test do
   gem 'database_cleaner'
   gem 'rails3-generators' #mainly for factory_girl & simple_form at this point
   gem 'rspec-rails'
+  gem 'ammeter'
   gem 'fabrication'
   gem 'forgery'
 end
