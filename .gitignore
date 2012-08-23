@@ -10,6 +10,10 @@
 # Ignore the default SQLite database.
 /db/*.sqlite3
 
+# Ignore app and config directory
+/app
+/config
+
 # For emacs:
 *~
 \#*

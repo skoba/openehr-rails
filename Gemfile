@@ -21,7 +21,7 @@ group :test, :developlent do
   gem 'libnotify'
   gem 'simplecov'
   gem 'database_cleaner'
-  gem 'rails3-generators' #mainly for factory_girl & simple_form at this point
+#  gem 'rails3-generators' #mainly for factory_girl & simple_form at this point
   gem 'rspec-rails'
   gem 'ammeter'
   gem 'fabrication'
