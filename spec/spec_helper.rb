@@ -4,8 +4,7 @@ require 'rails/all'
 require 'rspec/rails'
 require 'ammeter/init'
 
-
-#SimpleCov.start
+SimpleCov.start
 
 Spork.prefork do
   Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each {|f| require f}

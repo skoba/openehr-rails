@@ -7,15 +7,11 @@ gem 'sqlite3'
 # Using edge openehr package
 gem 'openehr'
 
+gem 'thor'
+gem "jeweler"# , "~> 1.8.3"
+gem 'soap4r-ruby1.9'
 
-group :development do
-  gem "rspec" #, "~> 2.8.0"
-#  gem "rdoc", "~> 3.12"
-  gem "jeweler"# , "~> 1.8.3"
-#  gem "rcov", ">= 0"
-end
-
-group :test do
+group :test, :developlent do
   gem 'spork', "~> 1.0rc"
   gem 'guard'
   gem 'guard-spork'

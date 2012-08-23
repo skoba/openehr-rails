@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'generators/openehr/install/install_generator'
+require 'thor/actions'
 
 describe OpenEHR::Generators::InstallGenerator do
   destination File.expand_path('../../../../../tmp', __FILE__)
