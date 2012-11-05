@@ -5,16 +5,16 @@
 
 require 'rubygems'
 require 'bundler'
-require File.expand_path('../config/application', __FILE__)
+# require File.expand_path('../config/application', __FILE__)
 
-OpenehrRails::Application.load_tasks
-begin
-  Bundler.setup(:default, :development)
-rescue Bundler::BundlerError => e
-  $stderr.puts e.message
-  $stderr.puts "Run `bundle install` to install missing gems"
-  exit e.status_code
-end
+# OpenehrRails::Application.load_tasks
+# begin
+#   Bundler.setup(:default, :development)
+# rescue Bundler::BundlerError => e
+#   $stderr.puts e.message
+#   $stderr.puts "Run `bundle install` to install missing gems"
+#   exit e.status_code
+# end
 require 'rake'
 
 require 'jeweler'
