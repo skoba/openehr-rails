@@ -1,7 +1,7 @@
 require 'spec_helper'
 require 'generators/openehr/controller/controller_generator'
 
-describe OpenEHR::Generators::ControllerGenerator do
+describe OpenEHR::Rails::Generators::ControllerGenerator do
 
   destination File.expand_path("../../../../../tmp", __FILE__)
 
