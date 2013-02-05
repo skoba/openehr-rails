@@ -13,6 +13,9 @@
 # Ignore app and config directory
 /app
 /config
+/public
+/vendor
+/plugin
 
 # For emacs:
 *~

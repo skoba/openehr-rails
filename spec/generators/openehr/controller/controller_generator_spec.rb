@@ -8,20 +8,28 @@ describe OpenEHR::Rails::Generators::ControllerGenerator do
   before { prepare_destination }
 
   describe 'controller spec' do
-    subject{ file('app/controllers/open_ehr_ehr_observation.v1_controller.rb') }
+    describe 'default action' do
+      before do
+        run_generator %w(openEHR-EHR-OBSERVATION.v1)
+      end
 
-    before do
-      run_generator %w(openEHR-EHR-OBSERVATION.v1)
-    end
-
-    describe 'controller spec' do
+      subject{ file('app/controllers/open_ehr_ehr_observation.v1_controller.rb') }
       it { should exist }
     end
 
-    it 'retrieve archetype from CKM with --remote option' do
-    
+    describe 'generate controller on local archetype library' do
+      before do
+        run_generator %w(openEHR-EHR-OBSERVATION.v1 --local)
+      end
+
+      # it ' app/archetype with --local option' do
+        
+      # end
     end
 
-    it 'parse archetype if app/archetype with --local option'
+
+    describe 'retrieve archetype from remote repository' do
+      it 'retrieve archetype from CKM with --remote option'
+    end
   end
 end
