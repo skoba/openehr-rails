@@ -5,31 +5,8 @@
 
 require 'rubygems'
 require 'bundler'
-# require File.expand_path('../config/application', __FILE__)
-
-# OpenehrRails::Application.load_tasks
-# begin
-#   Bundler.setup(:default, :development)
-# rescue Bundler::BundlerError => e
-#   $stderr.puts e.message
-#   $stderr.puts "Run `bundle install` to install missing gems"
-#   exit e.status_code
-# end
+require "bundler/gem_tasks"
 require 'rake'
-
-require 'jeweler'
-Jeweler::Tasks.new do |gem|
-  # gem is a Gem::Specification... see http://docs.rubygems.org/read/chapter/20 for more options
-  gem.name = "openehr-rails"
-  gem.homepage = "http://github.com/skoba/openehr-rails"
-  gem.license = "MIT"
-  gem.summary = %Q{TODO: one-line summary of your gem}
-  gem.description = %Q{TODO: longer description of your gem}
-  gem.email = "skoba@moss.gr.jp"
-  gem.authors = ["Shinji KOBAYASHI"]
-  # dependencies defined in Gemfile
-end
-Jeweler::RubygemsDotOrgTasks.new
 
 require 'rspec/core'
 require 'rspec/core/rake_task'
