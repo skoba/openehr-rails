@@ -1,27 +1,18 @@
 require 'rails/all'
 require 'spork'
+require 'ammeter/init'
+
+Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each {|f| require f}
+$:.unshift(File.dirname(__FILE__) + '/../lib')
+require 'openehr/rails'
 require 'simplecov'
 
-module OpenEHRRails
-  class Application < ::Rails::Application
-  end
-end
+# Spork.prefork do
 
+#   SimpleCov.start
+# end
 
-require 'openehr/rails'
+# Spork.each_run do
 
-Spork.prefork do
-
-  Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each {|f| require f}
-  $:.unshift(File.dirname(__FILE__) + '/../lib')
-
-  require 'openehr/rails'
-  require 'ammeter/init'
-
-  SimpleCov.start
-end
-
-Spork.each_run do
-
-end
+# end
 
