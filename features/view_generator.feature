@@ -1,14 +1,10 @@
 Feature: view_generator generates view from archetype
 
-  This openEHR ViewGenerator generates rails view and assets
-  from archetype definition.
+  So that view generator generates rails view and assets from arhcetype
+  As a developer
+  I need generated erb, i18n modules, modified layouts.
 
-  Scenario Outline: generate view
-    Given the archetype is "<archetype>"
-    When I generate "<generate>"
-    Then The view should be "<view>"
-
-    Scenarios: Blood pressure archetype
-      |archetype|generate|view|
-      |openEHR-EHR-OBSERVATION-blood_pressure.v1|view_generator|index.html.erb|
-      
+  Scenario: Generator generates rails view and assets from archetype
+    Given an archetype openEHR-EHR-OBSERVATION.blood_pressure.v1.adl
+    When generator runs
+    Then '/config/initializers/i18n' is geneated
