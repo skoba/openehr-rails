@@ -1,9 +1,7 @@
-require 'generators/openehr'
-
 module OpenEHR
   module Rails
     module Generators
-      class ControllerGenerator < Base
+      class ControllerGenerator < ::Rails::Generators::NamedBase
         argument :actions, :type => :array, :default => [], :bannar => 'action action'
         desc <<DESC
 generate controler from template and archetype
