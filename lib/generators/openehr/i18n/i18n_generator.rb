@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 require 'openehr/rm'
 require 'openehr/am'
 require 'openehr/parser'
@@ -15,14 +16,30 @@ module OpenEHR
           template 'i18n.rb', 'config/initializers/i18n.rb'
         end
 
+        def create_yaml_files
+          archetype.ontology.term_definitions.keys.each do |k|
+
+            target_file = "config/locales/#{k}.yml"
+            create_file target_file
+            archetype.ontology.term_definitions['en'].each do |code, term|
+              append_file target_file, <<-TARGET
+#{k}:
+ layouts:
+  applications:
+    #{code}: "#{term.items['text']}"
+TARGET
+            end
+          end
+        end
+
         private
         def archetype
-          OpenEHR::Parser::ADLParser.new(name).parse
+          @archetype ||= OpenEHR::Parser::ADLParser.new(name).parse
         end
 
         def original_language
           { code: original_language_code,
-            text: Locale::Info.get_language(original_language_code).name }
+            text: language_name(original_language_code) }
         end
 
         def original_language_code
@@ -31,8 +48,12 @@ module OpenEHR
 
         def translations
           archetype.translations.each_key.map do |key|
-            { code: key, text: Locale::Info.get_language(key).name }
+            { code: key, text: language_name(key) }
           end
+        end
+
+        def language_name(code)
+          Locale::Info.get_language(code).name
         end
       end
     end
