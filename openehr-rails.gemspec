@@ -20,7 +20,7 @@ Gem::Specification.new do |gem|
   gem.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
 
   gem.require_paths = ["lib"]
-  gem.add_dependency('openehr')
+  gem.add_dependency('openehr') # , git: 'git://github.com/skoba/openehr-ruby.git')
   gem.add_runtime_dependency('activesupport', '>= 4.0.0.beta1')
   gem.add_runtime_dependency('actionpack', '>= 4.0.0.beta1')
   gem.add_runtime_dependency('railties', '>= 4.0.0.beta1')
