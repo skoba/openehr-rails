@@ -6,6 +6,7 @@
 /vendor
 /plugin
 /db
+/bin
 
 # For emacs:
 *~
