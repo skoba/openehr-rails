@@ -17,18 +17,12 @@ module OpenEHR
         end
 
         def create_yaml_files
-          archetype.ontology.term_definitions.keys.each do |k|
-
-            target_file = "config/locales/#{k}.yml"
-            create_file target_file
-            archetype.ontology.term_definitions['en'].each do |code, term|
-              append_file target_file, <<-TARGET
-#{k}:
- layouts:
-  applications:
-    #{code}: "#{term.items['text']}"
-TARGET
+          archetype.ontology.term_definitions.each do |code, terms|
+            @language_code = code
+            @terms = terms.map do |atcode, term|
+              {atcode: atcode, item: term.items['text']}
             end
+            template 'language.yml', "config/locales/#{@language_code}.yml"
           end
         end
 
@@ -47,8 +41,8 @@ TARGET
         end
 
         def translations
-          archetype.translations.each_key.map do |key|
-            { code: key, text: language_name(key) }
+          archetype.translations.each_key.map do |code|
+            { code: code, text: language_name(code) }
           end
         end
 

@@ -1,0 +1,6 @@
+<%= @language_code %>:
+ layouts:
+  applications:
+<% @terms.each do |term| %>
+    <%= term[:atcode] %>: "<%= term[:item] %>"
+<% end %>

@@ -39,6 +39,13 @@ module OpenEHR
             it { should exist }
             it { should contain /ja:/ }
           end
+
+          describe 'nl.yml generation' do
+            subject { file('config/locales/nl.yml') }
+
+            it { should exist }
+            it { should contain /nl:/ }
+          end
         end
       end
     end
