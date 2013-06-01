@@ -9,7 +9,7 @@ module OpenEHR
         source_root File.expand_path("./templates", __FILE__)
 
         def copy_archetype_migration
-          migration_template 
+          
         end
       end
     end
