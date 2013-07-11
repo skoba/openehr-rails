@@ -1,6 +1,10 @@
 <%= @language_code %>:
- layouts:
-  applications:
-<% @terms.each do |term| %>
-    <%= term[:atcode] %>: "<%= term[:item] %>"
-<% end %>
+  layouts:
+    application:
+  <%= @controller_path %>:
+    index: &ontology
+<% @terms.each do |term| %>      <%= term[:atcode] %>: "<%= term[:item] %>"
+<% end %>    new: *ontology
+    form: *ontology
+    show: *ontology
+    edit: *ontology

@@ -17,6 +17,7 @@ module OpenEHR
         end
 
         def create_yaml_files
+          @controller_path = archetype.archetype_id.value.underscore
           archetype.ontology.term_definitions.each do |code, terms|
             @language_code = code
             @terms = terms.map do |atcode, term|

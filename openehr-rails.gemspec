@@ -20,18 +20,18 @@ Gem::Specification.new do |gem|
   gem.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
 
   gem.require_paths = ["lib"]
-  gem.add_dependency('openehr') # , git: 'git://github.com/skoba/openehr-ruby.git')
-  gem.add_dependency('rails', '>= 4.0.0.beta1')
-  gem.add_dependency('treetop', '1.4.12')
+  gem.add_dependency('openehr')
+  gem.add_dependency('rails', '~> 4.0.0')
+  gem.add_dependency('treetop')
 
   gem.add_development_dependency('rake')
   gem.add_development_dependency('ammeter')
   gem.add_development_dependency('rspec')
   gem.add_development_dependency('rspec-rails')
-#  gem.add_development_dependency('guard')
-#  gem.add_development_dependency('guard-rspec')
-#  gem.add_development_dependency('guard-spork')
+  gem.add_development_dependency('guard')
+  gem.add_development_dependency('guard-rspec')
+  gem.add_development_dependency('guard-spork')
   gem.add_development_dependency('simplecov')
-#  gem.add_development_dependency('listen', '0.6')
-#  gem.add_development_dependency('libnotify')
+  gem.add_development_dependency('listen', '0.6')
+  gem.add_development_dependency('libnotify')
 end

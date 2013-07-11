@@ -6,7 +6,7 @@ module OpenEHR
   module Rails
     module Generators
       describe I18nGenerator do
-        destination File.expand_path(destination_root)
+        destination File.expand_path '../../../../../tmp/', __FILE__
 
         before do
           prepare_destination
@@ -30,7 +30,9 @@ module OpenEHR
 
             it { should exist }
             it { should contain /en:/}
+            it { should contain /layouts:/}
             it { should contain /at0000: "Blood Pressure"/ }
+            it { }
           end
 
           describe 'ja.yml generation' do
