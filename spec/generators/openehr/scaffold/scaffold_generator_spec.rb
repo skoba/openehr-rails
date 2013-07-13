@@ -35,6 +35,19 @@ module OpenEHR
 
           it { should exist }
         end
+
+        describe 'invoke routing generator' do
+          subject { file('config/routes.rb')}
+        end
+
+        describe 'application controller modifier' do
+          subject { file('app/controllers/application_controller.rb')}
+
+          it { should contain /before_action :set_locale/ }
+          it { should contain /def set_locale/ }
+          it { should contain /I18n\.locale = params\[:locale\] \|\| I18n.default_locale/ }
+          it { should contain /end$/ }
+        end
       end
     end
   end

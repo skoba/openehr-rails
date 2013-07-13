@@ -35,6 +35,20 @@ module OpenEHR
           generate_view "_form.html.erb"
         end
 
+        def append_set_locale
+          
+          unless File.exist? 'app/controllers/application_controller.rb'
+            template 'application_controller.rb', File.join("app/controllers", 'application_controller.rb')
+          end
+          inject_into_file 'app/controllers/application_controller.rb', <<LOCALE, :after => "class ApplicationController < ActionController::Base\n"
+  before_action :set_locale
+
+  def set_locale
+    I18n.locale = params[:locale] || I18n.default_locale
+  end
+LOCALE
+        end
+
         protected
         def controller_file_path
           @archetype.archetype_id.value.underscore

@@ -20,19 +20,26 @@ module OpenEHR
             it { should exist }
             it { should contain /I18n\.default_locale = :en/ }
             it { should contain /LANGUAGES/ }
-            it { should contain /\['English', 'en'\]/ }
+            it { should contain /\['English', 'en'\],/ }
             it { should contain /\['Japanese', 'ja'\]/ }
-            it { should contain /\['Dutch', 'nl'\]/ }
+            it { should contain /\['Dutch', 'nl'\],/ }
           end
 
           describe 'en.yml generation' do
             subject { file('config/locales/en.yml') }
 
             it { should exist }
-            it { should contain /en:/}
-            it { should contain /layouts:/}
+            it { should contain /en:/ }
+            it { should contain /layouts:/ }
+            it { should contain /application:/ }
+            it { should contain /open_ehr_ehr_observation.blood_pressure.v1/ }
+            it { should contain /index: &ontology/ }
             it { should contain /at0000: "Blood Pressure"/ }
-            it { }
+            it { should contain /at0001: "history"/ }
+            it { should contain /new: \*ontology/ }
+            it { should contain /form: \*ontology/ }
+            it { should contain /show: \*ontology/ }
+            it { should contain /edit: \*ontology/ }
           end
 
           describe 'ja.yml generation' do
