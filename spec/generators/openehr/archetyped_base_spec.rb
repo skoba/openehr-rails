@@ -24,14 +24,18 @@ describe OpenEHR::Rails::Generators::ArchetypedBase do
       @archetyped_base.index_data.should include 'at0004'
     end
 
-    it 'includes at0006, too' do
+    it 'includes at0005, too' do
       @archetyped_base.index_data.should include 'at0005'
+    end
+
+    it 'does not include at0006' do
+      @archetyped_base.index_data.should_not include 'at0006'
     end
   end
   
   context 'model name' do
-    # it 'is origined form archetype id' do
-    #   expect(@archetype_base.controller_name).to 'open_ehr_ehr_observation.blood_pressure.v1'
-    # end
+    it 'is origined form archetype id' do
+      expect(@archetyped_base.model_name).to eq 'open_ehr_ehr_observation_blood_pressure_v1'
+    end
   end
 end

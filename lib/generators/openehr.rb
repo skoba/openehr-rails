@@ -21,8 +21,16 @@ module OpenEHR
           @archetype_file ||= File.exist?(@archetype_name) ? @archetype_name : File.join(archetype_path, @archetype_name)
         end
 
-        def controller_file_path
+        def controller_name
           archetype.archetype_id.value.underscore
+        end
+
+        def controller_file_path
+          controller_name
+        end
+
+        def model_name
+          controller_name.tr ".", "_"
         end
 
         def concept

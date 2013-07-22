@@ -3,9 +3,26 @@
 <table>
   <thead>
     <tr>
-<% index_data.each do |item| -%>
-      <th><%%= t(".<%= item %>") %></th>
-    </tr>
+<% index_data.each do |atcode| -%>
+      <th><%%= t(".<%= atcode %>") %></th>
 <% end -%>
+    </tr>
   </thead>
+  <tbody>
+    <%% @<%= model_name %>.each do |<%= model_name %>| %>
+      <tr>
+<% index_data.each do |atcode| -%>
+        <td><%%= <%= model_name %>.<%= atcode %> %></td>
+<% end -%>
+        <td><%%= link_to 'Show', <%= model_name %> %></td>
+        <td><%%= link_to 'Edit', edit_<%= model_name %>_path(<%= model_name %>) %></td>
+        <td><%%= link_to 'Destroy', <%= model_name %>, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+      </tr>
+    <%% end %>
+
+  </tbody>
 </table>
+
+<br>
+
+<%%= link_to <%%= t(".<%= concept %>") %>, new_<%= model_name %>_path %>
