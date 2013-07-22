@@ -16,6 +16,8 @@ module OpenEHR
           subject { file('app/views/open_ehr_ehr_observation.blood_pressure.v1/index.html.erb') }
 
           it { should exist }
+          it { should contain /\<h1\>Listing \<%= t\("\.at0000"\) %\>\<\/h1\>/ }
+          it { should contain /\<th\>\<%= t\("\.at0004"\) %\>\<\/th\>/ }
         end
 
         describe 'invoke show.html.erb template engine' do
@@ -38,6 +40,9 @@ module OpenEHR
 
         describe 'invoke routing generator' do
           subject { file('config/routes.rb')}
+
+          it { should contain /scope "\/:locale" do/ }
+          it { should contain /resources :open_ehr_ehr_observation.blood_pressure.v1/}
         end
 
         describe 'application controller modifier' do

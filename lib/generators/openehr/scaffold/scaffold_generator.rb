@@ -1,19 +1,13 @@
 require 'openehr/rm'
 require 'openehr/am'
 require 'openehr/parser'
-require 'rails/generators/named_base'
-require 'rails/generators/resource_helpers'
+require 'generators/openehr'
 
 module OpenEHR
   module Rails
     module Generators
-      class ScaffoldGenerator < ::Rails::Generators::Base
+      class ScaffoldGenerator < ArchetypedBase
         source_root File.expand_path("../templates", __FILE__)
-
-        def initialize(adl, *options)
-          super
-          @archetype = OpenEHR::Parser::ADLParser.new(adl[0]).parse
-        end
 
         def create_root_folder
           empty_directory File.join("app/views", controller_file_path)
@@ -35,8 +29,17 @@ module OpenEHR
           generate_view "_form.html.erb"
         end
 
+        def append_locale_route
+          unless File.exist? 'config/routes.rb'
+            template 'routes.rb', File.join("config", 'routes.rb')
+          end
+          inject_into_file 'config/routes.rb', <<LOCALE, :after => "Application.routes.draw do\n"
+  scope "/:locale" do
+    resources :#{controller_file_path}
+  end
+LOCALE
+        end
         def append_set_locale
-          
           unless File.exist? 'app/controllers/application_controller.rb'
             template 'application_controller.rb', File.join("app/controllers", 'application_controller.rb')
           end
@@ -50,9 +53,6 @@ LOCALE
         end
 
         protected
-        def controller_file_path
-          @archetype.archetype_id.value.underscore
-        end
 
         def generate_view(filename)
           template filename, File.join("app/views", controller_file_path, filename)

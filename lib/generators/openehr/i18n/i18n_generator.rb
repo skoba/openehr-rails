@@ -3,11 +3,12 @@ require 'openehr/rm'
 require 'openehr/am'
 require 'openehr/parser'
 require 'locale/info'
+require 'generators/openehr'
 
 module OpenEHR
   module Rails
     module Generators
-      class I18nGenerator < ::Rails::Generators::NamedBase
+      class I18nGenerator < ArchetypedBase
         source_root File.expand_path '../templates', __FILE__
 
         def create_i18n_file
@@ -28,10 +29,6 @@ module OpenEHR
         end
 
         private
-        def archetype
-          @archetype ||= OpenEHR::Parser::ADLParser.new(name).parse
-        end
-
         def original_language
           { code: original_language_code,
             text: language_name(original_language_code) }

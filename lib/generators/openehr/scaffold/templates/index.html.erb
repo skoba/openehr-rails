@@ -1,1 +1,11 @@
+<h1>Listing <%%= t(".<%= concept %>") %></h1>
 
+<table>
+  <thead>
+    <tr>
+<% index_data.each do |item| -%>
+      <th><%%= t(".<%= item %>") %></th>
+    </tr>
+<% end -%>
+  </thead>
+</table>
