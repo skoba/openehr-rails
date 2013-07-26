@@ -28,6 +28,10 @@ module OpenEHR
           subject { file('app/views/open_ehr_ehr_observation.blood_pressure.v1/show.html.erb') }
 
           it { should exist }
+          it { should contain /Observation/ }
+          it { should contain /t\("\.at0000\"\)/ }
+          it { should contain /Data/ }
+          it { should contain /Protocol/ }
         end
 
         describe 'invoke edit.html.erb template engine' do

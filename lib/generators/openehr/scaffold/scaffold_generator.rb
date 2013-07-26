@@ -57,6 +57,42 @@ LOCALE
         def generate_view(filename)
           template filename, File.join("app/views", controller_file_path, filename)
         end
+
+        def show_format(cobj)
+          h = case cobj.rm_type_name
+              when 'ELEMENT'
+                show_element cobj
+              when 'INTERVAL_EVENT'
+                show_element cobj
+              when 'OBSERVATION'
+                show_component cobj
+              when 'ACTION'
+                show_component cobj
+              else
+                show_component cobj
+              end
+          h
+        end
+
+        def show_component(cobj)
+          html = "<strong>#{cobj.rm_type_name.humanize} t(\".#{cobj.node_id}\")</strong>:<br/>\n"
+          unless cobj.respond_to? :attributes
+            html += "#{cobj.rm_type_name}\n"
+          else
+            html += cobj.attributes.inject("") do |form, attr|
+              form += "<p><strong>#{attr.rm_attribute_name.humanize}:</strong>"
+              form += attr.children.inject("") {|h,c| h += show_format c}
+              form += "</p>\n"
+            end
+          end
+          return html
+        end
+
+        def show_element(cobj)
+          html = "<strong><%= t(\"#.{cobj.node_id}\") %></strong>: "
+#          value = cobj.select {|attr| attr.rm_attribute_name == 'value'}
+          html += "<%= #{model_name}.#{cobj.node_id} %><br/>\n"
+        end
       end
     end
   end

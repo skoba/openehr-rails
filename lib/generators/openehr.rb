@@ -62,6 +62,9 @@ module OpenEHR
           end
           data
         end
+
+        def show_data(tree = archetype.definition)
+        end
       end
     end
   end

@@ -32,7 +32,13 @@ describe OpenEHR::Rails::Generators::ArchetypedBase do
       @archetyped_base.index_data.should_not include 'at0006'
     end
   end
-  
+
+  # context 'show data' do
+  #   subject { @archetyped_base. }
+
+  #   it { should have_key :protocol }
+  # end
+
   context 'model name' do
     it 'is origined form archetype id' do
       expect(@archetyped_base.model_name).to eq 'open_ehr_ehr_observation_blood_pressure_v1'
