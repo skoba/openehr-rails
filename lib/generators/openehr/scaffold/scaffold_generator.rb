@@ -93,6 +93,56 @@ LOCALE
 #          value = cobj.select {|attr| attr.rm_attribute_name == 'value'}
           html += "<%= #{model_name}.#{cobj.node_id} %><br/>\n"
         end
+
+        def form_format(cobj)
+          html = case cobj.rm_type_name
+                 when 'ELEMENT'
+                   form_element cobj
+                 when 'INTERVAL_EVENT'
+                   form_element cobj
+                 else
+                   form_component cobj
+                 end
+          return html
+        end
+
+        def form_component(cobj)
+          html = "<strong>#{cobj.rm_type_name.humanize} t(\".#{cobj.node_id}\")</strong>:<br/>\n"
+          unless cobj.respond_to? :attributes
+            html += "#{cobj.rm_type_name}\n"
+          else
+            html += cobj.attributes.inject("") do |form, attr|
+              form += "<p><strong><%= t(\".#{cobj.node_id})\" %></strong>:"
+              form += attr.children.inject('') {|h,c| h += form_format c}
+              form += '</p>'
+            end
+          end
+          html
+        end
+
+        def form_element(cobj)
+          html = ''
+          value = cobj.attributes.select {|attr| attr.rm_attribute_name == 'value'}
+          unless value[0].nil?
+            html = "<strong><%= f.label :#{cobj.node_id} %></strong>: "
+            html += form_field value[0].children[0], cobj.node_id
+          end
+          html
+        end
+
+        def form_field(cobj, label)
+          form = case cobj.rm_type_name
+                 when 'DV_TEXT'
+                   "<%= f.text_field :#{label} %>\n"
+                 when 'DV_CODED_TEXT'
+                   "<%= f.select :#{label}, #{cobj.attributes[0].children[0].code_list.to_s}\n"
+                 when 'DV_QUANTITY'
+                   "<%= f.text_field :#{label} %>\n"                   
+                 else
+                   "<%= f.text_field :#{label} %>\n"
+                 end
+          form
+        end
       end
     end
   end
