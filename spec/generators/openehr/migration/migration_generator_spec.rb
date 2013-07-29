@@ -1,7 +1,7 @@
 require 'spec_helper'
 require 'generators/openehr/migration/migration_generator'
 
-describe OpenEHR::Rails::Generators::MigrationGenerator do
+describe Openehr::Generators::MigrationGenerator do
   destination File.expand_path(destination_root)
 
   before { prepare_destination }

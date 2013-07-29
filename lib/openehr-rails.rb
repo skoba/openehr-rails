@@ -1,4 +1,4 @@
-module OpenEHR
+module Openehr
   module Rails
     class Railtie < ::Rails::Railtie
 

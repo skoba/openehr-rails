@@ -1,7 +1,7 @@
 require 'spec_helper'
 require 'generators/openehr/install/install_generator'
 
-describe OpenEHR::Rails::Generators::InstallGenerator do
+describe Openehr::Generators::InstallGenerator do
   destination File.expand_path('../../../../../tmp', __FILE__)
 
   before do 

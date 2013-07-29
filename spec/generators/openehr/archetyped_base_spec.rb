@@ -1,10 +1,10 @@
 require 'spec_helper'
 require 'generators/openehr'
 
-describe OpenEHR::Rails::Generators::ArchetypedBase do
+describe Openehr::Generators::ArchetypedBase do
   before (:each) do
     adl_file = File.expand_path '../../templates/openEHR-EHR-OBSERVATION.blood_pressure.v1.adl', __FILE__
-    @archetyped_base = OpenEHR::Rails::Generators::ArchetypedBase.new([adl_file])
+    @archetyped_base = Openehr::Generators::ArchetypedBase.new([adl_file])
   end
 
   context 'archtype path' do
