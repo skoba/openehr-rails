@@ -1,6 +1,7 @@
 require 'openehr/am'
 require 'openehr/rm'
 require 'openehr/parser'
+require 'ckm_client'
 
 module Openehr
   module Generators
@@ -22,6 +23,12 @@ module Openehr
 
       def archetype_file
         @archetype_file ||= File.exist?(@archetype_name) ? @archetype_name : File.join(archetype_path, @archetype_name)
+        if File.exist @archetype_file
+          return @archetype_file
+        else
+          ckmc = OpenEHR::CKMClient::SOAPInterface.new
+          create_file @archetype_file, ckmc.fetch(@archetype_name)
+        end
       end
 
       def controller_name
