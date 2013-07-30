@@ -44,4 +44,10 @@ describe Openehr::Generators::ArchetypedBase do
       expect(@archetyped_base.model_name).to eq 'open_ehr_ehr_observation_blood_pressure_v1'
     end
   end
+
+  context 'controller_name' do
+    it 'is originated from archtype id' do
+      expect(@archetyped_base.controller_name).to eq 'open_ehr_ehr_observation_blood_pressure_v1'      
+    end
+  end
 end

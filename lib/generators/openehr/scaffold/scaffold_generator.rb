@@ -2,6 +2,9 @@ require 'openehr/rm'
 require 'openehr/am'
 require 'openehr/parser'
 require 'generators/openehr'
+require 'generators/openehr/assets/assets_generator'
+require 'rails/generators'
+
 
 module Openehr
   module Generators
@@ -28,6 +31,8 @@ module Openehr
         generate_view "_form.html.erb"
       end
 
+      invoke Openehr::Generators::AssetsGenerator
+
       def append_locale_route
         unless File.exist? 'config/routes.rb'
           template 'routes.rb', File.join("config", 'routes.rb')
@@ -51,6 +56,7 @@ LOCALE
   end
 LOCALE
       end
+
 
       protected
 

@@ -12,7 +12,7 @@ module Openehr
       end
 
       describe 'invoke index.html.erb template engine' do
-        subject { file('app/views/open_ehr_ehr_observation.blood_pressure.v1/index.html.erb') }
+        subject { file('app/views/open_ehr_ehr_observation_blood_pressure_v1/index.html.erb') }
 
         it { should exist }
         it { should contain /\<h1\>Listing \<%= t\("\.at0000"\) %\>\<\/h1\>/ }
@@ -24,7 +24,7 @@ module Openehr
       end
 
       describe 'invoke show.html.erb template engine' do
-        subject { file('app/views/open_ehr_ehr_observation.blood_pressure.v1/show.html.erb') }
+        subject { file('app/views/open_ehr_ehr_observation_blood_pressure_v1/show.html.erb') }
 
         it { should exist }
         it { should contain /Observation/ }
@@ -34,14 +34,14 @@ module Openehr
       end
 
       describe 'invoke edit.html.erb template engine' do
-        subject { file('app/views/open_ehr_ehr_observation.blood_pressure.v1/edit.html.erb') }
+        subject { file('app/views/open_ehr_ehr_observation_blood_pressure_v1/edit.html.erb') }
 
         it { should exist }
         it { should contain /Editing \<%= t\(\"\.at0000\"\) /}
       end
 
       describe 'invoke _form.html.erb template engine' do
-        subject { file('app/views/open_ehr_ehr_observation.blood_pressure.v1/_form.html.erb')}
+        subject { file('app/views/open_ehr_ehr_observation_blood_pressure_v1/_form.html.erb')}
 
         it { should exist }
         it { should contain // }
@@ -52,6 +52,12 @@ module Openehr
 
         it { should contain /scope "\/:locale" do/ }
         it { should contain /resources :open_ehr_ehr_observation.blood_pressure.v1/}
+      end
+
+      describe 'invoke assets generator' do
+        subject { file('app/assets/stylesheets/scaffold.css') }
+
+        it { should exist }
       end
 
       describe 'application controller modifier' do
