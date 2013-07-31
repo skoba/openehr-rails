@@ -47,6 +47,14 @@ module Openehr
         archetype.concept
       end
 
+      def model_class_name
+        model_name.camelize
+      end
+
+      def controller_class_name
+        model_class_name + 'Controller'
+      end
+
       def data_tree
         archetype.definition.attributes.each do |attribute|
           return attribute if attribute.rm_attribute_name == "data"

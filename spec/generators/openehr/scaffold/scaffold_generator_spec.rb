@@ -60,6 +60,18 @@ module Openehr
         it { should exist }
       end
 
+      describe 'invoke helper generator' do
+        subject { file('app/helpers/open_ehr_ehr_observation_blood_pressure_v1_helper.rb')}
+
+        it { should exist }
+      end
+
+      describe 'controller generator' do
+        subject { file('app/controllers/open_ehr_ehr_observation_blood_pressure_v1_controller.rb') }
+
+        it { should exist }
+      end
+
       describe 'application controller modifier' do
         subject { file('app/controllers/application_controller.rb')}
 

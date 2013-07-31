@@ -3,6 +3,7 @@ require 'openehr/am'
 require 'openehr/parser'
 require 'generators/openehr'
 require 'generators/openehr/assets/assets_generator'
+require 'generators/openehr/helper/helper_generator'
 require 'rails/generators'
 
 
@@ -31,6 +32,8 @@ module Openehr
         generate_view "_form.html.erb"
       end
 
+      invoke Openehr::Generators::ControllerGenerator
+      invoke Openehr::Generators::HelperGenerator
       invoke Openehr::Generators::AssetsGenerator
 
       def append_locale_route
