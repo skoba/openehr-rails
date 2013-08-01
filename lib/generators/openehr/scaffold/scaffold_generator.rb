@@ -3,9 +3,9 @@ require 'openehr/am'
 require 'openehr/parser'
 require 'generators/openehr'
 require 'generators/openehr/assets/assets_generator'
+require 'generators/openehr/controller/controller_generator'
 require 'generators/openehr/helper/helper_generator'
 require 'rails/generators'
-
 
 module Openehr
   module Generators
@@ -59,7 +59,6 @@ LOCALE
   end
 LOCALE
       end
-
 
       protected
 
