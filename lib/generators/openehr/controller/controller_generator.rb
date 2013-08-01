@@ -4,7 +4,7 @@ module Openehr
   module Generators
     class ControllerGenerator < ArchetypedBase
       source_root File.expand_path("../templates", __FILE__)
-      argument :actions, :type => :array, :default => [], :bannar => 'action action'
+
       desc <<DESC
 generate controler from template and archetype
 DESC

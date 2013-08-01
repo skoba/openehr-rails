@@ -6,10 +6,14 @@ require 'openehr/ckm_client'
 module Openehr
   module Generators
     class ArchetypedBase < ::Rails::Generators::Base
-      argument :archetype_name
+      argument :adl_file
 
       def initialize(args, *options)
-        @archetype_name = args[0]
+        if args[0].class == OpenEHR::AM::Archetype::Archetype
+          @archetype = args[0]
+        else
+          @adl_file = args[0]
+        end
         super
       end
 
@@ -22,13 +26,11 @@ module Openehr
       end
 
       def archetype_file
-        @archetype_file ||= File.exist?(@archetype_name) ? @archetype_name : File.join(archetype_path, @archetype_name)
-        if File.exist? @archetype_file
-          return @archetype_file
-        else
-          ckmc = OpenEHR::CKMClient::SOAPInterface.new
-          create_file @archetype_file, ckmc.fetch(@archetype_name)
-        end
+        @adl_file
+      end
+
+      def archetype_name
+        archetype.archetype_id.value
       end
 
       def controller_name

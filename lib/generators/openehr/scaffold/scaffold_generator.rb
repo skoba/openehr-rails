@@ -32,9 +32,9 @@ module Openehr
         generate_view "_form.html.erb"
       end
 
-      invoke Openehr::Generators::ControllerGenerator
-      invoke Openehr::Generators::HelperGenerator
-      invoke Openehr::Generators::AssetsGenerator
+      invoke Openehr::Generators::ControllerGenerator, @archetype
+      invoke Openehr::Generators::HelperGenerator, @archetype
+      invoke Openehr::Generators::AssetsGenerator, @archetype
 
       def append_locale_route
         unless File.exist? 'config/routes.rb'
