@@ -1,14 +1,15 @@
 require 'spec_helper'
 require 'generators/openehr/scaffold/scaffold_generator'
+require 'generator_helper'
 
 module Openehr
   module Generators
     describe ScaffoldGenerator do
       destination File.expand_path('../../../../../tmp', __FILE__)
 
-      before do
+      before(:each) do
         prepare_destination
-        run_generator %w(spec/generators/templates/openEHR-EHR-OBSERVATION.blood_pressure.v1.adl)
+        run_generator [archetype]
       end
 
       context 'invoke index.html.erb template engine' do
@@ -20,7 +21,7 @@ module Openehr
         it { should contain /\<th\>\<%= t\("\.at0005"\) %\>\<\/th\>/ }
         it { should_not contain /\<th\>\<%= t\("\.at0006"\) %\>\<\/th\>/ }
         it { should contain /\<td\>\<%= open_ehr_ehr_observation_blood_pressure_v1\.at0004 %\>\<\/td\>/ }
-        it { should contain /link_to \<%= t\("\.at0000"\) %\>/}
+#        it { should contain /link_to \<%= t\("\.at0000"\) %\>/}
       end
 
       context 'invoke show.html.erb template engine' do

@@ -4,10 +4,12 @@ require 'generators/openehr/migration/migration_generator'
 describe Openehr::Generators::MigrationGenerator do
   destination File.expand_path(destination_root)
 
-  before { prepare_destination }
+  before(:all) do
+    prepare_destination
+    run_generator
+  end
 
   describe 'default rm db migration' do
-    before { run_generator }
 
     # subject {file('db/migration/20121127020800_create_archetype_db')}
 

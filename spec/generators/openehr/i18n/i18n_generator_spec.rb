@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 require 'spec_helper'
 require 'generators/openehr/i18n/i18n_generator'
+require 'generator_helper'
 
 module Openehr
   module Generators
     describe I18nGenerator do
       destination File.expand_path '../../../../../tmp/', __FILE__
 
-      before do
+      before(:each) do
         prepare_destination
-        run_generator %w(spec/generators/templates/openEHR-EHR-OBSERVATION.blood_pressure.v1.adl)
+        run_generator [archetype]
       end
 
       describe 'File generation' do

@@ -1,14 +1,17 @@
 require 'spec_helper'
 require 'generators/openehr/assets/assets_generator'
-
+require 'openehr/am'
+require 'openehr/rm'
+require 'openehr/parser'
+require 'generator_helper'
 module Openehr
   module Generators
     describe AssetsGenerator do
       destination File.expand_path('../../../../../tmp', __FILE__)
 
-      before do
+      before(:each) do
         prepare_destination
-        run_generator %w(spec/generators/templates/openEHR-EHR-OBSERVATION.blood_pressure.v1.adl)
+        run_generator [archetype]
       end
 
       context 'scaffold.css' do
