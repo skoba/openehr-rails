@@ -6,7 +6,7 @@ require 'openehr/ckm_client'
 module Openehr
   module Generators
     class ArchetypedBase < ::Rails::Generators::Base
-      argument :adl_file
+      argument :archetype
 
       def initialize(args, *options)
         if args[0].class == OpenEHR::AM::Archetype::Archetype
@@ -17,6 +17,7 @@ module Openehr
         super
       end
 
+      protected
       def archetype
         @archetype ||= OpenEHR::Parser::ADLParser.new(archetype_file).parse
       end

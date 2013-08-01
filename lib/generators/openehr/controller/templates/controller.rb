@@ -1,4 +1,4 @@
-class <%= controller_class_name %>Controller < ApplicationController
+class <%= controller_class_name %> < ApplicationController
   before_action :set_<%= controller_name %>, only: [:show, :edit, :update, :destroy]
 
   # GET /<%= controller_class_name %>
@@ -42,7 +42,7 @@ class <%= controller_class_name %>Controller < ApplicationController
   def update
     respond_to do |format|
       if @<%= model_name %>.update(<%= model_name %>_params)
-        format.html { redirect_to @open_ehr_ehr_observation_blood_pressure_v1, notice: '<%= archetype_name %> updated.' }
+        format.html { redirect_to @<%= controller_name %>, notice: '<%= archetype_name %> updated.' }
         format.json { head :no_content }
       else
         format.html { render action: 'edit' }

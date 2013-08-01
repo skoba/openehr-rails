@@ -35,6 +35,7 @@ module Openehr
       invoke Openehr::Generators::ControllerGenerator, @archetype
       invoke Openehr::Generators::HelperGenerator, @archetype
       invoke Openehr::Generators::AssetsGenerator, @archetype
+      invoke Openehr::Generators::I18nGenerator, @archetype
 
       def append_locale_route
         unless File.exist? 'config/routes.rb'

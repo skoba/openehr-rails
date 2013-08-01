@@ -27,7 +27,7 @@ module Openehr
         end
       end
 
-      private
+      protected
       def original_language
         { code: original_language_code,
           text: language_name(original_language_code) }

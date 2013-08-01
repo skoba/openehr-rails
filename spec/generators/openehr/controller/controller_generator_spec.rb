@@ -16,4 +16,5 @@ describe Openehr::Generators::ControllerGenerator do
 
   it { should exist }
 
+  it { should contain /^class OpenEhrEhrObservationBloodPressureV1Controller < ApplicationController$/ }
 end

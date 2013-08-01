@@ -11,7 +11,7 @@ module Openehr
         run_generator %w(spec/generators/templates/openEHR-EHR-OBSERVATION.blood_pressure.v1.adl)
       end
 
-      describe 'invoke index.html.erb template engine' do
+      context 'invoke index.html.erb template engine' do
         subject { file('app/views/open_ehr_ehr_observation_blood_pressure_v1/index.html.erb') }
 
         it { should exist }
@@ -23,7 +23,7 @@ module Openehr
         it { should contain /link_to \<%= t\("\.at0000"\) %\>/}
       end
 
-      describe 'invoke show.html.erb template engine' do
+      context 'invoke show.html.erb template engine' do
         subject { file('app/views/open_ehr_ehr_observation_blood_pressure_v1/show.html.erb') }
 
         it { should exist }
@@ -33,34 +33,40 @@ module Openehr
         it { should contain /Protocol/ }
       end
 
-      describe 'invoke edit.html.erb template engine' do
+      context 'invoke edit.html.erb template engine' do
         subject { file('app/views/open_ehr_ehr_observation_blood_pressure_v1/edit.html.erb') }
 
         it { should exist }
         it { should contain /Editing \<%= t\(\"\.at0000\"\) /}
       end
 
-      describe 'invoke _form.html.erb template engine' do
+      context 'invoke _form.html.erb template engine' do
         subject { file('app/views/open_ehr_ehr_observation_blood_pressure_v1/_form.html.erb')}
 
         it { should exist }
         it { should contain // }
       end
 
-      describe 'invoke routing generator' do
+      context 'invoke routing generator' do
         subject { file('config/routes.rb')}
 
         it { should contain /scope "\/:locale" do/ }
         it { should contain /resources :open_ehr_ehr_observation.blood_pressure.v1/}
       end
 
-      describe 'invoke assets generator' do
+      context 'invoke assets generator' do
         subject { file('app/assets/stylesheets/scaffold.css') }
 
         it { should exist }
       end
 
-      describe 'invoke helper generator' do
+      context 'i18n generator' do
+        subject { file('config/initializers/i18n.rb') }
+
+        it { should exist}
+      end
+      
+      context 'invoke helper generator' do
         subject { file('app/helpers/open_ehr_ehr_observation_blood_pressure_v1_helper.rb')}
 
         it { should exist }
