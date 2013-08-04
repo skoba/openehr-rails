@@ -121,7 +121,7 @@ LOCALE
           html += "#{cobj.rm_type_name}\n"
         else
           html += cobj.attributes.inject("") do |form, attr|
-            form += "<p><strong><%= t(\".#{cobj.node_id})\" %></strong>:"
+            form += "<p><strong><%= t(\".#{cobj.node_id}\") %></strong>:"
             form += attr.children.inject('') {|h,c| h += form_format c}
             form += '</p>'
           end
