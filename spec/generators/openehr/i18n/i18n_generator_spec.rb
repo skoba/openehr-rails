@@ -32,7 +32,7 @@ module Openehr
           it { should contain /en:/ }
           it { should contain /layouts:/ }
           it { should contain /application:/ }
-          it { should contain /open_ehr_ehr_observation.blood_pressure.v1/ }
+          it { should contain /open_ehr_ehr_observation_blood_pressure_v1/ }
           it { should contain /index: &ontology/ }
           it { should contain /at0000: "Blood Pressure"/ }
           it { should contain /at0001: "history"/ }

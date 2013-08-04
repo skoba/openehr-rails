@@ -5,6 +5,7 @@ require 'generators/openehr'
 require 'generators/openehr/assets/assets_generator'
 require 'generators/openehr/controller/controller_generator'
 require 'generators/openehr/helper/helper_generator'
+require 'generators/openehr/i18n/i18n_generator'
 require 'rails/generators'
 
 module Openehr
@@ -28,6 +29,9 @@ module Openehr
         generate_view "edit.html.erb"
       end
 
+      def generate_new
+        generate_view 'new.html.erb'
+      end
       def generate_form
         generate_view "_form.html.erb"
       end
@@ -144,7 +148,7 @@ LOCALE
                when 'DV_TEXT'
                  "<%= f.text_field :#{label} %>\n"
                when 'DV_CODED_TEXT'
-                 "<%= f.select :#{label}, #{cobj.attributes[0].children[0].code_list.to_s}\n"
+                 "<%= f.select :#{label}, #{cobj.attributes[0].children[0].code_list.to_s} %>\n"
                when 'DV_QUANTITY'
                  "<%= f.text_field :#{label} %>\n"                   
                else
