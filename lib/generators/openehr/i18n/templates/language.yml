@@ -1,7 +1,7 @@
 <%= @language_code %>:
   layouts:
     application:
-  <%= @controller_path %>:
+  <%= controller_name %>:
     index: &ontology
 <% @terms.each do |term| %>      <%= term[:atcode] %>: "<%= term[:item] %>"
 <% end %>    new: *ontology

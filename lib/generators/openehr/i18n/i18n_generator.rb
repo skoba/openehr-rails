@@ -11,13 +11,10 @@ module Openehr
       source_root File.expand_path '../templates', __FILE__
 
       def create_i18n_file
-        @original_language = original_language
-        @translations = translations
         template 'i18n.rb', 'config/initializers/i18n.rb'
       end
 
       def create_yaml_files
-        @controller_path = archetype.archetype_id.value.underscore
         archetype.ontology.term_definitions.each do |code, terms|
           @language_code = code
           @terms = terms.map do |atcode, term|
@@ -44,7 +41,8 @@ module Openehr
       end
 
       def language_name(code)
-        Locale::Info.get_language(code).name
+        lang_name = Locale::Info.get_language(code)
+        lang_name ? lang_name.name : code
       end
     end
   end
