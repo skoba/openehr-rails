@@ -52,6 +52,21 @@ module Openehr
 LOCALE
       end
 
+      def insert_uncountable_inflection
+        inflections_file_path = 'config/initializers/inflections.rb'
+        unless File.exist? inflections_file_path
+          empty_directory File.join('config/initializers')
+          template 'inflections.rb', File.join('config/initializers', 'inflections.rb')
+        else
+          append_to_file inflections_file_path, <<INFLECTION
+ActiveSupport::Inflector.inflections(:en) do |inflect|
+  inflect.uncountable %w()
+end
+INFLECTION
+        end
+        insert_into_file inflections_file_path, model_name, :after => "inflect.uncountable %w("
+      end
+
       def append_set_locale
         unless File.exist? 'app/controllers/application_controller.rb'
           template 'application_controller.rb', File.join("app/controllers", 'application_controller.rb')
@@ -155,6 +170,14 @@ LOCALE
                  "<%= f.text_field :#{label} %>\n"
                end
         form
+      end
+
+      def contain?(file, regexp)
+        if File.readlines(file).grep regexp
+          return true
+        else
+          return false
+        end
       end
     end
   end
