@@ -60,11 +60,11 @@ LOCALE
         else
           append_to_file inflections_file_path, <<INFLECTION
 ActiveSupport::Inflector.inflections(:en) do |inflect|
-  inflect.uncountable %w()
+  inflect.uncountable %w(  )
 end
 INFLECTION
         end
-        insert_into_file inflections_file_path, model_name, :after => "inflect.uncountable %w("
+        insert_into_file inflections_file_path, model_name, :after => "inflect.uncountable %w( "
       end
 
       def append_set_locale

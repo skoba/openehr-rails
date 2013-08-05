@@ -1,3 +1,3 @@
 ActiveSupport::Inflector.inflections(:en) do |inflect|
-  inflect.uncountable %w()
+  inflect.uncountable %w(  )
 end
