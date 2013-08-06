@@ -76,9 +76,21 @@ module Openehr
       context 'i18n generator' do
         subject { file('config/initializers/i18n.rb') }
 
-        it { should exist}
+        it { should exist }
+        it { should contain /I18n\.default_locale = :en/ }
+        it { should contain /LANGUAGES = \[/ }
+        it { should contain /\['English', 'en'\],/ }
+        it { should contain /\['Japanese', 'ja'\],/ }
       end
       
+      context 'add locale switcher to application.html.erb' do
+        subject { file('app/views/layouts/application.html.erb') }
+
+        it { should exist }
+        it { should contain /\<%= select_tag 'locale',/ }
+        it { should contain /options_for_select\(LANGUAGES, I18n\.locale.to_s\),/ }
+      end
+
       context 'invoke helper generator' do
         subject { file('app/helpers/open_ehr_ehr_observation_blood_pressure_v1_helper.rb')}
 

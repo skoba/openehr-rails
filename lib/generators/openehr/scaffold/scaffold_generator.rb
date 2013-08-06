@@ -52,6 +52,21 @@ module Openehr
 LOCALE
       end
 
+      def insert_locale_swither
+        unless File.exist? 'app/views/layouts/application.html.erb'
+          template 'application.html.erb', File.join('app/views/layouts', 'application.html.erb')
+        end
+        inject_into_file 'app/views/layouts/application.html.erb', <<SWITCHER, :after => "<body>\n"
+<div id="banner">
+ <%= form_tag '', :method => 'get', class: 'locale' do %>
+  <%= select_tag 'locale',
+      options_for_select(LANGUAGES, I18n.locale.to_s), 
+      onchange: 'this.form.submit()' %>
+ <% end %>
+</div>
+SWITCHER
+      end
+
       def insert_uncountable_inflection
         inflections_file_path = 'config/initializers/inflections.rb'
         unless File.exist? inflections_file_path
