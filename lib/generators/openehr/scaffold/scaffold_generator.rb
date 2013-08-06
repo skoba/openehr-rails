@@ -67,6 +67,10 @@ LOCALE
 SWITCHER
       end
 
+      def generate_layout_stylesheet
+        template 'layout.css.scss', File.join('app/assets/stylesheets', 'layout.css.scss')
+      end
+
       def insert_uncountable_inflection
         inflections_file_path = 'config/initializers/inflections.rb'
         unless File.exist? inflections_file_path
@@ -187,13 +191,6 @@ LOCALE
         form
       end
 
-      def contain?(file, regexp)
-        if File.readlines(file).grep regexp
-          return true
-        else
-          return false
-        end
-      end
     end
   end
 end

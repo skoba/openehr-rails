@@ -91,6 +91,13 @@ module Openehr
         it { should contain /options_for_select\(LANGUAGES, I18n\.locale.to_s\),/ }
       end
 
+      context 'layout.css.scss' do
+        subject { file('app/assets/stylesheets/layout.css.scss') }
+
+        it { should exist }
+        it { should contain /\.locale {/ }
+      end
+
       context 'invoke helper generator' do
         subject { file('app/helpers/open_ehr_ehr_observation_blood_pressure_v1_helper.rb')}
 
