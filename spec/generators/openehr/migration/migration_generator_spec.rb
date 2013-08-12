@@ -1,18 +1,31 @@
 require 'spec_helper'
 require 'generators/openehr/migration/migration_generator'
 
-describe Openehr::Generators::MigrationGenerator do
-  destination File.expand_path(destination_root)
+module Openehr
+  module Generators
+    describe MigrationGenerator do
+      destination File.expand_path('../../../../../tmp', __FILE__)
 
-  before(:all) do
-    prepare_destination
-    run_generator
-  end
+      before(:each) do
+        prepare_destination
+        run_generator
+      end
 
-  describe 'default rm db migration' do
+      context 'default archetype db migration' do
+        subject { file('db/migration/create_archetypes.rb') }
 
-    # subject {file('db/migration/20121127020800_create_archetype_db')}
+        it { should be_a_migration }
+      end
 
-    # it { should exist }
+      context 'default rm db migration' do
+
+        it 'is a migration' do
+          file('db/migration/create_rms.db').should be_a_migration
+        end
+        # subject {  }
+
+        # it { should be_a_migration }
+      end
+    end
   end
 end
