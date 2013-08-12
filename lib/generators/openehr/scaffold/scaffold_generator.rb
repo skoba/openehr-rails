@@ -94,7 +94,8 @@ INFLECTION
   before_action :set_locale
 
   def set_locale
-    I18n.locale = params[:locale] || I18n.default_locale
+    I18n.locale = params[:locale] || session[:locale] || I18n.default_locale
+    session[:locale] = I18n.locale
   end
 LOCALE
       end
@@ -109,8 +110,10 @@ LOCALE
         h = case cobj.rm_type_name
             when 'ELEMENT'
               show_element cobj
+            when /EVENT/
+              show_component cobj
             when 'INTERVAL_EVENT'
-              show_element cobj
+              show_component cobj
             when 'OBSERVATION'
               show_component cobj
             when 'ACTION'
@@ -120,7 +123,7 @@ LOCALE
             end
         h
       end
-
+ 
       def show_component(cobj)
         html = "<strong>#{cobj.rm_type_name.humanize} t(\".#{cobj.node_id}\")</strong>:<br/>\n"
         unless cobj.respond_to? :attributes
@@ -136,9 +139,9 @@ LOCALE
       end
       
       def show_element(cobj)
-        html = "<strong><%= t(\"#.{cobj.node_id}\") %></strong>: "
+        html = "<strong><%= t(\".#{cobj.node_id}\") %></strong>: "
         #    value = cobj.select {|attr| attr.rm_attribute_name == 'value'}
-        html += "<%= #{model_name}.#{cobj.node_id} %><br/>\n"
+        html += "<%= @#{model_name}.#{cobj.node_id} %><br/>\n"
       end
 
       def form_format(cobj)
@@ -171,7 +174,7 @@ LOCALE
         html = ''
         value = cobj.attributes.select {|attr| attr.rm_attribute_name == 'value'}
         unless value[0].nil?
-          html = "<strong><%= f.label :#{cobj.node_id} %></strong>: "
+          html = "<strong><%= t('.#{cobj.node_id}') %></strong>: "
           html += form_field value[0].children[0], cobj.node_id
         end
         html
@@ -184,7 +187,7 @@ LOCALE
                when 'DV_CODED_TEXT'
                  "<%= f.select :#{label}, #{cobj.attributes[0].children[0].code_list.to_s} %>\n"
                when 'DV_QUANTITY'
-                 "<%= f.text_field :#{label} %>\n"                   
+                 "<%= f.text_field :#{label} %> #{cobj.list[0].units}\n"
                else
                  "<%= f.text_field :#{label} %>\n"
                end

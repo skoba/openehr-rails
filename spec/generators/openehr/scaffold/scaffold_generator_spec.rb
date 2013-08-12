@@ -31,6 +31,8 @@ module Openehr
         it { should contain /Observation/ }
         it { should contain /t\(\"\.at0000\"\)/ }
         it { should contain /Data/ }
+        it { should contain /\<strong\>\<%= t\(\"\.at0005\"\) %\>\<\/strong\>: / }
+        it { should contain /\<%= \@open_ehr_ehr_observation_blood_pressure_v1\.at0005 %\>\<br\/\>/ }
         it { should contain /Protocol/ }
       end
 
@@ -111,11 +113,11 @@ module Openehr
       end
 
       describe 'application controller modifier' do
-        subject { file('app/controllers/application_controller.rb')}
+        subject { file('app/controllers/application_controller.rb') }
 
         it { should contain /before_action :set_locale/ }
         it { should contain /def set_locale/ }
-        it { should contain /I18n\.locale = params\[:locale\] \|\| I18n.default_locale/ }
+        it { should contain /I18n\.locale = params\[:locale\] \|\| session\[:locale\] \|\| I18n.default_locale/ }
         it { should contain /end$/ }
       end
     end

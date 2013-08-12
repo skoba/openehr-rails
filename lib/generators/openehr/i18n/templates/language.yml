@@ -1,10 +1,15 @@
 <%= @language_code %>:
+  date: # month name and date format should be customized as you need.
+    month_names: [~, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    order: [year, month, day]
   layouts:
     application:
   <%= controller_name %>:
     index: &ontology
-<% @terms.each do |term| %>      <%= term[:atcode] %>: "<%= term[:item] %>"
-<% end %>    new: *ontology
+<% @terms.each do |term| -%>
+      <%= term[:atcode] %>: "<%= term[:item] %>"
+<% end -%>
+    new: *ontology
     form: *ontology
     show: *ontology
     edit: *ontology
