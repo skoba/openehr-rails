@@ -12,19 +12,15 @@ module Openehr
       end
 
       context 'default archetype db migration' do
-        subject { file('db/migration/create_archetypes.rb') }
+        subject { file('db/migrate/create_archetypes.rb') }
 
         it { should be_a_migration }
       end
 
       context 'default rm db migration' do
+        subject { file('db/migrate/create_rms.rb') }
 
-        it 'is a migration' do
-          file('db/migration/create_rms.db').should be_a_migration
-        end
-        # subject {  }
-
-        # it { should be_a_migration }
+        it { should be_a_migration }
       end
     end
   end
