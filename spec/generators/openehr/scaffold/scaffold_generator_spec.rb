@@ -12,16 +12,37 @@ module Openehr
         run_generator [archetype]
       end
 
+      context 'invoke migration generator' do
+        context 'generate rm migration' do
+          subject { file('db/migrate/create_rms.rb') }
+          
+          it { should be_a_migration}
+        end
+
+        context 'generate archetype migration' do
+          subject { file('db/migrate/create_archetypes.rb') }
+
+          it { should be_a_migration }
+        end
+      end
+
+      
+      context 'generate rm model' do
+        subject { file('app/models/open_ehr_ehr_observation_blood_pressure_v1.rb') }
+
+        it { should exist}
+      end
+
       context 'invoke index.html.erb template engine' do
         subject { file('app/views/open_ehr_ehr_observation_blood_pressure_v1/index.html.erb') }
 
         it { should exist }
-        it { should contain /\<h1\>Listing \<%= t\("\.at0000"\) %\>\<\/h1\>/ }
-        it { should contain /\<th\>\<%= t\("\.at0004"\) %\>\<\/th\>/ }
-        it { should contain /\<th\>\<%= t\("\.at0005"\) %\>\<\/th\>/ }
+        it { should contain '<h1>Listing <%= t(".at0000") %></h1>' }
+        it { should contain '<th><%= t(".at0004") %></th>' }
+        it { should contain '<th><%= t(".at0005") %></th>' }
         it { should_not contain /\<th\>\<%= t\("\.at0006"\) %\>\<\/th\>/ }
         it { should contain /\<td\>\<%= open_ehr_ehr_observation_blood_pressure_v1\.at0004 %\>\<\/td\>/ }
-#        it { should contain /link_to \<%= t\("\.at0000"\) %\>/}
+#        it { should contain 'link_to <%= t(".at0000") %>'}
       end
 
       context 'invoke show.html.erb template engine' do
@@ -79,10 +100,6 @@ module Openehr
         subject { file('config/initializers/i18n.rb') }
 
         it { should exist }
-        it { should contain /I18n\.default_locale = :en/ }
-        it { should contain /LANGUAGES = \[/ }
-        it { should contain /\['English', 'en'\],/ }
-        it { should contain /\['Japanese', 'ja'\],/ }
       end
       
       context 'add locale switcher to application.html.erb' do
@@ -117,7 +134,7 @@ module Openehr
 
         it { should contain /before_action :set_locale/ }
         it { should contain /def set_locale/ }
-        it { should contain /I18n\.locale = params\[:locale\] \|\| session\[:locale\] \|\| I18n.default_locale/ }
+        it { should contain /I18n\.locale = params\[:locale\] \|\| session\[:locale\] \|\| I18n\.default_locale/ }
         it { should contain /end$/ }
       end
     end
