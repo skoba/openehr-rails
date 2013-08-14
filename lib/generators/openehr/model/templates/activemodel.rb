@@ -44,4 +44,9 @@ class <%= model_class_name %>
   end
 
 <%= atcodes(archetype.definition) %>
+  private
+  def confat(node_id, path)
+    archetype.rms.find_by(:node_id => node_id) ||
+      archetype.rms.build(:node_id => node_id, :path => path)
+  end
 end

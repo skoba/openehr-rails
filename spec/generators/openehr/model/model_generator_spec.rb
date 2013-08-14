@@ -40,6 +40,10 @@ module Openehr
         it { should contain "def update(attributes)\n    self.attributes=attributes" }
         it { should contain "@archetype ||= Archetype.new(archetypeid: 'openEHR-EHR-OBSERVATION.blood_pressure.v1')" }
         it { should contain /def at0004$/ }
+        it { should contain /at0004model.num_value$/}
+        it { should contain 'def at0004=(at0004)' }
+        it { should contain 'at0004model.num_value = at0004'}
+        it { should contain 'def confat(node_id, path)'}
       end
     end
   end

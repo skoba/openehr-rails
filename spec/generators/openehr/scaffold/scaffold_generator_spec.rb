@@ -80,14 +80,13 @@ module Openehr
       context 'invoke routing generator' do
         subject { file('config/routes.rb')}
 
-        it { should contain /scope "\/:locale" do/ }
-        it { should contain /resources :open_ehr_ehr_observation.blood_pressure.v1/}
+        it { should contain 'resources :open_ehr_ehr_observation_blood_pressure_v1'}
       end
 
       context 'Insert inflection setting' do
         subject { file('config/initializers/inflections.rb') }
         
-        it { should contain /inflect\.uncountable %w\( open_ehr_ehr_observation_blood_pressure_v1 \)/ }
+        it { should contain 'inflect.uncountable %w( open_ehr_ehr_observation_blood_pressure_v1 )' }
       end
 
       context 'invoke assets generator' do

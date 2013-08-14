@@ -3,6 +3,8 @@ require 'openehr/am'
 require 'openehr/parser'
 require 'generators/openehr'
 require 'generators/openehr/assets/assets_generator'
+require 'generators/openehr/model/model_generator'
+require 'generators/openehr/migration/migration_generator'
 require 'generators/openehr/controller/controller_generator'
 require 'generators/openehr/helper/helper_generator'
 require 'generators/openehr/i18n/i18n_generator'
@@ -47,11 +49,9 @@ module Openehr
         unless File.exist? 'config/routes.rb'
           template 'routes.rb', File.join("config", 'routes.rb')
         end
-        inject_into_file 'config/routes.rb', <<LOCALE, :after => "Application.routes.draw do\n"
-  scope "/:locale" do
-    resources :#{controller_file_path}
-  end
-LOCALE
+        inject_into_file 'config/routes.rb',
+        "  resources :#{controller_file_path}\n",
+        :after => "Application.routes.draw do\n"
       end
 
       def insert_locale_swither

@@ -61,17 +61,16 @@ module Openehr
                   'text_value'
                 end
         return <<ATFORM
+  def #{cobj.node_id}model
+    @#{cobj.node_id} ||= confat('#{cobj.node_id}', '#{val.path}')
+  end
 
   def #{cobj.node_id}
-    @#{cobj.node_id} ||= archetype.rms.find_by(:node_id => '#{cobj.node_id}')
-    @#{cobj.node_id} ||= archetype.rms.build(node_id: '#{cobj.node_id}', path: #{val.path})
-    @#{cobj.node_id}.#{atval}
+    #{cobj.node_id}model.#{atval}
   end
 
   def #{cobj.node_id}=(#{cobj.node_id})
-    @#{cobj.node_id} ||= archetype.rms.find_by(:node_id => '#{cobj.node_id}')
-    @#{cobj.node_id} ||= archetype.rms.build(:node_id => '#{cobj.node_id}', :path => '#{val.path}')
-    @#{cobj.node_id}.#{atval}= #{cobj.node_id}
+    #{cobj.node_id}model.#{atval} = #{cobj.node_id}
   end
 ATFORM
       end
