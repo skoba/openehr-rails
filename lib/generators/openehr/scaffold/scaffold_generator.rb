@@ -185,13 +185,13 @@ LOCALE
       def form_field(cobj, label)
         form = case cobj.rm_type_name
                when 'DV_TEXT'
-                 "<%= f.text_field :#{label} %>\n"
+                 "<%= f.text_field :#{label} %>"
                when 'DV_CODED_TEXT'
-                 "<%= f.select :#{label}, #{cobj.attributes[0].children[0].code_list.to_s} %>\n"
+                 "<%= f.select :#{label}, #{cobj.attributes[0].children[0].code_list.to_s} %>"
                when 'DV_QUANTITY'
-                 "<%= f.text_field :#{label} %> #{cobj.list[0].units}\n"
+                 "<%= f.text_field :#{label} %> #{cobj.list[0].units}"
                else
-                 "<%= f.text_field :#{label} %>\n"
+                 "<%= f.text_field :#{label} %>"
                end
         form
       end

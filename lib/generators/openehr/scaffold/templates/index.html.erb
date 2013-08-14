@@ -14,9 +14,9 @@
 <% index_data.each do |atcode| -%>
         <td><%%= <%= model_name %>.<%= atcode %> %></td>
 <% end -%>
-        <td><%%= link_to 'Show', <%= model_name %> %></td>
-        <td><%%= link_to 'Edit', edit_<%= model_name %>_path(<%= model_name %>) %></td>
-        <td><%%= link_to 'Destroy', <%= model_name %>, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+        <td><%%= link_to 'Show', <%= controller_name %>_path(id: <%= model_name %>.id) %></td>
+        <td><%%= link_to 'Edit', edit_<%= controller_name %>_path(id: <%= model_name %>.id) %></td>
+        <td><%%= link_to 'Destroy', <%= controller_name %>_path(id: <%= model_name %>.id), method: :delete, data: { confirm: 'Are you sure?' } %></td>
       </tr>
     <%% end %>
 

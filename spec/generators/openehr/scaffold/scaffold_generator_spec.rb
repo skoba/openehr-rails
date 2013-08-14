@@ -40,9 +40,9 @@ module Openehr
         it { should contain '<h1>Listing <%= t(".at0000") %></h1>' }
         it { should contain '<th><%= t(".at0004") %></th>' }
         it { should contain '<th><%= t(".at0005") %></th>' }
-        it { should_not contain /\<th\>\<%= t\("\.at0006"\) %\>\<\/th\>/ }
-        it { should contain /\<td\>\<%= open_ehr_ehr_observation_blood_pressure_v1\.at0004 %\>\<\/td\>/ }
-#        it { should contain 'link_to <%= t(".at0000") %>'}
+        it { should_not contain '<th><%= t(".at0006") %></th>' }
+        it { should contain '<td><%= open_ehr_ehr_observation_blood_pressure_v1.at0004 %></td>' }
+        it { should contain "<%= link_to 'Show', open_ehr_ehr_observation_blood_pressure_v1_path(id: open_ehr_ehr_observation_blood_pressure_v1.id) %>"}
       end
 
       context 'invoke show.html.erb template engine' do
