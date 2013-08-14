@@ -27,8 +27,8 @@ class <%= controller_class_name %> < ApplicationController
     @<%= model_name %> = <%= model_class_name %>.new(<%= model_name %>_params)
 
     respond_to do |format|
-      if <%= model_name %>.save
-        format.html { redirect_to <%= model_name %>, notice: '<%= archetype_name %> was successfully created.' }
+      if @<%= model_name %>.save
+        format.html { redirect_to @<%= controller_name %>, notice: '<%= archetype_name %> was successfully created.' }
         format.json { render action: 'show', status: :created, location: @<%= controller_name %> }
       else
         format.html { render action: 'new' }

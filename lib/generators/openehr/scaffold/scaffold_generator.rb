@@ -159,14 +159,14 @@ LOCALE
       end
 
       def form_component(cobj)
-        html = "<strong>#{cobj.rm_type_name.humanize} t(\".#{cobj.node_id}\")</strong>:<br/>\n"
+        html = "<strong>#{cobj.rm_type_name.humanize} <%= t(\".#{cobj.node_id}\") %></strong>:<br/>\n"
         unless cobj.respond_to? :attributes
           html += "#{cobj.rm_type_name}\n"
         else
           html += cobj.attributes.inject("") do |form, attr|
             form += "<p><strong><%= t(\".#{cobj.node_id}\") %></strong>:"
             form += attr.children.inject('') {|h,c| h += form_format c}
-            form += '</p>'
+            form += "</p>\n"
           end
         end
         html
