@@ -142,8 +142,16 @@ LOCALE
       
       def show_element(cobj)
         html = "<strong><%= t('.#{cobj.node_id}') %></strong>: "
-        #    value = cobj.select {|attr| attr.rm_attribute_name == 'value'}
-        html += "<%= @#{model_name}.#{cobj.node_id} %><br/>\n"
+        value = cobj.attributes[0].children[0]
+        case value.rm_type_name
+        when 'DV_CODED_TEXT' || 'DvCodedText'
+          html += "<%= t('.<%= @#{model_name}.#{cobj.node_id} %>') %><br/>\n"
+        when 'DvQuantity' || 'DV_QUANTITY'
+          html += "<%= @#{model_name}.#{cobj.node_id} %>#{value.list[0].units}<br/>\n"
+        else
+          html += "<%= @#{model_name}.#{cobj.node_id} %><br/>\n"
+        end
+        html
       end
 
       def form_format(cobj)
@@ -184,12 +192,12 @@ LOCALE
 
       def form_field(cobj, label)
         form = case cobj.rm_type_name
-               when 'DV_TEXT'
+               when 'DV_TEXT' || 'DvText'
                  "<%= f.text_field :#{label} %>"
-               when 'DV_CODED_TEXT'
+               when 'DV_CODED_TEXT' || 'DvCodedText'
                  "<%= f.select :#{label}, #{code_list_to_hash(cobj.attributes[0].children[0].code_list)} %>"
-               when 'DV_QUANTITY'
-                 "<%= f.text_field :#{label} %> #{cobj.list[0].units}"
+               when 'DV_QUANTITY' || 'DvQuantity'
+                 "<%= f.number_field :#{label} %> #{cobj.list[0].units}"
                else
                  "<%= f.text_field :#{label} %>"
                end
