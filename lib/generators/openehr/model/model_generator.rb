@@ -27,25 +27,45 @@ module Openehr
         case cobj.rm_type_name
         when 'ELEMENT'
           add_atcode_methods cobj
+        when 'EVENT'
+          add_event cobj
+        when 'INTERVAL_EVENT'
+          add_event cobj
         else
-          html = ''
-          if cobj.respond_to? :attributes
-            html += cobj.attributes.inject('') do |form, attr|
-              form += if attr.respond_to? :children
-                        attr.children.inject('') {|h, child| h += atcodes child;h}
-                      else
-                        ''
-                      end
-              form
-            end
-            html
-          end
-          html
+          add_data_component cobj
         end
       end
 
-      private
+      def add_data_component(cobj)
+        html = ''
+        if cobj.respond_to? :attributes
+          html += cobj.attributes.inject('') do |form, attr|
+            if attr.respond_to? :children
+              form += attr.children.inject('') do |h, child|
+                child_atcode = atcodes child
+                unless child_atcode.nil?
+                  h += child_atcode
+                end
+                h
+              end
+            end
+            form
+          end
+        end
+        html
+      end
 
+      def add_event(cobj)
+        add_interval_event(cobj) + add_data_component(cobj)
+      end
+
+      def add_interval_event(cobj)
+        atcode = cobj.node_id
+        path = cobj.path+ "/value"
+        atval = "#{atcode}model.text_value"
+        atform(atcode, path, atval, 'text_value')
+      end
+      
       def add_atcode_methods(cobj)
         atcode = cobj.node_id
         val = cobj.attributes.select {|attr| attr.rm_attribute_name == 'value'}[0]
@@ -68,12 +88,16 @@ module Openehr
                end
         if val.children[0].rm_type_name == 'DV_CODED_TEXT' ||
             val.children[0].rm_type_name == 'DvCodedText'
-          atval = "translate(#{cobj.node_id}model.#{type})"
+          atval = "translate(#{atcode}model.#{type})"
         else
-          atval = "#{cobj.node_id}model.#{type}"
+          atval = "#{atcode}model.#{type}"
         end
+        atform(atcode, path, atval, type)
+      end
+
+      def atform(atcode, path, atval, type)
         return <<ATFORM
-  def #{cobj.node_id}model
+  def #{atcode}model
     @#{atcode} ||= confat('#{atcode}', '#{path}')
   end
 
@@ -84,6 +108,7 @@ module Openehr
   def #{atcode}=(#{atcode})
     #{atcode}model.#{type} = #{atcode}
   end
+
 ATFORM
       end
     end

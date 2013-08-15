@@ -1,3 +1,4 @@
+require 'securerandom'
 class <%= model_class_name %>
   include ActiveModel::Model
 
@@ -27,13 +28,17 @@ class <%= model_class_name %>
     archetype.persisted?
   end
 
+  def destroy
+    archetype.destroy
+  end
+  
   def update(attributes)
     self.attributes=attributes
   end
 
   def attributes=(attributes)
     attributes.each do |k, v|
-      send("#{k}=", v )
+       send("#{k}=", v )
     end
   end
 
@@ -53,11 +58,11 @@ class <%= model_class_name %>
     @archetype = archetype
   end
 
-<%= atcodes(archetype.definition) %>
+<%= add_data_component(archetype.definition) %>
   private
   def confat(node_id, path)
     archetype.rms.find_by(:node_id => node_id) ||
-      archetype.rms.build(:node_id => node_id, :path => path)
+      archetype.rms.build(:node_id => node_id, :path => path, :uid => SecureRandom.uuid)
   end
 
   def translate(term)

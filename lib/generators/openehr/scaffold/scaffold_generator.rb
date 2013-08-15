@@ -127,17 +127,17 @@ LOCALE
       end
  
       def show_component(cobj)
-        html = "<strong>#{cobj.rm_type_name.humanize} t(\".#{cobj.node_id}\")</strong>:<br/>\n"
+        html = ''# "<strong>#{cobj.rm_type_name.humanize} t(\".#{cobj.node_id}\")</strong>:<br/>\n"
         unless cobj.respond_to? :attributes
           html += "#{cobj.rm_type_name}\n"
         else
           html += cobj.attributes.inject("") do |form, attr|
             form += "<p><strong>#{attr.rm_attribute_name.humanize}:</strong>"
-            form += attr.children.inject("") {|h,c| h += show_format c}
+            form += attr.children.inject("") {|h,c| h += show_format c; h}
             form += "</p>\n"
           end
         end
-        return html
+        html
       end
       
       def show_element(cobj)
@@ -158,8 +158,11 @@ LOCALE
         html = case cobj.rm_type_name
                when 'ELEMENT'
                  form_element cobj
-               when 'INTERVAL_EVENT', 'EVENT'
-                 form_component cobj
+               when 'EVENT'
+                 "<strong><%= t('.#{cobj.node_id}') %></strong>: <%= f.text_field :#{cobj.node_id} %><br/>\n" +
+                 form_component(cobj)
+               when 'INTERVAL_EVENT'
+                 "<strong><%= t('.#{cobj.node_id}') %></strong>: <%= f.text_field :#{cobj.node_id} %><br/>\n"
                else
                  form_component cobj
                end
@@ -167,7 +170,7 @@ LOCALE
       end
 
       def form_component(cobj)
-        html = "<strong>#{cobj.rm_type_name.humanize} <%= t('.#{cobj.node_id}') %></strong>:<br/>\n"
+        html = '' #"<strong>#{cobj.rm_type_name.humanize} <%= t('.#{cobj.node_id}') %></strong>:<br/>\n"
         unless cobj.respond_to? :attributes
           html += "#{cobj.rm_type_name}<br/>\n"
         else
@@ -182,10 +185,13 @@ LOCALE
 
       def form_element(cobj)
         html = ''
-        value = cobj.attributes.select {|attr| attr.rm_attribute_name == 'value'}
-        unless value[0].nil?
-          html = "<strong><%= t('.#{cobj.node_id}') %></strong>: "
-          html += form_field value[0].children[0], cobj.node_id
+        if cobj.respond_to? :attributes
+          cobj.attributes.each do |attr|
+            unless attr.nil?
+              html = "<strong><%= t('.#{cobj.node_id}') %></strong>: "
+              html += form_field attr.children[0], cobj.node_id
+            end
+          end
         end
         html
       end

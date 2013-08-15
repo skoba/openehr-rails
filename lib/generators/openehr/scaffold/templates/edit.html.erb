@@ -2,5 +2,5 @@
 
 <%%= render 'form' %>
 
-<%%= link_to 'Show', @<%= controller_name %>_path(id: @<%= model_name %>.id %> |
+<%%= link_to 'Show', <%= controller_name %>_path(id: @<%= model_name %>.id) %> |
 <%%= link_to 'Back', <%= controller_name %>_index_path %>

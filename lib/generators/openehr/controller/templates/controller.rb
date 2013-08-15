@@ -56,7 +56,7 @@ class <%= controller_class_name %> < ApplicationController
   def destroy
     @<%= model_name %>.destroy
     respond_to do |format|
-      format.html { redirect_to <%= controller_name %>_url }
+      format.html { redirect_to <%= controller_name %>_index_url }
       format.json { head :no_content }
     end
   end

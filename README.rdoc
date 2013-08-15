@@ -1,11 +1,19 @@
+{<img src="https://travis-ci.org/skoba/openehr-ruby.png?branch=master" alt="Build Status" />}[https://travis-ci.org/skoba/openehr-ruby]
 == Synopsys
 
 This is a support library for openEHR on Rails implementation and
 still working exeperimental codes.
 
-== Description
+== Requirements
 
+* Supports Ruby 1.9.3, 2.0.0 or equivalents.
+* Developed with CRuby 2.0.0, 1.9.3 on FreeBSD and Linux.
+* Ruby 1.8 or earlier are no longer supported.
 
+== Usage
+
+This library provide scaffold generator on archetype clinical domain
+concepts.
 
 
 == License

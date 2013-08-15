@@ -1,3 +1,3 @@
 class Archetype < ActiveRecord::Base
-  has_many :rms
+  has_many :rms, dependent: :detroy
 end

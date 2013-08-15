@@ -50,9 +50,6 @@ module Openehr
       context 'invoke show.html.erb template engine' do
         subject { file('app/views/open_ehr_ehr_observation_blood_pressure_v1/show.html.erb') }
 
-        it { should exist }
-        it { should contain 'Observation' }
-        it { should contain 't(".at0000")' }
         it { should contain 'Data' }
         it { should contain "<strong><%= t('.at0005') %></strong>: " }
         it { should contain '<%= @open_ehr_ehr_observation_blood_pressure_v1.at0005 %>mm[Hg]<br/>' }
@@ -79,6 +76,7 @@ module Openehr
 
         it { should exist }
         it { should contain "f.select :at0013, t('.at0015') => 'at0015', t('.at0016') => 'at0016'"}
+        it { should contain "<%= t('.at0006') %></strong>: <%= f.text_field :at0006 %>" }
       end
 
       context 'invoke routing generator' do
