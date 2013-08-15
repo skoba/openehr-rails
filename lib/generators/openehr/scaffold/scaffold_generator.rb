@@ -159,7 +159,7 @@ LOCALE
                when 'ELEMENT'
                  form_element cobj
                when 'INTERVAL_EVENT', 'EVENT'
-                 form_element cobj
+                 form_component cobj
                else
                  form_component cobj
                end
