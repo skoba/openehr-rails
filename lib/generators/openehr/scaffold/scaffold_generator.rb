@@ -141,7 +141,7 @@ LOCALE
       end
       
       def show_element(cobj)
-        html = "<strong><%= t(\".#{cobj.node_id}\") %></strong>: "
+        html = "<strong><%= t('.#{cobj.node_id}') %></strong>: "
         #    value = cobj.select {|attr| attr.rm_attribute_name == 'value'}
         html += "<%= @#{model_name}.#{cobj.node_id} %><br/>\n"
       end
@@ -159,12 +159,12 @@ LOCALE
       end
 
       def form_component(cobj)
-        html = "<strong>#{cobj.rm_type_name.humanize} <%= t(\".#{cobj.node_id}\") %></strong>:<br/>\n"
+        html = "<strong>#{cobj.rm_type_name.humanize} <%= t('.#{cobj.node_id}') %></strong>:<br/>\n"
         unless cobj.respond_to? :attributes
           html += "#{cobj.rm_type_name}\n"
         else
           html += cobj.attributes.inject("") do |form, attr|
-            form += "<p><strong><%= t(\".#{cobj.node_id}\") %></strong>:"
+            form += "<p><strong><%= t('.#{cobj.node_id}') %></strong>:"
             form += attr.children.inject('') {|h,c| h += form_format c}
             form += "</p>\n"
           end
@@ -187,7 +187,7 @@ LOCALE
                when 'DV_TEXT'
                  "<%= f.text_field :#{label} %>"
                when 'DV_CODED_TEXT'
-                 "<%= f.select :#{label}, #{cobj.attributes[0].children[0].code_list.to_s} %>"
+                 "<%= f.select :#{label}, #{code_list_to_hash(cobj.attributes[0].children[0].code_list)} %>"
                when 'DV_QUANTITY'
                  "<%= f.text_field :#{label} %> #{cobj.list[0].units}"
                else
@@ -196,6 +196,12 @@ LOCALE
         form
       end
 
+      def code_list_to_hash(code_list)
+        html = code_list.inject('') do |form, item|
+          form += "t('.#{item}') => '#{item}', "
+        end
+        html[0..-3] unless html.nil?
+      end
     end
   end
 end
