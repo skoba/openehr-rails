@@ -43,7 +43,10 @@ module Openehr
         it { should contain /at0004model.num_value$/}
         it { should contain 'def at0004=(at0004)' }
         it { should contain 'at0004model.num_value = at0004'}
+        it { should contain 'translate(at0008model.text_value)'}
         it { should contain 'def confat(node_id, path)'}
+        it { should contain 'I18n.translate("open_ehr_ehr_observation_blood_pressure_v1.index.#{term}")'}
+        it { should contain "def persisted?\n    archetype.persisted?"}
       end
     end
   end

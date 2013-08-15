@@ -2,5 +2,5 @@
 
 <%= show_format(archetype.definition) %>
 
-<%%= link_to 'Edit', edit_<%= model_name %>_path(@<%= model_name %>) %> |
-<%%= link_to 'Back', <%= model_name %>_index_path %>
+<%%= link_to 'Edit', edit_<%= controller_name %>_path(id: @<%= model_name %>.id) %> |
+<%%= link_to 'Back', <%= controller_name %>_index_path %>

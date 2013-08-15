@@ -23,8 +23,18 @@ class <%= model_class_name %>
     archetype.rms.inject(archetype.save, :&) {|rm| rm.save}
   end
 
+  def persisted?
+    archetype.persisted?
+  end
+
   def update(attributes)
     self.attributes=attributes
+  end
+
+  def attributes=(attributes)
+    attributes.each do |k, v|
+      send("#{k}=", v )
+    end
   end
 
   def id
@@ -48,5 +58,9 @@ class <%= model_class_name %>
   def confat(node_id, path)
     archetype.rms.find_by(:node_id => node_id) ||
       archetype.rms.build(:node_id => node_id, :path => path)
+  end
+
+  def translate(term)
+    I18n.translate("<%= controller_name %>.index.#{term}")
   end
 end

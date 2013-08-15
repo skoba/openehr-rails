@@ -57,7 +57,7 @@ module Openehr
         it { should contain "<strong><%= t('.at0005') %></strong>: " }
         it { should contain '<%= @open_ehr_ehr_observation_blood_pressure_v1.at0005 %>mm[Hg]<br/>' }
         it { should contain 'Protocol' }
-        it { should contain "<strong><%= t('.at0013') %></strong>: <%= t('.<%= @open_ehr_ehr_observation_blood_pressure_v1.at0013 %>') %>"}
+        it { should contain "<strong><%= t('.at0013') %></strong>: <%= @open_ehr_ehr_observation_blood_pressure_v1.at0013 %>"}
       end
 
       context 'invoke edit.html.erb template engine' do

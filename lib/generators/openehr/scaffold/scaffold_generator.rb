@@ -145,7 +145,7 @@ LOCALE
         value = cobj.attributes[0].children[0]
         case value.rm_type_name
         when 'DV_CODED_TEXT' || 'DvCodedText'
-          html += "<%= t('.<%= @#{model_name}.#{cobj.node_id} %>') %><br/>\n"
+          html += "<%= @#{model_name}.#{cobj.node_id} %><br/>\n"
         when 'DvQuantity' || 'DV_QUANTITY'
           html += "<%= @#{model_name}.#{cobj.node_id} %>#{value.list[0].units}<br/>\n"
         else

@@ -46,31 +46,43 @@ module Openehr
 
       private
 
-      def add_atcode_methods(cobj)        
+      def add_atcode_methods(cobj)
+        atcode = cobj.node_id
         val = cobj.attributes.select {|attr| attr.rm_attribute_name == 'value'}[0]
-        atval = case val.children[0].rm_type_name
-                when 'DvQuantity'
+        path = val.path
+        type = case val.children[0].rm_type_name
+               when 'DvQuantity', 'DV_QUANTITY'
                   'num_value'
-                when 'DvText'
-                  'text_value'
-                when 'DvCodedText'
-                  'text_value'
-                when 'DvDate'
-                  'date_value'
-                else
-                  'text_value'
-                end
+               when 'DvText', 'DV_TEXT'
+                 'text_value'
+               when 'DvCodedText', "DV_CODED_TEXT"
+                 'text_value'
+               when 'DvDate', 'DV_DATE'
+                 'date_value'
+               when 'DvTime', 'DvTime'
+                 'time_value'
+               when 'DvDateTime', 'DvDateTime'
+                 'datetime_value'
+               else
+                 'text_value'
+               end
+        if val.children[0].rm_type_name == 'DV_CODED_TEXT' ||
+            val.children[0].rm_type_name == 'DvCodedText'
+          atval = "translate(#{cobj.node_id}model.#{type})"
+        else
+          atval = "#{cobj.node_id}model.#{type}"
+        end
         return <<ATFORM
   def #{cobj.node_id}model
-    @#{cobj.node_id} ||= confat('#{cobj.node_id}', '#{val.path}')
+    @#{atcode} ||= confat('#{atcode}', '#{path}')
   end
 
-  def #{cobj.node_id}
-    #{cobj.node_id}model.#{atval}
+  def #{atcode}
+    #{atval}
   end
 
-  def #{cobj.node_id}=(#{cobj.node_id})
-    #{cobj.node_id}model.#{atval} = #{cobj.node_id}
+  def #{atcode}=(#{atcode})
+    #{atcode}model.#{type} = #{atcode}
   end
 ATFORM
       end

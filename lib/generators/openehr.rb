@@ -33,7 +33,7 @@ module Openehr
       end
 
       def controller_name
-        archetype.archetype_id.value.underscore.tr '.', '_'
+        archetype_name.underscore.tr '.', '_'
       end
 
       def controller_file_path
