@@ -112,7 +112,7 @@ LOCALE
         h = case cobj.rm_type_name
             when 'ELEMENT'
               show_element cobj
-            when /EVENT/
+            when 'EVENT'
               show_component cobj
             when 'INTERVAL_EVENT'
               show_component cobj
@@ -144,9 +144,9 @@ LOCALE
         html = "<strong><%= t('.#{cobj.node_id}') %></strong>: "
         value = cobj.attributes[0].children[0]
         case value.rm_type_name
-        when 'DV_CODED_TEXT' || 'DvCodedText'
+        when 'DV_CODED_TEXT', 'DvCodedText'
           html += "<%= @#{model_name}.#{cobj.node_id} %><br/>\n"
-        when 'DvQuantity' || 'DV_QUANTITY'
+        when 'DvQuantity', 'DV_QUANTITY'
           html += "<%= @#{model_name}.#{cobj.node_id} %>#{value.list[0].units}<br/>\n"
         else
           html += "<%= @#{model_name}.#{cobj.node_id} %><br/>\n"
@@ -158,7 +158,7 @@ LOCALE
         html = case cobj.rm_type_name
                when 'ELEMENT'
                  form_element cobj
-               when 'INTERVAL_EVENT'
+               when 'INTERVAL_EVENT', 'EVENT'
                  form_element cobj
                else
                  form_component cobj
@@ -169,7 +169,7 @@ LOCALE
       def form_component(cobj)
         html = "<strong>#{cobj.rm_type_name.humanize} <%= t('.#{cobj.node_id}') %></strong>:<br/>\n"
         unless cobj.respond_to? :attributes
-          html += "#{cobj.rm_type_name}\n"
+          html += "#{cobj.rm_type_name}<br/>\n"
         else
           html += cobj.attributes.inject("") do |form, attr|
             form += "<p><strong><%= t('.#{cobj.node_id}') %></strong>:"
@@ -192,14 +192,14 @@ LOCALE
 
       def form_field(cobj, label)
         form = case cobj.rm_type_name
-               when 'DV_TEXT' || 'DvText'
-                 "<%= f.text_field :#{label} %>"
-               when 'DV_CODED_TEXT' || 'DvCodedText'
-                 "<%= f.select :#{label}, #{code_list_to_hash(cobj.attributes[0].children[0].code_list)} %>"
-               when 'DV_QUANTITY' || 'DvQuantity'
-                 "<%= f.number_field :#{label} %> #{cobj.list[0].units}"
+               when 'DV_TEXT', 'DvText'
+                 "<%= f.text_field :#{label} %><br/>\n"
+               when 'DV_CODED_TEXT', 'DvCodedText'
+                 "<%= f.select :#{label}, #{code_list_to_hash(cobj.attributes[0].children[0].code_list)} %><br/>\n"
+               when 'DV_QUANTITY', 'DvQuantity'
+                 "<%= f.number_field :#{label} %> #{cobj.list[0].units}<br/>\n"
                else
-                 "<%= f.text_field :#{label} %>"
+                 "<%= f.text_field :#{label} %><br/>\n"
                end
         form
       end

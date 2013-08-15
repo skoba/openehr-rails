@@ -3,6 +3,11 @@
 This is a support library for openEHR on Rails implementation and
 still working exeperimental codes.
 
+== Description
+
+
+
+
 == License
 This product is under Apache 2.0 license
 
