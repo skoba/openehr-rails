@@ -62,7 +62,7 @@ class <%= model_class_name %>
   private
   def confat(node_id, path)
     archetype.rms.find_by(:node_id => node_id) ||
-      archetype.rms.build(:node_id => node_id, :path => path, :uid => SecureRandom.uuid)
+      archetype.rms.build(:node_id => node_id, :path => path)
   end
 
   def translate(term)
