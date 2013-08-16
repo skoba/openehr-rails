@@ -51,7 +51,7 @@ class <%= model_class_name %>
   end
 
   def archetype
-    @archetype ||= Archetype.new(archetypeid: '<%= archetype_name %>')
+    @archetype ||= Archetype.new(archetypeid: '<%= archetype_name %>', uid: SecureRandom.uuid)
   end
 
   def archetype=(archetype)

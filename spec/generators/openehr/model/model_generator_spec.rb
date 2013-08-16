@@ -25,7 +25,7 @@ module Openehr
 
         it { should exist }
         it { should contain 'class Archetype < ActiveRecord::Base' }
-        it { should contain 'has_many :rms' }
+        it { should contain 'has_many :rms, dependent: :destroy' }
       end
 
       context 'interim model generation' do
@@ -33,12 +33,12 @@ module Openehr
 
         it { should exist }
         it { should contain 'class OpenEhrEhrObservationBloodPressureV1' }
-        it { should contain 'OpenEhrEhrObservationBloodPressureV1.new(archetype: archetype)' }
+        it { should contain 'OpenEhrEhrObservationBloodPressureV1.new(archetype: archetype, uid)' }
         it { should contain  'OpenEhrEhrObservationBloodPressureV1.new(archetype: Archetype.find(id))' }
         it { should contain "def self.build(params)\n    OpenEhrEhrObservationBloodPressureV1.new(params)"}
         it { should contain 'archetype.rms.inject(archetype.save, :&) {|rm| rm.save' }
         it { should contain "def update(attributes)\n    self.attributes=attributes" }
-        it { should contain "@archetype ||= Archetype.new(archetypeid: 'openEHR-EHR-OBSERVATION.blood_pressure.v1')" }
+        it { should contain "@archetype ||= Archetype.new(archetypeid: 'openEHR-EHR-OBSERVATION.blood_pressure.v1', uid: SecureRandom.uuid)" }
         it { should contain /def at0004$/ }
         it { should contain /at0004model.num_value$/}
         it { should contain 'def at0004=(at0004)' }
