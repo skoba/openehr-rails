@@ -33,7 +33,7 @@ module Openehr
 
         it { should exist }
         it { should contain 'class OpenEhrEhrObservationBloodPressureV1' }
-        it { should contain 'OpenEhrEhrObservationBloodPressureV1.new(archetype: archetype, uid)' }
+        it { should contain 'OpenEhrEhrObservationBloodPressureV1.new(archetype: archetype)' }
         it { should contain  'OpenEhrEhrObservationBloodPressureV1.new(archetype: Archetype.find(id))' }
         it { should contain "def self.build(params)\n    OpenEhrEhrObservationBloodPressureV1.new(params)"}
         it { should contain 'archetype.rms.inject(archetype.save, :&) {|rm| rm.save' }
