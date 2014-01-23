@@ -22,32 +22,6 @@ module Openehr
           @archetyped_base.send(:archetype_path).should == 'app/archetypes'
         end
       end
-      
-      context 'data_tree' do
-        it 'rm_attribute_name.should data' do
-          @archetyped_base.send(:data_tree).rm_attribute_name.should == 'data'
-        end
-      end
-      
-      context 'index data' do
-        it 'includes value data' do
-          @archetyped_base.send(:index_data).should include 'at0004'
-        end
-
-        it 'includes at0005, too' do
-          @archetyped_base.send(:index_data).should include 'at0005'
-        end
-
-        it 'does not include at0006' do
-          @archetyped_base.send(:index_data).should_not include 'at0006'
-        end
-      end
-
-      # context 'show data' do
-      #   subject { @archetyped_base. }
-      
-      #   it { should have_key :protocol }
-      # end
 
       context 'model name' do
         it 'is origined form archetype id' do

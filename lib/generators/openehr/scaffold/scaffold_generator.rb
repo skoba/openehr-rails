@@ -104,6 +104,32 @@ LOCALE
 
       protected
 
+      def data_tree
+        archetype.definition.attributes.each do |attribute|
+          return attribute if attribute.rm_attribute_name == "data"
+        end
+      end
+
+      def index_data(tree = data_tree)
+        data = []
+        if tree.has_children?
+          data = tree.children.inject([]) do |values, child|
+            if child.respond_to? :attributes
+              child.attributes.each do |attribute|
+                if attribute.rm_attribute_name == 'value'
+                  values << child.node_id unless child.node_id.nil?
+                end
+                if attribute.has_children?
+                  values.concat index_data(attribute)
+                end
+              end
+            end
+            values
+          end
+        end
+        data
+      end
+
       def generate_view(filename)
         template filename, File.join("app/views", controller_file_path, filename)
       end
