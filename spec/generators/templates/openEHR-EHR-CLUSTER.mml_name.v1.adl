@@ -1,0 +1,146 @@
+﻿archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.mml_name.v1
+
+concept
+	[at0000]	-- Mml name component
+language
+	original_language = <[ISO_639-1::ja]>
+	translations = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			author = <
+				["name"] = <"Shinji KOBAYASHI">
+			>
+		>
+	>
+description
+	original_author = <
+		["date"] = <"2014-01-28">
+		["name"] = <"Shinji KOBAYASHI">
+		["email"] = <"skoba@moss.or.jp">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record personal name">
+			use = <"To describe personal name">
+			misuse = <"Not to use organization name">
+			copyright = <"MedXML consortium">
+		>
+		["ja"] = <
+			language = <[ISO_639-1::ja]>
+			purpose = <"個人の名前を記録するため">
+			use = <"個人の名前を表現すること">
+			misuse = <"組織の名前には用いない">
+			copyright = <"MedXML consortium">
+		>
+	>
+	lifecycle_state = <"Initial">
+	other_contributors = <>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"E37639D8A03C1B2E8FBEAC057D938B8C">
+	>
+
+definition
+	CLUSTER[at0000] matches {	-- Mml name component
+		items cardinality matches {2..*; unordered} matches {
+			ELEMENT[at0002] matches {	-- mmlNm:family
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0001] matches {	-- mmlNm:given
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0003] occurrences matches {0..1} matches {	-- mmlNm:middle
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0004] occurrences matches {0..1} matches {	-- mmlNm:fullname
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0005] occurrences matches {0..1} matches {	-- mmlNm:prefix
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+			ELEMENT[at0006] occurrences matches {0..1} matches {	-- mmlNm:degree
+				value matches {
+					DV_TEXT matches {*}
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Mml name component">
+					description = <"mmlNm:Name">
+				>
+				["at0001"] = <
+					text = <"mmlNm:given">
+					description = <"Given name">
+				>
+				["at0002"] = <
+					text = <"mmlNm:family">
+					description = <"Family name">
+				>
+				["at0003"] = <
+					text = <"mmlNm:middle">
+					description = <"middle name of person">
+				>
+				["at0004"] = <
+					text = <"mmlNm:fullname">
+					description = <"*">
+				>
+				["at0005"] = <
+					text = <"mmlNm:prefix">
+					description = <"*">
+				>
+				["at0006"] = <
+					text = <"mmlNm:degree">
+					description = <"*">
+				>
+			>
+		>
+		["ja"] = <
+			items = <
+				["at0000"] = <
+					text = <"Mml name">
+					description = <"unknown">
+				>
+				["at0001"] = <
+					text = <"名">
+					description = <"名">
+				>
+				["at0002"] = <
+					text = <"姓">
+					description = <"姓">
+				>
+				["at0003"] = <
+					text = <"ミドルネーム">
+					description = <"ミドルネーム">
+				>
+				["at0004"] = <
+					text = <"フルネーム">
+					description = <"フルネーム">
+				>
+				["at0005"] = <
+					text = <"敬称">
+					description = <"敬称">
+				>
+				["at0006"] = <
+					text = <"学位">
+					description = <"学位">
+				>
+			>
+		>
+	>

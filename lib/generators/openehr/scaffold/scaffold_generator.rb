@@ -104,28 +104,16 @@ LOCALE
 
       protected
 
-      def data_tree
-        archetype.definition.attributes.each do |attribute|
-          return attribute if attribute.rm_attribute_name == "data"
-        end
-      end
-
-      def index_data(tree = data_tree)
-        data = []
-        if tree.has_children?
-          data = tree.children.inject([]) do |values, child|
-            if child.respond_to? :attributes
-              child.attributes.each do |attribute|
-                if attribute.rm_attribute_name == 'value'
-                  values << child.node_id unless child.node_id.nil?
-                end
-                if attribute.has_children?
-                  values.concat index_data(attribute)
-                end
-              end
+      def index_data(tree = archetype.definition)
+        data = tree.attributes.inject([]) do |values, attribute|
+          attribute.children.each do |child|
+            if child.rm_type_name == 'ELEMENT'
+              values << child.node_id
+            else
+              values.concat index_data(child) if child.respond_to? :attributes
             end
-            values
-          end
+          end if attribute.has_children?
+          values
         end
         data
       end
