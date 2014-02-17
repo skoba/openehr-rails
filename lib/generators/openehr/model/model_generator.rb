@@ -107,6 +107,7 @@ module Openehr
 
   def #{atcode}=(#{atcode})
     #{atcode}model.#{type} = #{atcode}
+    #{atcode}model.save
   end
 
 ATFORM
