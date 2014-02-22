@@ -160,8 +160,10 @@ LOCALE
         case value.rm_type_name
         when 'DV_CODED_TEXT', 'DvCodedText'
           html += "<%= @#{model_name}.#{cobj.node_id} %><br/>\n"
-        when 'DvQuantity', 'DV_QUANTITY'
-          html += "<%= @#{model_name}.#{cobj.node_id} %>#{value.list[0].units}<br/>\n"
+        when 'DV_QUANTITY', 'DvQuantity'
+          units = value.list[0].units unless value.list.nil? or value.list.empty?
+            
+          html += "<%= @#{model_name}.#{cobj.node_id} %>#{units}<br/>\n"
         else
           html += "<%= @#{model_name}.#{cobj.node_id} %><br/>\n"
         end
