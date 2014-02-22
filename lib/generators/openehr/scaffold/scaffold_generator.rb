@@ -162,7 +162,6 @@ LOCALE
           html += "<%= @#{model_name}.#{cobj.node_id} %><br/>\n"
         when 'DV_QUANTITY', 'DvQuantity'
           units = value.list[0].units unless value.list.nil? or value.list.empty?
-            
           html += "<%= @#{model_name}.#{cobj.node_id} %>#{units}<br/>\n"
         else
           html += "<%= @#{model_name}.#{cobj.node_id} %><br/>\n"
@@ -219,7 +218,8 @@ LOCALE
                when 'DV_CODED_TEXT', 'DvCodedText'
                  "<%= f.select :#{label}, #{code_list_to_hash(cobj.attributes[0].children[0].code_list)} %><br/>\n"
                when 'DV_QUANTITY', 'DvQuantity'
-                 "<%= f.number_field :#{label} %> #{cobj.list[0].units}<br/>\n"
+                 units = value.list[0].units unless value.list.nil? or value.list.empty?
+                 "<%= f.number_field :#{label} %> #{units}<br/>\n"
                else
                  "<%= f.text_field :#{label} %><br/>\n"
                end
