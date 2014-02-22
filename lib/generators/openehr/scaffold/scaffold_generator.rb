@@ -38,8 +38,6 @@ module Openehr
         generate_view "_form.html.erb"
       end
 
-      invoke Openehr::Generators::MigrationGenerator
-      invoke Openehr::Generators::ModelGenerator, @archetype
       invoke Openehr::Generators::ControllerGenerator, @archetype
       invoke Openehr::Generators::HelperGenerator, @archetype
       invoke Openehr::Generators::AssetsGenerator, @archetype
@@ -101,6 +99,9 @@ INFLECTION
   end
 LOCALE
       end
+
+      invoke Openehr::Generators::ModelGenerator, @archetype
+      invoke Openehr::Generators::MigrationGenerator
 
       protected
 
