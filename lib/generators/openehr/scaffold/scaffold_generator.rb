@@ -218,7 +218,7 @@ LOCALE
                when 'DV_CODED_TEXT', 'DvCodedText'
                  "<%= f.select :#{label}, #{code_list_to_hash(cobj.attributes[0].children[0].code_list)} %><br/>\n"
                when 'DV_QUANTITY', 'DvQuantity'
-                 units = value.list[0].units unless value.list.nil? or value.list.empty?
+                 units = cobj.list[0].units unless cobj.list.nil? or cobj.list.empty?
                  "<%= f.number_field :#{label} %> #{units}<br/>\n"
                else
                  "<%= f.text_field :#{label} %><br/>\n"
