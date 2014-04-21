@@ -21,7 +21,7 @@ Gem::Specification.new do |gem|
 
   gem.require_paths = ["lib"]
   gem.add_dependency('openehr')
-  gem.add_dependency('rails', '~> 4.0.0')
+  gem.add_dependency('rails', '~> 4.1.0')
   gem.add_dependency('ckm_client')
 
   gem.add_development_dependency('rake')
