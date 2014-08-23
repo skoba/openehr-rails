@@ -13,13 +13,13 @@ module Openehr
         it 'archetype file is adl_file' do
           adl_file = File.expand_path '../../templates/openEHR-EHR-OBSERVATION.blood_pressure.v1.adl', __FILE__
           archetyped_base = Openehr::Generators::ArchetypedBase.new([adl_file])
-          archetyped_base.send(:archetype_file).should == File.expand_path('../../templates/openEHR-EHR-OBSERVATION.blood_pressure.v1.adl', __FILE__)
+          expect(archetyped_base.send(:archetype_file)).to eq(File.expand_path('../../templates/openEHR-EHR-OBSERVATION.blood_pressure.v1.adl', __FILE__))
         end
       end
 
       context 'archetype path' do
         it 'archetype_path is app/archetypes' do
-          @archetyped_base.send(:archetype_path).should == 'app/archetypes'
+          expect(@archetyped_base.send(:archetype_path)).to eq('app/archetypes')
         end
       end
 

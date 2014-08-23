@@ -15,8 +15,8 @@ module Openehr
       context 'helper generation' do
         subject { file('app/helpers/open_ehr_ehr_observation_blood_pressure_v1_helper.rb') }
 
-        it { should exist }
-        it { should contain /module OpenEhrEhrObservationBloodPressureV1Helper/ }
+        it { is_expected.to exist }
+        it { is_expected.to contain /module OpenEhrEhrObservationBloodPressureV1Helper/ }
       end
     end
   end

@@ -16,13 +16,13 @@ module Openehr
         context 'generate rm migration' do
           subject { file('db/migrate/create_rms.rb') }
           
-          it { should be_a_migration}
+          it { is_expected.to be_a_migration}
         end
 
         context 'generate archetype migration' do
           subject { file('db/migrate/create_archetypes.rb') }
 
-          it { should be_a_migration }
+          it { is_expected.to be_a_migration }
         end
       end
 
@@ -30,113 +30,113 @@ module Openehr
       context 'generate rm model' do
         subject { file('app/models/open_ehr_ehr_observation_blood_pressure_v1.rb') }
 
-        it { should exist}
+        it { is_expected.to exist}
       end
 
       context 'invoke index.html.erb template engine' do
         subject { file('app/views/open_ehr_ehr_observation_blood_pressure_v1/index.html.erb') }
 
-        it { should exist }
-        it { should contain '<h1>Listing <%= t(".at0000") %></h1>' }
-        it { should contain '<th><%= t(".at0004") %></th>' }
-        it { should contain '<th><%= t(".at0005") %></th>' }
-        it { should_not contain '<th><%= t(".at0006") %></th>' }
-        it { should contain '<td><%= open_ehr_ehr_observation_blood_pressure_v1.at0004 %></td>' }
-        it { should contain "<%= link_to 'Show', open_ehr_ehr_observation_blood_pressure_v1_path(id: open_ehr_ehr_observation_blood_pressure_v1.id) %>"}
-        it { should contain "<%= link_to 'Edit', edit_open_ehr_ehr_observation_blood_pressure_v1_path(id: open_ehr_ehr_observation_blood_pressure_v1.id) %>" }
-        it { should contain "<%= link_to 'Destroy', open_ehr_ehr_observation_blood_pressure_v1_path(id: open_ehr_ehr_observation_blood_pressure_v1.id), method: :delete, data: { confirm: 'Are you sure?' } %>"}
+        it { is_expected.to exist }
+        it { is_expected.to contain '<h1>Listing <%= t(".at0000") %></h1>' }
+        it { is_expected.to contain '<th><%= t(".at0004") %></th>' }
+        it { is_expected.to contain '<th><%= t(".at0005") %></th>' }
+        it { is_expected.not_to contain '<th><%= t(".at0006") %></th>' }
+        it { is_expected.to contain '<td><%= open_ehr_ehr_observation_blood_pressure_v1.at0004 %></td>' }
+        it { is_expected.to contain "<%= link_to 'Show', open_ehr_ehr_observation_blood_pressure_v1_path(id: open_ehr_ehr_observation_blood_pressure_v1.id) %>"}
+        it { is_expected.to contain "<%= link_to 'Edit', edit_open_ehr_ehr_observation_blood_pressure_v1_path(id: open_ehr_ehr_observation_blood_pressure_v1.id) %>" }
+        it { is_expected.to contain "<%= link_to 'Destroy', open_ehr_ehr_observation_blood_pressure_v1_path(id: open_ehr_ehr_observation_blood_pressure_v1.id), method: :delete, data: { confirm: 'Are you sure?' } %>"}
       end
 
       context 'invoke show.html.erb template engine' do
         subject { file('app/views/open_ehr_ehr_observation_blood_pressure_v1/show.html.erb') }
 
-        it { should contain 'Data' }
-        it { should contain "<strong><%= t('.at0005') %></strong>: " }
-        it { should contain '<%= @open_ehr_ehr_observation_blood_pressure_v1.at0005 %>mm[Hg]<br/>' }
-        it { should contain 'Protocol' }
-        it { should contain "<strong><%= t('.at0013') %></strong>: <%= @open_ehr_ehr_observation_blood_pressure_v1.at0013 %>"}
+        it { is_expected.to contain 'Data' }
+        it { is_expected.to contain "<strong><%= t('.at0005') %></strong>: " }
+        it { is_expected.to contain '<%= @open_ehr_ehr_observation_blood_pressure_v1.at0005 %>mm[Hg]<br/>' }
+        it { is_expected.to contain 'Protocol' }
+        it { is_expected.to contain "<strong><%= t('.at0013') %></strong>: <%= @open_ehr_ehr_observation_blood_pressure_v1.at0013 %>"}
       end
 
       context 'invoke edit.html.erb template engine' do
         subject { file('app/views/open_ehr_ehr_observation_blood_pressure_v1/edit.html.erb') }
 
-        it { should exist }
-        it { should contain "Editing <%= t('.at0000')"}
+        it { is_expected.to exist }
+        it { is_expected.to contain "Editing <%= t('.at0000')"}
       end
 
       context 'invoke new.html.erb template engine' do
         subject { file('app/views/open_ehr_ehr_observation_blood_pressure_v1/new.html.erb')}
 
-        it { should exist}
-        it { should contain /New \<%= t\(\".at0000\"\) %\>/ }
+        it { is_expected.to exist}
+        it { is_expected.to contain /New \<%= t\(\".at0000\"\) %\>/ }
       end
 
       context 'invoke _form.html.erb template engine' do
         subject { file('app/views/open_ehr_ehr_observation_blood_pressure_v1/_form.html.erb')}
 
-        it { should exist }
-        it { should contain "f.select :at0013, t('.at0015') => 'at0015', t('.at0016') => 'at0016'"}
-        it { should contain "<%= t('.at0006') %></strong>: <%= f.text_field :at0006 %>" }
+        it { is_expected.to exist }
+        it { is_expected.to contain "f.select :at0013, t('.at0015') => 'at0015', t('.at0016') => 'at0016'"}
+        it { is_expected.to contain "<%= t('.at0006') %></strong>: <%= f.text_field :at0006 %>" }
       end
 
       context 'invoke routing generator' do
         subject { file('config/routes.rb')}
 
-        it { should contain 'resources :open_ehr_ehr_observation_blood_pressure_v1'}
+        it { is_expected.to contain 'resources :open_ehr_ehr_observation_blood_pressure_v1'}
       end
 
       context 'Insert inflection setting' do
         subject { file('config/initializers/inflections.rb') }
         
-        it { should contain 'inflect.uncountable %w( open_ehr_ehr_observation_blood_pressure_v1 )' }
+        it { is_expected.to contain 'inflect.uncountable %w( open_ehr_ehr_observation_blood_pressure_v1 )' }
       end
 
       context 'invoke assets generator' do
         subject { file('app/assets/stylesheets/scaffold.css') }
 
-        it { should exist }
+        it { is_expected.to exist }
       end
 
       context 'i18n generator' do
         subject { file('config/initializers/i18n.rb') }
 
-        it { should exist }
+        it { is_expected.to exist }
       end
       
       context 'add locale switcher to application.html.erb' do
         subject { file('app/views/layouts/application.html.erb') }
 
-        it { should exist }
-        it { should contain /\<%= select_tag 'locale',/ }
-        it { should contain /options_for_select\(LANGUAGES, I18n\.locale.to_s\),/ }
+        it { is_expected.to exist }
+        it { is_expected.to contain /\<%= select_tag 'locale',/ }
+        it { is_expected.to contain /options_for_select\(LANGUAGES, I18n\.locale.to_s\),/ }
       end
 
       context 'layout.css.scss' do
         subject { file('app/assets/stylesheets/layout.css.scss') }
 
-        it { should exist }
-        it { should contain /\.locale {/ }
+        it { is_expected.to exist }
+        it { is_expected.to contain /\.locale {/ }
       end
 
       context 'invoke helper generator' do
         subject { file('app/helpers/open_ehr_ehr_observation_blood_pressure_v1_helper.rb')}
 
-        it { should exist }
+        it { is_expected.to exist }
       end
 
       describe 'controller generator' do
         subject { file('app/controllers/open_ehr_ehr_observation_blood_pressure_v1_controller.rb') }
 
-        it { should exist }
+        it { is_expected.to exist }
       end
 
       describe 'application controller modifier' do
         subject { file('app/controllers/application_controller.rb') }
 
-        it { should contain /before_action :set_locale/ }
-        it { should contain /def set_locale/ }
-        it { should contain /I18n\.locale = params\[:locale\] \|\| session\[:locale\] \|\| I18n\.default_locale/ }
-        it { should contain /end$/ }
+        it { is_expected.to contain /before_action :set_locale/ }
+        it { is_expected.to contain /def set_locale/ }
+        it { is_expected.to contain /I18n\.locale = params\[:locale\] \|\| session\[:locale\] \|\| I18n\.default_locale/ }
+        it { is_expected.to contain /end$/ }
       end
     end
   end

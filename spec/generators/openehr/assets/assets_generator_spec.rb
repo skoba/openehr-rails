@@ -17,20 +17,20 @@ module Openehr
       context 'scaffold.css' do
         subject { file('app/assets/stylesheets/scaffold.css') }
 
-        it { should exist }
-        it { should contain /body {/}
+        it { is_expected.to exist }
+        it { is_expected.to contain /body {/}
       end
 
       context 'generate scss file' do
         subject { file('app/assets/stylesheets/open_ehr_ehr_observation_blood_pressure_v1.css.scss') }
 
-        it { should exist }
+        it { is_expected.to exist }
       end
 
       context 'generate coffeescript' do
         subject { file('app/assets/javascripts/open_ehr_ehr_observation_blood_pressure_v1.js.coffee') }
 
-        it { should exist }
+        it { is_expected.to exist }
       end
     end
   end

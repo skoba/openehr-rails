@@ -8,14 +8,14 @@ describe OpenEHR::RComponents::RElement do
   end
 
   it 'should be an instance of RElement' do
-    @relement.should be_an_instance_of OpenEHR::RComponents::RElement
+    expect(@relement).to be_an_instance_of OpenEHR::RComponents::RElement
   end
 
   it 'node_id is at0004' do
-    @relement.node_id.should eq 'at0004'
+    expect(@relement.node_id).to eq 'at0004'
   end
 
   it 'path is /data[at0004]' do
-    @relement.path.should eq '/data[at0004]'
+    expect(@relement.path).to eq '/data[at0004]'
   end
 end

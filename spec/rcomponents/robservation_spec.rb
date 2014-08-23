@@ -12,10 +12,10 @@ describe OpenEHR::RComponents::RObservation do
   end
 
   it 'protocol is properly assigned' do
-    @robservation.protocol.should eq 'dummy protocol'
+    expect(@robservation.protocol).to eq 'dummy protocol'
   end
 
   it 'state is properly assigned' do
-    @robservation.state.should eq 'dummy state'
+    expect(@robservation.state).to eq 'dummy state'
   end
 end

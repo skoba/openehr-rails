@@ -17,43 +17,43 @@ module Openehr
         describe 'i18n.rb generation' do
           subject { file('config/initializers/i18n.rb') }
 
-          it { should exist }
-          it { should contain /I18n\.default_locale = :en/ }
-          it { should contain /LANGUAGES/ }
-          it { should contain /\['English', 'en'\],/ }
-          it { should contain /\['Japanese', 'ja'\]/ }
-          it { should contain /\['Dutch', 'nl'\],/ }
+          it { is_expected.to exist }
+          it { is_expected.to contain /I18n\.default_locale = :en/ }
+          it { is_expected.to contain /LANGUAGES/ }
+          it { is_expected.to contain /\['English', 'en'\],/ }
+          it { is_expected.to contain /\['Japanese', 'ja'\]/ }
+          it { is_expected.to contain /\['Dutch', 'nl'\],/ }
         end
 
         describe 'en.yml generation' do
           subject { file('config/locales/en.yml') }
 
-          it { should exist }
-          it { should contain /en:/ }
-          it { should contain /layouts:/ }
-          it { should contain /application:/ }
-          it { should contain /open_ehr_ehr_observation_blood_pressure_v1/ }
-          it { should contain /index: &ontology/ }
-          it { should contain /at0000: "Blood Pressure"/ }
-          it { should contain /at0001: "history"/ }
-          it { should contain /new: \*ontology/ }
-          it { should contain /form: \*ontology/ }
-          it { should contain /show: \*ontology/ }
-          it { should contain /edit: \*ontology/ }
+          it { is_expected.to exist }
+          it { is_expected.to contain /en:/ }
+          it { is_expected.to contain /layouts:/ }
+          it { is_expected.to contain /application:/ }
+          it { is_expected.to contain /open_ehr_ehr_observation_blood_pressure_v1/ }
+          it { is_expected.to contain /index: &ontology/ }
+          it { is_expected.to contain /at0000: "Blood Pressure"/ }
+          it { is_expected.to contain /at0001: "history"/ }
+          it { is_expected.to contain /new: \*ontology/ }
+          it { is_expected.to contain /form: \*ontology/ }
+          it { is_expected.to contain /show: \*ontology/ }
+          it { is_expected.to contain /edit: \*ontology/ }
         end
 
         describe 'ja.yml generation' do
           subject { file('config/locales/ja.yml')}
 
-          it { should exist }
-          it { should contain /ja:/ }
+          it { is_expected.to exist }
+          it { is_expected.to contain /ja:/ }
         end
 
         describe 'nl.yml generation' do
           subject { file('config/locales/nl.yml') }
 
-          it { should exist }
-          it { should contain /nl:/ }
+          it { is_expected.to exist }
+          it { is_expected.to contain /nl:/ }
         end
       end
     end

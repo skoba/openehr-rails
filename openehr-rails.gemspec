@@ -20,7 +20,7 @@ Gem::Specification.new do |gem|
   gem.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
 
   gem.require_paths = ["lib"]
-  gem.add_dependency('openehr')
+  gem.add_dependency('openehr'	)
   gem.add_dependency('rails', '~> 4.1.0')
   gem.add_dependency('ckm_client')
 
