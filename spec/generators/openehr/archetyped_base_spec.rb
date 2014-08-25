@@ -1,11 +1,11 @@
 require 'spec_helper'
 require 'generators/openehr'
-#require 'generator_helper'
+require 'generator_helper'
 
 module Openehr
   module Generators
     describe ArchetypedBase do
-      let(:adl_file) { File.expand_path '../../templates/openEHR-EHR-OBSERVATION.blood_pressure.v1.adl', __FILE__ }
+      let(:adl_file) { File.expand_path('../../templates/openEHR-EHR-OBSERVATION.blood_pressure.v1.adl', __FILE__) }
 
       context 'archetype file' do
         it 'archetype file is adl_file' do
@@ -15,7 +15,8 @@ module Openehr
       end
 
       describe 'protected values' do
-        let(:archetyped_base) {Openehr::Generators::ArchetypedBase.new([adl_file])}
+#        let(:archetype) {OpenEHR::Parser::ADLParser.new(adl_file).parse}
+        let(:archetyped_base) {Openehr::Generators::ArchetypedBase.new([archetype])}
 
         context 'archetype path' do
           it 'archetype_path is app/archetypes' do

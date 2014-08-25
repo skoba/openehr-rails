@@ -7,18 +7,17 @@ module Openehr
   module Generators
     class ArchetypedBase < ::Rails::Generators::Base
       def initialize(args, *options)
-p args
-        @adl_file = args[0]
-        # if args[0].class == OpenEHR::AM::Archetype::Archetype
-        #   @archetype = args[0]
-        # else
-        # end
-#        super
+        if args[0].class == OpenEHR::AM::Archetype::Archetype
+          @archetype = args[0]
+        else
+          @adl_file = args[0]
+        end
+        super
       end
 
       protected
       def archetype
-        @archetype ||= OpenEHR::Parser::ADLParser.new(archetype_file).parse
+        @archetype ||= ::OpenEHR::Parser::ADLParser.new(archetype_file).parse
       end
       
       def archetype_path
