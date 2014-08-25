@@ -15,7 +15,6 @@ module Openehr
       end
 
       describe 'protected values' do
-#        let(:archetype) {OpenEHR::Parser::ADLParser.new(adl_file).parse}
         let(:archetyped_base) {Openehr::Generators::ArchetypedBase.new([archetype])}
 
         context 'archetype path' do
