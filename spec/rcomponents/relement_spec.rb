@@ -1,7 +1,7 @@
 require 'spec_helper'
 require 'rcomponents'
 
-describe OpenEHR::RComponents::RElement do
+xdescribe OpenEHR::RComponents::RElement do
   before(:each) do
     @relement =
       OpenEHR::RComponents::RElement.new(:node_id => 'at0004', :path => '/data[at0004]', :rm_type_name => "ELEMENT")

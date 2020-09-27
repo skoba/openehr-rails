@@ -3,7 +3,7 @@ require 'generators/openehr/migration/migration_generator'
 
 module Openehr
   module Generators
-    describe MigrationGenerator do
+    xdescribe MigrationGenerator do
       destination File.expand_path('../../../../../tmp', __FILE__)
 
       before(:each) do

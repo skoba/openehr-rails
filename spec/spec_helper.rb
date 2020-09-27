@@ -8,11 +8,3 @@ $:.unshift(File.dirname(__FILE__) + '/../lib')
 require 'simplecov'
 
 SimpleCov.start
-# Spork.prefork do
-# 
-# end
-
-# Spork.each_run do
-
-# end
-

@@ -9,7 +9,7 @@ describe Openehr::Generators::InstallGenerator do
     run_generator
   end
 
-  it 'makes app/archetypes directory' do
+  xit 'makes app/archetypes directory' do
     expect(file('app/archetypes')).to exist
   end
 end

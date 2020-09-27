@@ -4,7 +4,7 @@ require 'generator_helper'
 
 module Openehr
   module Generators
-    describe ArchetypedBase do
+    xdescribe ArchetypedBase do
       let(:adl_file) { File.expand_path('../../templates/openEHR-EHR-OBSERVATION.blood_pressure.v1.adl', __FILE__) }
 
       context 'archetype file' do

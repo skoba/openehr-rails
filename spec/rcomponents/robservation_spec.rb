@@ -1,7 +1,7 @@
 require 'spec_helper'
 require 'rcomponents'
 
-describe OpenEHR::RComponents::RObservation do
+xdescribe OpenEHR::RComponents::RObservation do
   before(:each) do
     @robservation =
       OpenEHR::RComponents::RObservation.new(node_id: double('node_id'),

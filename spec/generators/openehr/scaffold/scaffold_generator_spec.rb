@@ -4,7 +4,7 @@ require 'generator_helper'
 
 module Openehr
   module Generators
-    describe ScaffoldGenerator do
+    xdescribe ScaffoldGenerator do
       destination File.expand_path('../../../../../tmp', __FILE__)
 
       before(:each) do
