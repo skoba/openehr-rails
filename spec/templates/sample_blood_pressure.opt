@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<template xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="openEHR/v1/Template">
+  <id>blood_pressure_template</id>
+  <name>
+    <value>Blood Pressure Measurement Template</value>
+  </name>
+  <description>
+    <purpose>Template for recording blood pressure measurements</purpose>
+  </description>
+  <definition xsi:type="OBSERVATION" archetype_id="openEHR-EHR-OBSERVATION.blood_pressure.v1" concept_name="Blood pressure">
+    <Rule path="/data[at0001]/events[at0006]/data[at0003]/items[at0004]" name="Systolic">
+      <constraint xsi:type="DV_QUANTITY">
+        <property>
+          <value>Pressure</value>
+        </property>
+        <list>
+          <units>mm[Hg]</units>
+          <magnitude>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1000</upper>
+          </magnitude>
+        </list>
+      </constraint>
+    </Rule>
+    <Rule path="/data[at0001]/events[at0006]/data[at0003]/items[at0005]" name="Diastolic">
+      <constraint xsi:type="DV_QUANTITY">
+        <property>
+          <value>Pressure</value>
+        </property>
+        <list>
+          <units>mm[Hg]</units>
+          <magnitude>
+            <lower_included>true</lower_included>
+            <upper_included>true</upper_included>
+            <lower_unbounded>false</lower_unbounded>
+            <upper_unbounded>false</upper_unbounded>
+            <lower>0</lower>
+            <upper>1000</upper>
+          </magnitude>
+        </list>
+      </constraint>
+    </Rule>
+  </definition>
+</template>

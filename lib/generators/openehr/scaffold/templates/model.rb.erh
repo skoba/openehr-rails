@@ -1,0 +1,70 @@
+class <%= @model_name.camelize %> < ApplicationRecord
+  include OpenehrStorable
+  include AqlQueryable
+  
+  # Template: <%= @template_id %>
+  # Generated from: <%= @opt.concept %>
+  
+  belongs_to :ehr
+  belongs_to :composer, class_name: 'Person'
+  has_one :composition, as: :content
+  
+  # Template-specific scopes
+  scope :recent, -> { order(created_at: :desc) }
+  scope :by_ehr, ->(ehr_id) { where(ehr_id: ehr_id) }
+  
+  # Validations based on template constraints
+  <% @opt.mandatory_fields.each do |field| %>
+  validates :<%= field[:name].underscore %>, presence: true
+  <% end %>
+  
+  # Store as openEHR Composition
+  def to_composition
+    comp = Composition.new(
+      ehr_id: ehr_id,
+      template_id: '<%= @template_id %>',
+      archetype_node_id: '<%= @opt.definition.archetype_id %>'
+    )
+    
+    comp.store_content(build_composition_content)
+    comp
+  end
+  
+  # AQL query helpers
+  def self.find_by_aql(aql_where_clause)
+    aql = <<~AQL
+      SELECT c
+      FROM EHR e
+      CONTAINS COMPOSITION c[<%= @opt.definition.archetype_id %>]
+      WHERE #{aql_where_clause}
+    AQL
+    
+    AqlTranslator.new.execute(aql)
+  end
+  
+  private
+  
+  def build_composition_content
+    OpenEHR::RM::Composition.build do |c|
+      c.name = DvText.new('<%= @human_name %>')
+      c.archetype_node_id = '<%= @opt.definition.archetype_id %>'
+      c.language = CodePhrase.new('ISO_639-1', 'ja')
+      c.territory = CodePhrase.new('ISO_3166-1', 'JP')
+      c.composer = build_party_proxy(composer)
+      
+      # Add content based on form data
+      <% @opt.entries.each do |entry| %>
+      c.content << build_<%= entry[:name].underscore %>_entry if <%= entry[:name].underscore %>_present?
+      <% end %>
+    end
+  end
+  
+  <% @opt.entries.each do |entry| %>
+  def build_<%= entry[:name].underscore %>_entry
+    # Build <%= entry[:archetype_id] %> entry
+    OpenEHR::RM::<%= entry[:rm_type] %>.build('<%= entry[:archetype_id] %>') do |entry|
+      # Implementation based on template structure
+    end
+  end
+  <% end %>
+end

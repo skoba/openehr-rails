@@ -7,10 +7,10 @@ still working exeperimental codes.
 
 ## Requirements
 
-* Version 0.2.x supports Rails 4.1.x, and version 0.1.x series support Rails 4.0.x
-* Supports Ruby 1.9.3, 2.0.0, 2.1.1 or equivalents.
-* Developed with CRuby 2.1.1, 2.0.0, 1.9.3 on FreeBSD and Linux.
-* Ruby 1.8 or earlier are no longer supported.
+* Current version supports Rails 7.0+ and Rails 8.x
+* Requires Ruby 3.0 or later (tested with Ruby 3.4)
+* Developed with CRuby 3.4 on Linux
+* Previous versions supported older Ruby/Rails versions (see git history)
 
 ## Usage
 

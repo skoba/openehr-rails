@@ -1,10 +1,18 @@
+<% if is_opt_file? -%>
+<h1>Listing <%= concept %></h1>
+<% else -%>
 <h1>Listing <%%= t(".<%= concept %>") %></h1>
+<% end -%>
 
 <table>
   <thead>
     <tr>
 <% index_data.each do |atcode| -%>
+<% if is_opt_file? -%>
+      <th><%= atcode.capitalize %></th>
+<% else -%>
       <th><%%= t(".<%= atcode %>") %></th>
+<% end -%>
 <% end -%>
     </tr>
   </thead>

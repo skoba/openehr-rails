@@ -20,14 +20,17 @@ Gem::Specification.new do |gem|
   gem.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
 
   gem.require_paths = ["lib"]
-  gem.add_dependency('openehr')
-  gem.add_dependency('rails') #, '~> 4.1.0')
+  gem.required_ruby_version = '>= 3.0.0'
+  
+  gem.add_dependency('openehr', '~> 1.3.0')
+  gem.add_dependency('rails', '>= 7.0', '< 9.0')
   gem.add_dependency('ckm_client')
+  gem.add_dependency('nokogiri', '>= 1.10')
+  
   gem.add_development_dependency('rake')
-  gem.add_development_dependency('ammeter')
-  gem.add_development_dependency('rspec-rails')
-  gem.add_development_dependency('rubocop-rails')
-  gem.add_development_dependency('guard-rspec')
-  gem.add_development_dependency('spring-commands-rspec')
-  gem.add_development_dependency('simplecov')
+  gem.add_development_dependency('ammeter', '>= 1.1')
+  gem.add_development_dependency('rspec-rails', '>= 6.0')
+  gem.add_development_dependency('rubocop-rails', '>= 2.20')
+  gem.add_development_dependency('guard-rspec', '>= 4.7')
+  gem.add_development_dependency('simplecov', '>= 0.21')
 end
