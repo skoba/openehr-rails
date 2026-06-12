@@ -1,0 +1,29 @@
+<h1>Listing <%= @human_name.pluralize %></h1>
+
+<table>
+  <thead>
+    <tr>
+<% fields.each do |field| -%>
+      <th><%%= <%= class_name %>.human_attribute_name(:<%= field[:name] %>) %></th>
+<% end -%>
+      <th colspan="3"></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <%% @<%= plural_name %>.each do |<%= @model_name %>| %>
+      <tr>
+<% fields.each do |field| -%>
+        <td><%= display_value_for(field, @model_name) %></td>
+<% end -%>
+        <td><%%= link_to 'Show', <%= route_helper_prefix %>_path(<%= @model_name %>) %></td>
+        <td><%%= link_to 'Edit', edit_<%= route_helper_prefix %>_path(<%= @model_name %>) %></td>
+        <td><%%= button_to 'Destroy', <%= route_helper_prefix %>_path(<%= @model_name %>), method: :delete, data: { turbo_confirm: 'Are you sure?' } %></td>
+      </tr>
+    <%% end %>
+  </tbody>
+</table>
+
+<br>
+
+<%%= link_to 'New <%= @human_name %>', new_<%= route_helper_prefix %>_path %>

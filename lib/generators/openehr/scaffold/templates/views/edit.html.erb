@@ -1,0 +1,6 @@
+<h1>Editing <%= @human_name %></h1>
+
+<%%= render 'form', <%= @model_name %>: @<%= @model_name %> %>
+
+<%%= link_to 'Show', <%= route_helper_prefix %>_path(@<%= @model_name %>) %> |
+<%%= link_to 'Back', <%= route_helper_prefix.pluralize %>_path %>

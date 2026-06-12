@@ -1,0 +1,11 @@
+<h1><%= @human_name %></h1>
+
+<% fields.each do |field| -%>
+<p>
+  <strong><%%= <%= class_name %>.human_attribute_name(:<%= field[:name] %>) %></strong>:
+  <%= display_value_for(field, "@#{@model_name}") %>
+</p>
+<% end -%>
+
+<%%= link_to 'Edit', edit_<%= route_helper_prefix %>_path(@<%= @model_name %>) %> |
+<%%= link_to 'Back', <%= route_helper_prefix.pluralize %>_path %>

@@ -28,6 +28,7 @@ Gem::Specification.new do |gem|
   gem.add_dependency('nokogiri', '>= 1.10')
   
   gem.add_development_dependency('rake')
+  gem.add_development_dependency('sqlite3', '>= 2.1')
   gem.add_development_dependency('ammeter', '>= 1.1')
   gem.add_development_dependency('rspec-rails', '>= 6.0')
   gem.add_development_dependency('rubocop-rails', '>= 2.20')

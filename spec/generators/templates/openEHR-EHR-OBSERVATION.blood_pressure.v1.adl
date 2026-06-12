@@ -1,0 +1,99 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-OBSERVATION.blood_pressure.v1
+
+concept
+	[at0000]	-- Blood pressure
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"openehr-rails test fixture">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test fixture for openehr-rails specs">
+			use = <"">
+			misuse = <"">
+		>
+	>
+	lifecycle_state = <"AuthorDraft">
+	other_contributors = <>
+
+definition
+	OBSERVATION[at0000] matches {	-- Blood pressure
+		data matches {
+			HISTORY[at0001] matches {	-- history
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[at0006] matches {	-- any event
+						data matches {
+							ITEM_TREE[at0003] matches {	-- blood pressure
+								items cardinality matches {0..*; unordered} matches {
+									ELEMENT[at0004] occurrences matches {0..1} matches {	-- Systolic
+										value matches {
+											C_DV_QUANTITY <
+												property = <[openehr::125]>
+												list = <
+													["1"] = <
+														units = <"mm[Hg]">
+														magnitude = <|0.0..<1000.0|>
+													>
+												>
+											>
+										}
+									}
+									ELEMENT[at0005] occurrences matches {0..1} matches {	-- Diastolic
+										value matches {
+											C_DV_QUANTITY <
+												property = <[openehr::125]>
+												list = <
+													["1"] = <
+														units = <"mm[Hg]">
+														magnitude = <|0.0..<1000.0|>
+													>
+												>
+											>
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Blood pressure">
+					description = <"Blood pressure measurement">
+				>
+				["at0001"] = <
+					text = <"history">
+					description = <"history">
+				>
+				["at0003"] = <
+					text = <"blood pressure">
+					description = <"blood pressure">
+				>
+				["at0004"] = <
+					text = <"Systolic">
+					description = <"Systolic pressure">
+				>
+				["at0005"] = <
+					text = <"Diastolic">
+					description = <"Diastolic pressure">
+				>
+				["at0006"] = <
+					text = <"any event">
+					description = <"any event">
+				>
+			>
+		>
+	>

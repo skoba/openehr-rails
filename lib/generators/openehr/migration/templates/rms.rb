@@ -1,4 +1,4 @@
-class CreateRms < ActiveRecord::Migration
+class CreateRms < ActiveRecord::Migration[7.1]
   def change
     create_table :rms do |t|
       t.string :node_id
@@ -8,6 +8,7 @@ class CreateRms < ActiveRecord::Migration
       t.float :num_value
       t.date :date_value
       t.time :time_value
+      t.datetime :datetime_value
       t.boolean :bool_value
 
       t.timestamps

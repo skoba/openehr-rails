@@ -1,8 +1,8 @@
 require 'spec_helper'
 
 describe 'OpenehrTemplate model' do
-  let(:opt_file) { File.expand_path('../generators/templates/bmi_calculation.opt', __FILE__) }
-  let(:adl_file) { File.expand_path('../generators/templates/openEHR-EHR-OBSERVATION.blood_pressure.v1.adl', __FILE__) }
+  let(:opt_file) { File.expand_path('../../generators/templates/bmi_calculation.opt', __FILE__) }
+  let(:adl_file) { File.expand_path('../../generators/templates/openEHR-EHR-OBSERVATION.blood_pressure.v1.adl', __FILE__) }
 
   describe 'validations' do
     it 'requires template_id' do

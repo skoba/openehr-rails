@@ -1,4 +1,4 @@
-class CreateArchetypes < ActiveRecord::Migration
+class CreateArchetypes < ActiveRecord::Migration[7.1]
   def change
     create_table :archetypes do |t|
       t.string :archetypeid

@@ -1,0 +1,78 @@
+class <%= controller_class_name %> < ApplicationController
+  before_action :set_<%= @model_name %>, only: %i[show edit update destroy]
+
+  # GET /<%= view_path %>
+  def index
+    @<%= plural_name %> = <%= class_name %>.all
+
+    respond_to do |format|
+      format.html
+      format.json { render json: @<%= plural_name %> }
+    end
+  end
+
+  # GET /<%= view_path %>/1
+  def show
+    respond_to do |format|
+      format.html
+      format.json { render json: @<%= @model_name %> }
+    end
+  end
+
+  # GET /<%= view_path %>/new
+  def new
+    @<%= @model_name %> = <%= class_name %>.new
+  end
+
+  # GET /<%= view_path %>/1/edit
+  def edit
+  end
+
+  # POST /<%= view_path %>
+  def create
+    @<%= @model_name %> = <%= class_name %>.new(<%= @model_name %>_params)
+
+    respond_to do |format|
+      if @<%= @model_name %>.save
+        format.html { redirect_to <%= route_helper_prefix %>_url(@<%= @model_name %>), notice: '<%= @human_name %> was successfully created.' }
+        format.json { render json: @<%= @model_name %>, status: :created }
+      else
+        format.html { render :new, status: :unprocessable_entity }
+        format.json { render json: @<%= @model_name %>.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  # PATCH/PUT /<%= view_path %>/1
+  def update
+    respond_to do |format|
+      if @<%= @model_name %>.update(<%= @model_name %>_params)
+        format.html { redirect_to <%= route_helper_prefix %>_url(@<%= @model_name %>), notice: '<%= @human_name %> was successfully updated.' }
+        format.json { render json: @<%= @model_name %>, status: :ok }
+      else
+        format.html { render :edit, status: :unprocessable_entity }
+        format.json { render json: @<%= @model_name %>.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  # DELETE /<%= view_path %>/1
+  def destroy
+    @<%= @model_name %>.destroy!
+
+    respond_to do |format|
+      format.html { redirect_to <%= route_helper_prefix.pluralize %>_url, notice: '<%= @human_name %> was successfully destroyed.', status: :see_other }
+      format.json { head :no_content }
+    end
+  end
+
+  private
+
+  def set_<%= @model_name %>
+    @<%= @model_name %> = <%= class_name %>.find(params[:id])
+  end
+
+  def <%= @model_name %>_params
+    params.require(:<%= @model_name %>).permit(<%= permitted_params %>)
+  end
+end

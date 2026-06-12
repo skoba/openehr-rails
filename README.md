@@ -14,8 +14,43 @@ still working exeperimental codes.
 
 ## Usage
 
-This library provide scaffold generator on archetype clinical domain
-concepts by ADL formatted archetypes.
+Generate a complete Rails resource (model, migration, controller,
+views, routes, i18n locale, request spec) from an openEHR Operational
+Template (.opt):
+
+```sh
+# one-time setup: template registry model + migration + initializer
+bin/rails generate openehr:install
+bin/rails db:migrate
+
+# scaffold from an OPT file
+bin/rails generate openehr:scaffold path/to/your_template.opt
+bin/rails db:migrate
+bin/rails db:seed   # registers the template in the openehr_templates table
+```
+
+The generated model keeps typed columns for Rails forms and queries,
+and additionally persists every record as a canonical openEHR RM
+Composition JSON document in the `rm_composition` column on save
+(see `OpenehrRails::Storable`). The `FIELD_MAP` constant on the model
+links each column to its openEHR RM path and data value type, and
+`Model.find_by_path(rm_path, value)` resolves RM paths to columns
+(`OpenehrRails::AqlQueryable`).
+
+Options:
+
+* `--namespace=ehr` namespaces controller, views and routes.
+
+### Legacy generators
+
+The ADL-based generators (`openehr:model`, `openehr:controller`,
+`openehr:migration`, `openehr:template`, ...) predate the OPT
+scaffold and are deprecated; they are kept for reference only.
+
+### Roadmap
+
+* HL7 FHIR R5 profile (StructureDefinition) generation from OPT
+* FHIR REST API facade storing data as openEHR RM compositions
 
 ## License
 This product is under Apache 2.0 license

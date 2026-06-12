@@ -1,0 +1,15 @@
+# Generated from openEHR template <%= @template_id %> by openehr:scaffold.
+class <%= class_name %> < ApplicationRecord
+  include OpenehrRails::Storable
+  include OpenehrRails::AqlQueryable
+
+  TEMPLATE_ID = '<%= @template_id %>'
+  ROOT_ARCHETYPE_ID = '<%= @opt.definition.archetype_id.value %>'
+
+  # Single source of truth linking columns to openEHR RM paths and types.
+  FIELD_MAP = <%= field_map_source %>
+
+<% validation_lines.each do |line| -%>
+<%= line %>
+<% end -%>
+end

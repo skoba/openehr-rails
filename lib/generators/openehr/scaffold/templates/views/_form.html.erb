@@ -1,0 +1,23 @@
+<%%= form_with(model: <%= options[:namespace] ? "[:#{options[:namespace]}, #{@model_name}]" : @model_name %>) do |f| %>
+  <%% if <%= @model_name %>.errors.any? %>
+    <div id="error_explanation">
+      <h2><%%= pluralize(<%= @model_name %>.errors.count, "error") %> prohibited this record from being saved:</h2>
+      <ul>
+        <%% <%= @model_name %>.errors.full_messages.each do |message| %>
+          <li><%%= message %></li>
+        <%% end %>
+      </ul>
+    </div>
+  <%% end %>
+
+<% fields.each do |field| -%>
+  <div class="field">
+    <%%= f.label :<%= field[:name] %>, <%= class_name %>.human_attribute_name(:<%= field[:name] %>) %><br>
+    <%= form_input_for(field) %>
+  </div>
+<% end -%>
+
+  <div class="actions">
+    <%%= f.submit %>
+  </div>
+<%% end %>

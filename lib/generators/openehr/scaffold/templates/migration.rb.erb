@@ -1,0 +1,18 @@
+class Create<%= plural_name.camelize %> < ActiveRecord::Migration<%= migration_version %>
+  def change
+    create_table :<%= table_name %> do |t|
+<% migration_column_lines.each do |line| -%>
+<%= line %>
+<% end -%>
+      t.string :ehr_id
+      t.datetime :composed_at
+      t.json :rm_composition
+      t.string :template_id, null: false, default: '<%= @template_id %>'
+      t.string :uid
+
+      t.timestamps
+    end
+    add_index :<%= table_name %>, :ehr_id
+    add_index :<%= table_name %>, :uid, unique: true
+  end
+end

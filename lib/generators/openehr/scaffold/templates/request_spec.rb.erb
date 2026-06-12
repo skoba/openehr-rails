@@ -1,0 +1,46 @@
+require 'rails_helper'
+
+RSpec.describe '/<%= view_path %>', type: :request do
+  let(:valid_attributes) do
+    {
+<% fields.each do |field| -%>
+      <%= field[:name] %>: <%= sample_value_for(field) %>,
+<% end -%>
+    }
+  end
+
+  describe 'GET /index' do
+    it 'renders a successful response' do
+      <%= class_name %>.create!(valid_attributes)
+      get <%= route_helper_prefix.pluralize %>_url
+      expect(response).to be_successful
+    end
+  end
+
+  describe 'GET /show' do
+    it 'renders a successful response' do
+      record = <%= class_name %>.create!(valid_attributes)
+      get <%= route_helper_prefix %>_url(record)
+      expect(response).to be_successful
+    end
+  end
+
+  describe 'POST /create' do
+    it 'creates a new record and the RM composition' do
+      expect do
+        post <%= route_helper_prefix.pluralize %>_url, params: { <%= @model_name %>: valid_attributes }
+      end.to change(<%= class_name %>, :count).by(1)
+
+      expect(<%= class_name %>.last.rm_composition['_type']).to eq('COMPOSITION')
+    end
+  end
+
+  describe 'DELETE /destroy' do
+    it 'destroys the record' do
+      record = <%= class_name %>.create!(valid_attributes)
+      expect do
+        delete <%= route_helper_prefix %>_url(record)
+      end.to change(<%= class_name %>, :count).by(-1)
+    end
+  end
+end

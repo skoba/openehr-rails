@@ -1,0 +1,9 @@
+<%= locale_code %>:
+  activerecord:
+    models:
+      <%= @model_name %>: <%= @human_name %>
+    attributes:
+      <%= @model_name %>:
+<% fields.each do |field| -%>
+        <%= field[:name] %>: "<%= field[:label] %>"
+<% end -%>
