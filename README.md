@@ -40,6 +40,9 @@ links each column to its openEHR RM path and data value type, and
 Options:
 
 * `--namespace=ehr` namespaces controller, views and routes.
+* `--fhir` also writes HL7 FHIR R5 StructureDefinition profiles (one
+  per OPT entry) to `app/fhir/profiles/`. They can also be generated
+  standalone with `bin/rails generate openehr:fhir_profile <opt>`.
 
 ### Template admin UI
 
@@ -57,16 +60,32 @@ enabled in the development environment only. Override with:
 OpenehrRails.enable_runtime_scaffolding = true # or false
 ```
 
+### HL7 FHIR R5 facade
+
+The engine also serves a FHIR R5 API under `<mount>/fhir`
+(`/openehr/fhir` by default), backed by the scaffolded models:
+
+* `GET /openehr/fhir/metadata` — CapabilityStatement listing every
+  registered archetype profile
+* `GET /openehr/fhir/StructureDefinition/:id` — generated profiles
+* `GET /openehr/fhir/Observation?code=<archetype_id>&subject=<ref>` —
+  searchset Bundle
+* `GET /openehr/fhir/Observation/:id` — read
+* `POST /openehr/fhir/Observation` — create; the FHIR resource is
+  converted through the model's FIELD_MAP and stored canonically as an
+  openEHR RM Composition (`rm_composition` column). Errors are
+  returned as OperationOutcome.
+
+Mapping is derived automatically from openEHR RM types
+(OBSERVATION→Observation, DV_QUANTITY→Quantity,
+DV_CODED_TEXT→CodeableConcept, ...; see
+`OpenehrRails::Fhir::TypeMap`).
+
 ### Legacy generators
 
 The ADL-based generators (`openehr:model`, `openehr:controller`,
 `openehr:migration`, `openehr:template`, ...) predate the OPT
 scaffold and are deprecated; they are kept for reference only.
-
-### Roadmap
-
-* HL7 FHIR R5 profile (StructureDefinition) generation from OPT
-* FHIR REST API facade storing data as openEHR RM compositions
 
 ## License
 This product is under Apache 2.0 license

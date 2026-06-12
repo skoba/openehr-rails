@@ -23,6 +23,7 @@ module OpenehrRails
 
     included do
       before_save :refresh_rm_composition
+      OpenehrRails::Fhir::ResourceRegistry.register_model(self)
     end
 
     class_methods do
@@ -105,6 +106,7 @@ module OpenehrRails
     def rm_content
       entries = {}
       self.class::FIELD_MAP.each do |name, field|
+        field = field.merge(name: name.to_s)
         value = public_send(name)
         next if value.nil?
 

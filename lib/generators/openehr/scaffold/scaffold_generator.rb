@@ -19,6 +19,8 @@ module Openehr
 
       class_option :namespace, type: :string, default: nil,
                                desc: "Namespace for controller/views/routes (e.g. 'ehr')"
+      class_option :fhir, type: :boolean, default: false,
+                          desc: 'Also generate FHIR R5 StructureDefinition profiles'
 
       def parse_opt_file
         @opt = OpenehrRails::Opt.parse(opt_file)
@@ -89,6 +91,14 @@ module Openehr
 
       def generate_request_spec
         template 'request_spec.rb.erb', "spec/requests/#{plural_name}_spec.rb"
+      end
+
+      def generate_fhir_profiles
+        return unless options[:fhir]
+
+        OpenehrRails::Fhir::ProfileGenerator.new(@opt).to_json_files.each do |id, json|
+          create_file "app/fhir/profiles/#{id}.json", json
+        end
       end
 
       def self.next_migration_number(dirname)
