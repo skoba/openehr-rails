@@ -41,6 +41,22 @@ Options:
 
 * `--namespace=ehr` namespaces controller, views and routes.
 
+### Template admin UI
+
+`openehr:install` mounts an admin engine at `/openehr`. It lists the
+registered templates and accepts OPT files via drag & drop upload;
+the **Generate UI** button runs the scaffold generator inside the
+running app (generates files, migrates, reloads routes), so the new
+resource is usable immediately without restarting the server.
+
+Runtime scaffolding writes files into the application, so it is
+enabled in the development environment only. Override with:
+
+```ruby
+# config/initializers/openehr.rb
+OpenehrRails.enable_runtime_scaffolding = true # or false
+```
+
 ### Legacy generators
 
 The ADL-based generators (`openehr:model`, `openehr:controller`,

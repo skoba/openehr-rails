@@ -105,16 +105,7 @@ module Openehr
       end
 
       def model_name_from_template_id(template_id)
-        name = template_id.dup
-        name.gsub!(/^openEHR-EHR-/, '')
-        name.gsub!(/^openEHR-/, '')
-        name.gsub!(/^IDCR-/, '')
-        name.gsub!(/^EHRN-/, '')
-        %w[COMPOSITION OBSERVATION EVALUATION ACTION INSTRUCTION ADMIN_ENTRY].each do |rm_type|
-          name.gsub!(/^#{rm_type}\./, '')
-        end
-        name.gsub!(/\.v\d+(\.\d+)?$/, '')
-        name.downcase.gsub(/[.\s-]/, '_')
+        OpenehrRails::Naming.model_name(template_id)
       end
 
       def class_name

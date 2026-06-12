@@ -8,6 +8,9 @@ describe Openehr::Generators::InstallGenerator do
 
   before(:each) do
     prepare_destination
+    FileUtils.mkdir_p(File.join(destination_root, 'config'))
+    File.write(File.join(destination_root, 'config/routes.rb'),
+               "Rails.application.routes.draw do\nend\n")
     run_generator
   end
 
@@ -30,5 +33,10 @@ describe Openehr::Generators::InstallGenerator do
 
   it 'creates the operational template directory' do
     expect(file('app/templates/operational')).to exist
+  end
+
+  it 'mounts the admin engine' do
+    expect(file('config/routes.rb'))
+      .to contain("mount OpenehrRails::Engine => '/openehr'")
   end
 end

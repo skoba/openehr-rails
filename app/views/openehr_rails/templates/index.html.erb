@@ -1,0 +1,97 @@
+<h1>openEHR Templates</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Template ID</th>
+      <th>Name</th>
+      <th>Type</th>
+      <th>UI</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @templates.each do |template| %>
+      <% scaffolder = OpenehrRails::RuntimeScaffolder.new(template, root: Rails.root) %>
+      <tr>
+        <td><%= template.template_id %></td>
+        <td><%= template.name %></td>
+        <td><%= template.template_type %></td>
+        <td>
+          <% if scaffolder.scaffolded? %>
+            <a href="/<%= scaffolder.model_name.pluralize %>">/<%= scaffolder.model_name.pluralize %></a>
+          <% elsif template.operational? %>
+            not generated
+          <% else %>
+            &mdash;
+          <% end %>
+        </td>
+        <td class="actions">
+          <% if template.operational? && !scaffolder.scaffolded? %>
+            <%= button_to 'Generate UI', generate_template_path(template), method: :post %>
+          <% end %>
+          <%= button_to 'Delete', template_path(template), method: :delete,
+                        data: { turbo_confirm: 'Remove this template from the registry?' } %>
+        </td>
+      </tr>
+    <% end %>
+    <% if @templates.empty? %>
+      <tr><td colspan="5">No templates registered yet. Drop an OPT file below.</td></tr>
+    <% end %>
+  </tbody>
+</table>
+
+<div id="dropzone">Drop .opt files here, or click to choose</div>
+<input type="file" id="opt-file-input" accept=".opt" multiple hidden>
+<p id="upload-status"></p>
+
+<script>
+  (function () {
+    const dropzone = document.getElementById('dropzone');
+    const input = document.getElementById('opt-file-input');
+    const status = document.getElementById('upload-status');
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+    function upload(files) {
+      Array.from(files).forEach(function (file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        status.textContent = 'Uploading ' + file.name + ' ...';
+        fetch('<%= templates_path %>', {
+          method: 'POST',
+          headers: { 'X-CSRF-Token': csrfToken },
+          body: formData
+        }).then(function (response) {
+          return response.json().then(function (json) {
+            if (response.ok) {
+              status.textContent = 'Uploaded ' + json.template_id;
+              window.location.reload();
+            } else {
+              status.textContent = 'Upload failed: ' + json.error;
+            }
+          });
+        }).catch(function (error) {
+          status.textContent = 'Upload failed: ' + error;
+        });
+      });
+    }
+
+    ['dragenter', 'dragover'].forEach(function (name) {
+      dropzone.addEventListener(name, function (event) {
+        event.preventDefault();
+        dropzone.classList.add('dragover');
+      });
+    });
+    ['dragleave', 'drop'].forEach(function (name) {
+      dropzone.addEventListener(name, function (event) {
+        event.preventDefault();
+        dropzone.classList.remove('dragover');
+      });
+    });
+    dropzone.addEventListener('drop', function (event) {
+      upload(event.dataTransfer.files);
+    });
+    dropzone.addEventListener('click', function () { input.click(); });
+    input.addEventListener('change', function () { upload(input.files); });
+  })();
+</script>

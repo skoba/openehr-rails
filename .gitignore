@@ -1,7 +1,6 @@
 /.bundle
 
-/app
-/config
+# /app and /config hold the admin engine (controllers, views, routes)
 /public
 /vendor
 /plugin

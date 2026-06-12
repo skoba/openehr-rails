@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>openEHR Templates</title>
+  <%= csrf_meta_tags %>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem auto; max-width: 60rem; color: #222; }
+    h1 { font-size: 1.4rem; }
+    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: .5rem .75rem; text-align: left; }
+    th { background: #f3f4f6; }
+    .notice { background: #ecfdf5; border: 1px solid #34d399; padding: .5rem .75rem; border-radius: 4px; }
+    .alert { background: #fef2f2; border: 1px solid #f87171; padding: .5rem .75rem; border-radius: 4px; }
+    #dropzone { margin-top: 1.5rem; padding: 2.5rem; border: 2px dashed #9ca3af; border-radius: 8px;
+                text-align: center; color: #6b7280; cursor: pointer; }
+    #dropzone.dragover { border-color: #2563eb; background: #eff6ff; color: #2563eb; }
+    #upload-status { margin-top: .5rem; min-height: 1.2rem; font-size: .9rem; }
+    .actions form { display: inline; }
+    button { cursor: pointer; }
+  </style>
+</head>
+<body>
+  <% if notice.present? %><p class="notice"><%= notice %></p><% end %>
+  <% if alert.present? %><p class="alert"><%= alert %></p><% end %>
+  <%= yield %>
+</body>
+</html>
