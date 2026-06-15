@@ -47,6 +47,15 @@ describe OpenehrRails::Storable do
         '_type' => 'DV_QUANTITY', 'magnitude' => 170.0, 'units' => 'cm'
       )
     end
+
+    it 'types intermediate RM nodes' do
+      height_entry = record.reload.rm_composition['content']
+                           .find { |e| e['archetype_node_id'] == 'openEHR-EHR-OBSERVATION.height.v2' }
+
+      expect(height_entry.dig('data', '_type')).to eq('HISTORY')
+      expect(height_entry.dig('data', 'events', 0, '_type')).to eq('POINT_EVENT')
+      expect(height_entry.dig('data', 'events', 0, 'data', '_type')).to eq('ITEM_TREE')
+    end
   end
 
   describe '.from_rm_composition' do
@@ -77,8 +86,11 @@ describe OpenehrRails::AqlQueryable do
     expect(BmiCalculation.find_by_path(height_path, 158.0).count).to eq(1)
   end
 
-  it 'raises for unknown paths' do
+  it 'raises for unknown paths when the RM graph layer is disabled' do
+    OpenehrRails.rm_persistence_enabled = false
     expect { BmiCalculation.find_by_path('/content[nowhere]/value', 1) }
       .to raise_error(ArgumentError, /no field maps/)
+  ensure
+    OpenehrRails.rm_persistence_enabled = nil
   end
 end

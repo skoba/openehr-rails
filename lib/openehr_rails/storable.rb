@@ -23,6 +23,8 @@ module OpenehrRails
 
     included do
       before_save :refresh_rm_composition
+      after_save :persist_rm_graph
+      after_destroy :purge_rm_graph
       OpenehrRails::Fhir::ResourceRegistry.register_model(self)
     end
 
@@ -72,6 +74,14 @@ module OpenehrRails
       end
     end
 
+    # Head version of the persisted RM graph (nil when the RM persistence
+    # layer is disabled or its tables are absent).
+    def rm_graph
+      return nil unless rm_layer_available?
+
+      OpenehrRails::Rm::Composition.latest.find_by(owner_type: self.class.name, owner_id: id)
+    end
+
     def to_rm_composition
       composition = {
         '_type' => 'COMPOSITION',
@@ -95,6 +105,22 @@ module OpenehrRails
     end
 
     private
+
+    def persist_rm_graph
+      return unless rm_layer_available?
+
+      OpenehrRails::Rm::GraphPersister.persist(self)
+    end
+
+    def purge_rm_graph
+      return unless rm_layer_available?
+
+      OpenehrRails::Rm::GraphPersister.purge(self)
+    end
+
+    def rm_layer_available?
+      defined?(OpenehrRails::Rm) && OpenehrRails::Rm.enabled?
+    end
 
     def refresh_rm_composition
       self.uid ||= SecureRandom.uuid if respond_to?(:uid=)
@@ -133,13 +159,34 @@ module OpenehrRails
           node['_type'] ||= 'ELEMENT'
           node['value'] = rm_value(field, value)
         elsif MULTIPLE_ATTRIBUTES.include?(attribute)
+          # A node holding 'items' that wasn't typed by the 'data' rule is a
+          # nested CLUSTER (ELEMENTs are typed by the 'value' branch).
+          node['_type'] ||= 'CLUSTER' if attribute == 'items'
           siblings = node[attribute] ||= []
           node = siblings.find { |s| s['archetype_node_id'] == node_id } ||
-                 (siblings << { 'archetype_node_id' => node_id }).last
+                 (siblings << new_rm_node(attribute, node['_type'] || entry['_type'], node_id)).last
         else
-          node = node[attribute] ||= { 'archetype_node_id' => node_id }
+          node = node[attribute] ||= new_rm_node(attribute, node['_type'] || entry['_type'], node_id)
         end
       end
+    end
+
+    # Infers the RM type of an intermediate node from the attribute it
+    # fills and the parent's type. 'items' children stay untyped here: the
+    # 'value' branch marks ELEMENTs and the 'items' descent marks CLUSTERs.
+    def new_rm_node(attribute, parent_type, node_id)
+      rm_type =
+        case attribute
+        when 'data'
+          parent_type == 'OBSERVATION' ? 'HISTORY' : 'ITEM_TREE'
+        when 'events' then 'POINT_EVENT'
+        when 'state', 'protocol', 'description' then 'ITEM_TREE'
+        when 'activities' then 'ACTIVITY'
+        end
+      node = {}
+      node['_type'] = rm_type if rm_type
+      node['archetype_node_id'] = node_id
+      node
     end
 
     def rm_value(field, value)

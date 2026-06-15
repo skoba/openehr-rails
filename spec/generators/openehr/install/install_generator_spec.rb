@@ -26,9 +26,20 @@ describe Openehr::Generators::InstallGenerator do
       .to contain(/ActiveRecord::Migration\[\d+\.\d+\]/)
   end
 
+  it 'creates RM persistence migrations' do
+    expect(migration_file('db/migrate/create_openehr_ehrs.rb'))
+      .to contain('create_table :openehr_ehrs')
+    expect(migration_file('db/migrate/create_openehr_rm_storage.rb'))
+      .to contain('create_table :openehr_rm_compositions')
+    expect(migration_file('db/migrate/create_openehr_rm_versioning.rb'))
+      .to contain('create_table :openehr_rm_versions')
+  end
+
   it 'creates the initializer' do
     expect(file('config/initializers/openehr.rb'))
       .to contain("require 'openehr_rails'")
+    expect(file('config/initializers/openehr.rb'))
+      .to contain('rm_persistence_enabled')
   end
 
   it 'creates the operational template directory' do

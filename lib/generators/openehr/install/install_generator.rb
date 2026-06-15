@@ -25,6 +25,15 @@ module Openehr
                            'db/migrate/create_openehr_templates.rb'
       end
 
+      def copy_rm_migrations
+        migration_template 'migrations/create_openehr_ehrs.rb',
+                           'db/migrate/create_openehr_ehrs.rb'
+        migration_template 'migrations/create_openehr_rm_storage.rb',
+                           'db/migrate/create_openehr_rm_storage.rb'
+        migration_template 'migrations/create_openehr_rm_versioning.rb',
+                           'db/migrate/create_openehr_rm_versioning.rb'
+      end
+
       def create_initializer
         template 'initializers/openehr.rb', 'config/initializers/openehr.rb'
       end

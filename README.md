@@ -30,12 +30,17 @@ bin/rails db:seed   # registers the template in the openehr_templates table
 ```
 
 The generated model keeps typed columns for Rails forms and queries,
-and additionally persists every record as a canonical openEHR RM
-Composition JSON document in the `rm_composition` column on save
-(see `OpenehrRails::Storable`). The `FIELD_MAP` constant on the model
-links each column to its openEHR RM path and data value type, and
-`Model.find_by_path(rm_path, value)` resolves RM paths to columns
-(`OpenehrRails::AqlQueryable`).
+and **persists every record as a canonical openEHR RM Composition** —
+first as a **typed node graph** in `openehr_rm_*` tables (if the
+install migrations were run), and also as a JSON document in the
+`rm_composition` column for backward compatibility and export.
+
+The `FIELD_MAP` constant on the model links each column to its openEHR
+RM path and data value type. `Model.find_by_path(rm_path, value)` 
+resolves RM paths to columns (`OpenehrRails::AqlQueryable`); if a 
+path is not in FIELD_MAP, the search falls back to the RM graph (when 
+available), allowing arbitrary archetype elements to be queried 
+(`OpenehrRails::Rm` layer).
 
 Options:
 

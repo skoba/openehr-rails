@@ -36,6 +36,19 @@ module OpenehrRails
   # files into the host app; defaults to development only.
   mattr_accessor :enable_runtime_scaffolding, default: nil
 
+  # RM graph persistence (openehr_rm_* tables): nil = auto-detect by
+  # table presence, true/false = force.
+  mattr_accessor :rm_persistence_enabled, default: nil
+
+  # Defaults injected when converting stored graphs into full
+  # OpenEHR::RM objects (OPT data does not carry these today).
+  mattr_accessor :system_id, default: 'openehr-rails'
+  mattr_accessor :default_language, default: 'en'
+  mattr_accessor :default_territory, default: 'US'
+  mattr_accessor :default_category, default: %w[433 event]
+  mattr_accessor :default_composer_name, default: 'unknown'
+  mattr_accessor :default_encoding, default: 'UTF-8'
+
   def self.runtime_scaffolding_allowed?
     return enable_runtime_scaffolding unless enable_runtime_scaffolding.nil?
 
