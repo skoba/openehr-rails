@@ -21,6 +21,7 @@ module OpenehrRails
     #   required:        true when the entry and element are both mandatory
     class FieldExtractor
       ENTRY_TYPES = %w[OBSERVATION EVALUATION INSTRUCTION ACTION ADMIN_ENTRY].freeze
+      SECTION_TYPE = 'SECTION'.freeze
 
       COLUMN_TYPES = {
         'DV_QUANTITY' => :float,
@@ -46,7 +47,7 @@ module OpenehrRails
       end
 
       def entries
-        @entries ||= content_roots.map { |root| build_entry(root) }
+        @entries ||= content_roots.map { |root, path| build_entry(root, path) }
       end
 
       def fields
@@ -65,15 +66,44 @@ module OpenehrRails
         content = attrs.find { |a| a.rm_attribute_name == 'content' }
         return [] unless content
 
-        (content.children || []).select do |child|
-          child.respond_to?(:archetype_id) && ENTRY_TYPES.include?(child.rm_type_name)
+        entry_roots(content.children || [], '/content')
+      end
+
+      # Collects [entry_root, rm_path] pairs from a list of content children,
+      # descending through SECTION containers (which nest their entries under
+      # the `items` attribute) so vitals/exam templates organised into sections
+      # still expose their ENTRYs.
+      def entry_roots(children, prefix)
+        children.flat_map do |child|
+          next [] unless child.respond_to?(:rm_type_name)
+
+          if entry_root?(child)
+            [[child, "#{prefix}[#{child.archetype_id.value}]"]]
+          elsif child.rm_type_name == SECTION_TYPE
+            section_path = prefix
+            if child.respond_to?(:archetype_id) && child.archetype_id
+              section_path += "[#{child.archetype_id.value}]"
+            end
+            (child.respond_to?(:attributes) ? child.attributes : []).to_a.flat_map do |attr|
+              next [] unless attr.rm_attribute_name == 'items'
+
+              entry_roots(attr.children || [], "#{section_path}/items")
+            end
+          else
+            []
+          end
         end
       end
 
-      def build_entry(root)
+      def entry_root?(child)
+        ENTRY_TYPES.include?(child.rm_type_name) &&
+          child.respond_to?(:archetype_id) && child.archetype_id
+      end
+
+      def build_entry(root, path_prefix)
         archetype_id = root.archetype_id.value
         concept = concept_of(archetype_id)
-        elements = collect_elements(root, "/content[#{archetype_id}]")
+        elements = collect_elements(root, path_prefix)
         entry = {
           archetype_id: archetype_id,
           rm_type: root.rm_type_name,
