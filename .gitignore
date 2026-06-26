@@ -1,5 +1,8 @@
 /.bundle
 
+# Generated demo Rails app (reproducible via script/build_demo.sh)
+/demo
+
 # /app and /config hold the admin engine (controllers, views, routes)
 /public
 /vendor

@@ -86,6 +86,21 @@ Mapping is derived automatically from openEHR RM types
 DV_CODED_TEXT→CodeableConcept, ...; see
 `OpenehrRails::Fhir::TypeMap`).
 
+### デモ環境（OPT → Rails アプリ）
+
+`script/build_demo.sh` は、この gem を使って **OPT から Rails アプリを生成し
+動かすデモ**をゼロから再現構築します（`demo/` を新規作成 → BMI / 問題リストの
+2 テンプレートを scaffold → サンプルデータ投入まで一括実行）。
+
+```sh
+bash script/build_demo.sh
+cd demo && bin/rails server   # http://localhost:3000
+```
+
+手順の詳細・生成物の解説・管理 UI・FHIR R5 facade の確認方法は
+日本語マニュアル [doc/DEMO_ja.md](doc/DEMO_ja.md) を参照してください。
+生成される `demo/` は再現可能なため git では追跡しません。
+
 ### Legacy generators
 
 The ADL-based generators (`openehr:model`, `openehr:controller`,
