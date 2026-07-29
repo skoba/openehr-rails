@@ -222,8 +222,12 @@ module OpenehrRails
         candidate
       end
 
+      # The middle segment of an archetype id is the concept (e.g.
+      # "openEHR-EHR-OBSERVATION.heart_rate-pulse.v1" => "heart_rate-pulse").
+      # Concepts can contain hyphens, which are illegal in column/attribute
+      # names, so slug it to a valid identifier ("heart_rate_pulse").
       def concept_of(archetype_id)
-        archetype_id.split('.')[1].to_s.downcase
+        ascii_slug(archetype_id.split('.')[1].to_s)
       end
 
       def mandatory?(node)

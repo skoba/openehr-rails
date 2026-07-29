@@ -39,3 +39,16 @@ if defined?(Problemlist)
   ].each { |attrs| Problemlist.create!(attrs) }
   puts "[demo_seed] Problemlist: #{Problemlist.count} records"
 end
+
+# --- 血圧（OBSERVATION / 脈拍 + 収縮期/拡張期血圧の DV_QUANTITY 複数）---------
+# 1 テンプレートに heart_rate-pulse と blood_pressure の 2 アーキタイプが同居し、
+# 列名はそれぞれ heart_rate_pulse / blood_pressure_systolic / _diastolic になる。
+if defined?(PatientBloodPressure)
+  PatientBloodPressure.delete_all
+  [
+    { heart_rate_pulse: 72, blood_pressure_systolic: 120, blood_pressure_diastolic: 80 },
+    { heart_rate_pulse: 88, blood_pressure_systolic: 148, blood_pressure_diastolic: 92 },
+    { heart_rate_pulse: 60, blood_pressure_systolic: 110, blood_pressure_diastolic: 70 },
+  ].each { |attrs| PatientBloodPressure.create!(attrs) }
+  puts "[demo_seed] PatientBloodPressure: #{PatientBloodPressure.count} records"
+end

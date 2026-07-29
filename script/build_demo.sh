@@ -90,13 +90,19 @@ bin/rails generate openehr:scaffold "$ASSETS_DIR/templates/problem_list.opt" --f
 bin/rails db:migrate
 bin/rails db:seed
 
+# 6.5 血圧テンプレートを scaffold（OBSERVATION / 複数アーキタイプ：脈拍＋収縮期/拡張期血圧）
+log "血圧(PatientBloodPressure) テンプレートを scaffold (--fhir)"
+bin/rails generate openehr:scaffold "$ASSETS_DIR/templates/patient_blood_pressure.opt" --fhir
+bin/rails db:migrate
+bin/rails db:seed
+
 # 7. デモ用サンプルデータを投入 --------------------------------------------
 log "サンプルレコードを投入します (demo_assets/demo_seed.rb)"
 bin/rails runner "$ASSETS_DIR/demo_seed.rb"
 
 # 生成されたルートを表示（実際のパス名はここを正とする）---------------------
 log "生成されたルート"
-bin/rails routes | grep -E 'bmi|problemlist|openehr' || true
+bin/rails routes | grep -E 'bmi|problemlist|patient_blood_pressure|openehr' || true
 
 # 8. 完了メッセージ ---------------------------------------------------------
 cat <<'MSG'
@@ -108,7 +114,7 @@ cat <<'MSG'
    cd demo && bin/rails server
 
  確認 URL (http://localhost:3000):
-   CRUD   : /bmi_calculations , /problemlists
+   CRUD   : /bmi_calculations , /problemlists , /patient_blood_pressures
    管理UI : /openehr
    FHIR   : /openehr/fhir/metadata
 

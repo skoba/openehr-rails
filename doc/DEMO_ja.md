@@ -5,20 +5,22 @@ Template (.opt) から Rails のリソース（model / migration / controller /
 views / i18n / FHIR プロファイル）を自動生成し、動くアプリとして提示する**
 までの手順をまとめたものです。
 
-題材として、型の異なる 2 つのテンプレートを順に scaffold します。
+題材として、型の異なる 3 つのテンプレートを順に scaffold します。
 
 | テンプレート | openEHR エントリ種別 | 主なデータ型 | 生成リソース |
 |---|---|---|---|
 | BMI 計算 (`bmi_calculation`) | OBSERVATION | DV_QUANTITY（数値＋単位）/ DV_TEXT | `/bmi_calculations` |
 | 問題リスト (`ProblemList`) | EVALUATION | DV_CODED_TEXT（コード化）/ DV_DATE_TIME | `/problemlists` |
+| 血圧 (`patient_blood_pressure`) | OBSERVATION | DV_QUANTITY（脈拍＋収縮期/拡張期）/ 複数アーキタイプ | `/patient_blood_pressures` |
 
-これにより「数値中心のテンプレート」と「コード化テキスト＋日時のテンプレート」が
-同一アプリ内で共存し、CRUD 画面・管理 UI・FHIR R5 facade が動く様子を確認できます。
+これにより「数値中心のテンプレート」「コード化テキスト＋日時のテンプレート」
+「複数アーキタイプを束ねたバイタルサインのテンプレート」が同一アプリ内で共存し、
+CRUD 画面・管理 UI・FHIR R5 facade が動く様子を確認できます。
 
-> ℹ️ 当初は血圧テンプレートを題材に予定していましたが、同梱の簡易サンプル
-> (`spec/templates/sample_blood_pressure.opt`) は標準 OPT フォーマットでは
-> なく、また CKM 由来の実際の血圧 OPT は `DV_DURATION` 等を含み現行 openehr
-> gem の OPT パーサが未対応のため、本デモでは BMI と問題リストを採用しています。
+> ℹ️ 血圧テンプレート (`patient_blood_pressure`) は、1 つの OPT に
+> `heart_rate-pulse` と `blood_pressure` の 2 アーキタイプを束ねた OBSERVATION
+> です。アーキタイプ名にハイフンを含む (`heart_rate-pulse`) ため、列名・属性名は
+> 妥当な識別子へサニタイズされ `heart_rate_pulse` になります。
 
 ---
 
@@ -54,7 +56,7 @@ rails -v     # Rails 8.x
 ## 3. クイックスタート（再現スクリプト）
 
 リポジトリのルートで再現スクリプトを実行すると、`demo/` に Rails アプリを
-ゼロから構築し、2 テンプレートの scaffold・マイグレーション・サンプルデータ投入
+ゼロから構築し、3 テンプレートの scaffold・マイグレーション・サンプルデータ投入
 までを一括で行います。
 
 ```sh
@@ -73,6 +75,7 @@ bin/rails server
 | <http://localhost:3000/> | 管理 UI（登録テンプレート一覧 = ルート） |
 | <http://localhost:3000/bmi_calculations> | BMI の CRUD 画面 |
 | <http://localhost:3000/problemlists> | 問題リストの CRUD 画面 |
+| <http://localhost:3000/patient_blood_pressures> | 血圧の CRUD 画面 |
 | <http://localhost:3000/openehr> | 管理 UI（テンプレート管理 / 実行時生成） |
 | <http://localhost:3000/openehr/fhir/metadata> | FHIR CapabilityStatement |
 
@@ -246,6 +249,9 @@ bin/rails runner 'r=BmiCalculation.first; puts r.rm_composition.keys.inspect'
 - <http://localhost:3000/problemlists> — 問題リスト（Hypertension / Type 2
   diabetes mellitus / Suspected asthma）。診断確実性は Suspected / Confirmed の
   プルダウン。
+- <http://localhost:3000/patient_blood_pressures> — 血圧（seed の 3 件:
+  120/80・148/92・110/70、脈拍 72/88/60）。脈拍・収縮期・拡張期がそれぞれ
+  単位付き（/min・mm[Hg]）の数値フィールドとして入力できる。
 
 > 📷 マニュアル掲載時はここに一覧・新規フォームのスクリーンショットを挿入してください。
 
@@ -255,7 +261,8 @@ bin/rails runner 'r=BmiCalculation.first; puts r.rm_composition.keys.inspect'
 
 <http://localhost:3000/openehr> はテンプレート管理エンジンです。
 
-- 登録済みテンプレート（`bmi_calculation` / `ProblemList`）の一覧表示。
+- 登録済みテンプレート（`bmi_calculation` / `ProblemList` /
+  `patient_blood_pressure`）の一覧表示。
 - OPT ファイルをドラッグ＆ドロップでアップロード。
 - 「Generate UI」ボタンで、**実行中のアプリ内**で scaffold ジェネレータを起動
   （ファイル生成 → マイグレーション → ルート再読込）。サーバを再起動せずに
@@ -329,11 +336,12 @@ bin/rails runner 'r=BmiCalculation.where.not(height: nil).last; \
 
 ---
 
-## 9. 2 リソースの共存
+## 9. 3 リソースの共存
 
-BMI（OBSERVATION / 数値）と問題リスト（EVALUATION / コード化テキスト＋日時）が
-同一アプリで動作します。`bin/rails routes | grep -E 'bmi|problemlist|openehr'`
-で両リソースと管理エンジン・FHIR ルートが確認できます。
+BMI（OBSERVATION / 数値）・問題リスト（EVALUATION / コード化テキスト＋日時）・
+血圧（OBSERVATION / 複数アーキタイプの数値）が同一アプリで動作します。
+`bin/rails routes | grep -E 'bmi|problemlist|patient_blood_pressure|openehr'`
+で各リソースと管理エンジン・FHIR ルートが確認できます。
 
 ---
 
@@ -352,8 +360,9 @@ FORCE=1 bash script/build_demo.sh
 ```
 script/build_demo.sh          再現スクリプト（本手順を自動化）
 demo_assets/
-  templates/bmi_calculation.opt   題材 OPT（BMI / OBSERVATION）
-  templates/problem_list.opt      題材 OPT（問題リスト / EVALUATION）
+  templates/bmi_calculation.opt        題材 OPT（BMI / OBSERVATION）
+  templates/problem_list.opt           題材 OPT（問題リスト / EVALUATION）
+  templates/patient_blood_pressure.opt 題材 OPT（血圧 / OBSERVATION・複数アーキタイプ）
   demo_seed.rb                    デモ用サンプルデータ投入スクリプト
 demo/                          スクリプトが生成する Rails アプリ（git 非追跡）
 doc/DEMO_ja.md                本書
