@@ -1,5 +1,20 @@
 # 引き継ぎプロンプト: openehr gem の OPT パーサ拡張
 
+> ✅ **解決済み**: openehr 2.0.0 で `c_duration`/`c_real`/`c_dv_ordinal`/
+> `c_dv_scale` が実装され、解消しました。2026-08-12、openehr 2.0.1 環境の
+> openehr-rails 側で下記の再現スクリプトをそのまま再実行して確認済み:
+>
+> ```
+> OK   mml4_vital_sign  fields=39
+> OK   General_Medical_Examination  fields=189
+> OK   test_result  fields=14
+> OK   LaboratoryTestReport  fields=11
+> ```
+>
+> 受け入れ条件（4件とも `OK fields=N (N>0)`）を満たしている。追加対応不要。
+>
+> 以下は元の引き継ぎ文書（歴史的記録として残す）。
+
 > このファイルは `openehr` gem 本体（`/home/skoba/src/openehr-ruby`, gem 名
 > `openehr`, version 1.3.0, branch master）側で作業するセッションへ渡すための
 > プロンプトです。`/home/skoba/src/openehr-ruby` を開いたセッションに以下を
