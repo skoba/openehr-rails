@@ -6,6 +6,7 @@
 # (host apps via the engine, gem specs via spec/support/active_record.rb).
 require 'openehr_rails/rm/type_map'
 require 'openehr_rails/rm/ehr'
+require 'openehr_rails/rm/ehr_serializer'
 require 'openehr_rails/rm/composition'
 require 'openehr_rails/rm/node'
 require 'openehr_rails/rm/nodes'
@@ -15,6 +16,7 @@ require 'openehr_rails/rm/contribution'
 require 'openehr_rails/rm/version'
 require 'openehr_rails/rm/graph_builder'
 require 'openehr_rails/rm/canonical_serializer'
+require 'openehr_rails/rm/composition_committer'
 require 'openehr_rails/rm/graph_persister'
 require 'openehr_rails/rm/rm_object_builder'
 
