@@ -64,14 +64,20 @@ rails new demo \
   --skip-ci
 
 # 3. gem を配線して bundle install -----------------------------------------
-log "Gemfile に openehr-rails (path: '..') を追記します"
+log "Gemfile に openehr-rails (path: '..') と rspec-rails を追記します"
 if ! grep -q 'gem "openehr-rails"' "$DEMO_DIR/Gemfile"; then
   printf '\n# openEHR archetype/template scaffolding (local path)\ngem "openehr-rails", path: ".."\n' >> "$DEMO_DIR/Gemfile"
+fi
+# --skip-test で作成しているが、openehr:scaffold は spec/requests/*.rb を
+# 生成する（生成物の妥当性を rspec で確認できるようにする）。
+if ! grep -q 'rspec-rails' "$DEMO_DIR/Gemfile"; then
+  printf '\ngroup :development, :test do\n  gem "rspec-rails"\nend\n' >> "$DEMO_DIR/Gemfile"
 fi
 
 cd "$DEMO_DIR"
 log "bundle install"
 bundle install
+bin/rails generate rspec:install
 
 # 4. openehr:install --------------------------------------------------------
 log "openehr:install（テンプレート登録モデル・RM テーブル・管理エンジン）"

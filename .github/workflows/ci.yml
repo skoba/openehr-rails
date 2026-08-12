@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  spec:
+    name: spec (ruby ${{ matrix.ruby }}, rails ${{ matrix.rails }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby: ['3.2', '3.3', '3.4', '4.0']
+        rails: ['7_2', '8_0', '8_1']
+    env:
+      BUNDLE_GEMFILE: ${{ github.workspace }}/gemfiles/rails_${{ matrix.rails }}.gemfile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+      - name: Run specs
+        run: bundle exec rake spec
+
+  demo-smoke:
+    name: demo smoke (openehr:scaffold end-to-end)
+    runs-on: ubuntu-latest
+    needs: spec
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '4.0'
+          bundler-cache: true
+      - name: Install rails CLI
+        run: gem install rails --no-document
+      - name: Build demo app from OPT templates
+        run: FORCE=1 bash script/build_demo.sh
+      - name: Run demo app's generated request specs
+        working-directory: demo
+        run: bundle exec rspec

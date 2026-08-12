@@ -1,4 +1,4 @@
-{<img src="https://travis-ci.org/skoba/openehr-ruby.png?branch=master" alt="Build Status" />}[https://travis-ci.org/skoba/openehr-ruby]
+[![CI](https://github.com/skoba/openehr-rails/actions/workflows/ci.yml/badge.svg)](https://github.com/skoba/openehr-rails/actions/workflows/ci.yml)
 
 # Synopsys
 
@@ -100,12 +100,6 @@ cd demo && bin/rails server   # http://localhost:3000
 手順の詳細・生成物の解説・管理 UI・FHIR R5 facade の確認方法は
 日本語マニュアル [doc/DEMO_ja.md](doc/DEMO_ja.md) を参照してください。
 生成される `demo/` は再現可能なため git では追跡しません。
-
-### Legacy generators
-
-The ADL-based generators (`openehr:model`, `openehr:controller`,
-`openehr:migration`, `openehr:template`, ...) predate the OPT
-scaffold and are deprecated; they are kept for reference only.
 
 ## License
 This product is under Apache 2.0 license
