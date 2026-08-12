@@ -28,6 +28,15 @@ module OpenehrRails
         where(id: compositions.select(:owner_id))
       end
 
+      # Executes an AQL query scoped to compositions owned by this model
+      # (i.e. records of this class), via OpenehrRails::Aql::Executor.
+      def aql(aql_string, params: {})
+        OpenehrRails::Aql::Executor.execute(
+          aql_string, params: params,
+                      composition_scope: OpenehrRails::Rm::Composition.latest.where(owner_type: base_class.name)
+        )
+      end
+
       def column_for_path(path)
         name, = const_get(:FIELD_MAP).find { |_name, field| field[:path] == path }
         name

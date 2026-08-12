@@ -16,6 +16,8 @@ describe OpenehrRails::Rm::RmObjectBuilder do
   it 'sets mandatory composition attributes' do
     expect(rm_composition.archetype_node_id)
       .to eq('openEHR-EHR-COMPOSITION.report-result.v1')
+    expect(rm_composition.uid).to be_a(OpenEHR::RM::Support::Identification::HierObjectID)
+    expect(rm_composition.uid.value).to eq(composition.uid)
     expect(rm_composition.language).to be_a(OpenEHR::RM::DataTypes::Text::CodePhrase)
     expect(rm_composition.language.code_string).to eq('en')
     expect(rm_composition.territory).to be_a(OpenEHR::RM::DataTypes::Text::CodePhrase)

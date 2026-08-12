@@ -19,6 +19,10 @@ require 'openehr_rails/storable'
 # openehr_rails/rm/graph_builder depends on OpenehrRails::Storable::MULTIPLE_ATTRIBUTES
 # at load time, so this must come after the storable require above.
 require 'openehr_rails/rm'
+require 'openehr_rails/aql/errors'
+require 'openehr_rails/aql/dataset_adapter'
+require 'openehr_rails/aql/query_validator'
+require 'openehr_rails/aql/executor'
 require 'openehr_rails/aql_queryable'
 require 'openehr_rails/template_registry'
 require 'openehr_rails/template_uploader'

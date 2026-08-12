@@ -36,6 +36,7 @@ module OpenehrRails
 
       def build_composition
         OpenEHR::RM::Composition::Composition.new(
+          uid: OpenEHR::RM::Support::Identification::HierObjectID.new(value: @composition.uid),
           archetype_node_id: @composition.archetype_node_id,
           name: dv_text(@composition.name_value || @composition.archetype_node_id),
           language: code_phrase(
