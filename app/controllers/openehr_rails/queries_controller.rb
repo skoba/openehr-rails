@@ -11,6 +11,10 @@ module OpenehrRails
     rescue_from StandardError, with: :render_error
     rescue_from OpenehrRails::Aql::Error, with: :render_aql_error
 
+    # GET /query -- HTML console. Executes via fetch against
+    # POST /v1/query/aql below, so there is exactly one execution path.
+    def show; end
+
     # GET  /v1/query/aql?q=...&query_parameters={"min":100}
     # POST /v1/query/aql  { "q": "...", "query_parameters": {...} }
     def execute

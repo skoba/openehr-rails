@@ -336,7 +336,76 @@ bin/rails runner 'r=BmiCalculation.where.not(height: nil).last; \
 
 ---
 
-## 9. 3 リソースの共存
+## 9. AQL クエリコンソールと患者タイムライン
+
+### 9.1 AQL クエリコンソール（`/openehr/query`）
+
+<http://localhost:3000/openehr/query> はブラウザから AQL（Archetype Query
+Language）を実行できる管理画面です。テキストエリアにクエリを入力して
+「Run query」を押すと、`POST /openehr/v1/query/aql`（下記 10 節）を叩いて
+結果を表として表示します。既定で入力されている例（身長の値を全 EHR から
+横断検索）をそのまま実行できます。
+
+クエリは `OpenehrRails::Aql.execute` / `Model.aql` と同じ実行エンジンを通る
+ため、LIKE・MATCHES・CONTAINS 内の standardPredicate/nodePredicate・集約と
+非集約列の混在・VERSION 系クエリは実行前に検証され、分かりやすいエラー
+メッセージ（例:「LIKE is parsed but not yet executable」）が返ります。
+
+### 9.2 患者タイムライン（`/openehr/ehrs`）
+
+<http://localhost:3000/openehr/ehrs> は EHR（患者）ごとの記録件数と最終更新
+日時の一覧です。「Timeline」から患者ごとの詳細画面
+（`/openehr/ehrs/:ehr_id`）に入ると、その患者に紐づく **全テンプレートの
+記録を時系列で横断表示**します（BMI・血圧・問題リストが同じタイムライン上に
+並びます）。
+
+- テンプレートで絞り込むフィルタリンクを上部に表示。
+- 各記録から生成元のスキャフォールドレコード（例 `/bmi_calculations/2`）へ
+  リンク。
+- 「canonical JSON」を展開すると、その記録が openEHR RM Composition として
+  どう永続化されているかを確認できます。
+- 修正歴のある記録は「version history」を展開するとバージョン一覧
+  （作成 = creation / 修正 = amendment）が見えます。デモの
+  `demo_seed.rb` は patient-001 の最初の BMI 記録を 1 件 `update!` して
+  この例を作っています。
+
+---
+
+## 10. openEHR REST API（`/openehr/v1`）
+
+QUERY・EHR・COMPOSITION の 3 リソースを提供します。
+
+```sh
+# QUERY: AQL を JSON で実行
+curl -s -G http://localhost:3000/openehr/v1/query/aql \
+  --data-urlencode 'q=SELECT o/data[at0001]/events[at0002]/data[at0003]/items[at0004]/value/magnitude AS height FROM EHR e CONTAINS COMPOSITION c CONTAINS OBSERVATION o[openEHR-EHR-OBSERVATION.height.v2]'
+# => {"q":"...","columns":[{"name":"height"}],"rows":[[170.0],[158.0],...]}
+
+# EHR: 新規作成（サーバ生成 ehr_id）
+curl -s -X POST http://localhost:3000/openehr/v1/ehr -d '{}' -H 'Content-Type: application/json'
+# => 201 Created, Location: .../v1/ehr/<uuid>
+
+# EHR: 参照
+curl -s http://localhost:3000/openehr/v1/ehr/patient-001
+
+# COMPOSITION: 参照（bare uid でも versioned uid = "uid::system::n" でも解決）
+curl -s http://localhost:3000/openehr/v1/ehr/patient-001/composition/<uid>
+```
+
+`PUT .../composition/:uid` は `If-Match: "<uid>::<system_id>::<version>"`
+ヘッダが現在の版と一致しないと `412 Precondition Failed` を返します
+（openEHR REST API の楽観的排他制御）。`DELETE` は物理削除ではなく
+`Version::LIFECYCLE_DELETED` を付与する論理削除です。
+
+> ⚠️ 既知の制約: COMPOSITION の作成/更新は、Storable が生成する正準 JSON と
+> 同じ形（entry 直下に `language`/`encoding`/`subject` を含まない）しか
+> 受理しません。第三者が openEHR 完全準拠の JSON（entry レベルに
+> `language`/`encoding`/`subject` を含む）を送ると `archetype_details` 等の
+> 解釈でエラーになります。
+
+---
+
+## 11. 3 リソースの共存
 
 BMI（OBSERVATION / 数値）・問題リスト（EVALUATION / コード化テキスト＋日時）・
 血圧（OBSERVATION / 複数アーキタイプの数値）が同一アプリで動作します。
@@ -345,7 +414,7 @@ BMI（OBSERVATION / 数値）・問題リスト（EVALUATION / コード化テ�
 
 ---
 
-## 10. クリーンアップ / 再生成
+## 12. クリーンアップ / 再生成
 
 ```sh
 # demo アプリを破棄して作り直す（毎回同じ結果になる）

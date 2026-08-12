@@ -62,7 +62,7 @@ module OpenehrRails
       end
 
       def render_ehr(ehr, status: :ok)
-        response.headers['Location'] = ehr_url(ehr.ehr_id)
+        response.headers['Location'] = api_ehr_url(ehr.ehr_id)
         render json: OpenehrRails::Rm::EhrSerializer.new(ehr).call, status: status
       end
 

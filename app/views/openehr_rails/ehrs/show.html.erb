@@ -1,0 +1,55 @@
+<p><%= link_to '&larr; Patients'.html_safe, ehrs_path %></p>
+<h1>Patient timeline &mdash; <%= @ehr.subject_id.presence || @ehr.ehr_id %></h1>
+<p>EHR ID: <code><%= @ehr.ehr_id %></code></p>
+
+<% if @template_ids.size > 1 %>
+  <p>
+    Filter:
+    <%= link_to 'All', ehr_path(@ehr.ehr_id), class: params[:template_id].blank? ? 'active' : nil %>
+    <% @template_ids.each do |template_id| %>
+      | <%= link_to template_id, ehr_path(@ehr.ehr_id, template_id: template_id),
+                     class: (params[:template_id] == template_id ? 'active' : nil) %>
+    <% end %>
+  </p>
+<% end %>
+
+<% if @compositions.empty? %>
+  <p>No records for this patient<%= " (template: #{params[:template_id]})" if params[:template_id].present? %>.</p>
+<% end %>
+
+<% @days.each do |day, compositions| %>
+  <h2><%= day.strftime('%Y-%m-%d') %></h2>
+  <ul class="timeline">
+    <% compositions.each do |composition| %>
+      <li>
+        <strong><%= (composition.context_start_time || composition.created_at).strftime('%H:%M') %></strong>
+        &mdash; <%= composition.template_id || composition.archetype_node_id %>
+        <% if composition.composer_name.present? %>(<%= composition.composer_name %>)<% end %>
+        <% if composition.owner %>
+          &middot; <%= link_to 'view record', main_app.url_for(composition.owner) %>
+        <% end %>
+
+        <details>
+          <summary>canonical JSON</summary>
+          <pre><%= JSON.pretty_generate(composition.to_canonical_hash) %></pre>
+        </details>
+
+        <% versions = OpenehrRails::Rm::Version.of_object(composition.uid) %>
+        <% if versions.size > 1 %>
+          <details>
+            <summary>version history (<%= versions.size %>)</summary>
+            <ul>
+              <% versions.each do |version| %>
+                <li>
+                  v<%= version.version_tree_id %> &mdash;
+                  <%= version.contribution&.change_type_value %>
+                  (<%= version.contribution&.time_committed&.strftime('%Y-%m-%d %H:%M') %>)
+                </li>
+              <% end %>
+            </ul>
+          </details>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+<% end %>

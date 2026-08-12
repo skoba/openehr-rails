@@ -1,0 +1,27 @@
+<h1>Patients (EHRs)</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>EHR ID</th>
+      <th>Subject</th>
+      <th>Compositions</th>
+      <th>Last activity</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @summaries.each do |summary| %>
+      <tr>
+        <td><%= summary.ehr.ehr_id %></td>
+        <td><%= summary.ehr.subject_id.presence || '&mdash;'.html_safe %></td>
+        <td><%= summary.composition_count %></td>
+        <td><%= summary.last_activity_at&.strftime('%Y-%m-%d %H:%M') || '&mdash;'.html_safe %></td>
+        <td><%= link_to 'Timeline', ehr_path(summary.ehr.ehr_id) %></td>
+      </tr>
+    <% end %>
+    <% if @summaries.empty? %>
+      <tr><td colspan="5">No EHRs yet. Records are linked to an EHR when a scaffolded model sets <code>ehr_id</code>.</td></tr>
+    <% end %>
+  </tbody>
+</table>

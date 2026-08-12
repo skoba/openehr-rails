@@ -1,0 +1,103 @@
+<h1>AQL Query Console</h1>
+
+<p>
+  <%= link_to 'Templates', templates_path %> &middot;
+  <%= link_to 'Patients', ehrs_path %>
+</p>
+
+<label for="aql-query">AQL query</label><br>
+<textarea id="aql-query" rows="6" style="width: 100%; font-family: monospace;">SELECT o/data[at0001]/events[at0002]/data[at0003]/items[at0004]/value/magnitude AS height
+FROM EHR e CONTAINS COMPOSITION c CONTAINS OBSERVATION o[openEHR-EHR-OBSERVATION.height.v2]</textarea>
+
+<p>
+  <label for="aql-params">Query parameters (JSON, optional)</label><br>
+  <input id="aql-params" type="text" style="width: 100%; font-family: monospace;" placeholder='{"min": 100}'>
+</p>
+
+<button id="aql-run">Run query</button>
+<span id="aql-status"></span>
+
+<div id="aql-error" class="alert" style="display: none; margin-top: 1rem;"></div>
+
+<table id="aql-results" style="display: none;">
+  <thead><tr id="aql-columns"></tr></thead>
+  <tbody id="aql-rows"></tbody>
+</table>
+
+<script>
+  (function () {
+    const queryInput = document.getElementById('aql-query');
+    const paramsInput = document.getElementById('aql-params');
+    const runButton = document.getElementById('aql-run');
+    const status = document.getElementById('aql-status');
+    const errorBox = document.getElementById('aql-error');
+    const resultsTable = document.getElementById('aql-results');
+    const columnsRow = document.getElementById('aql-columns');
+    const rowsBody = document.getElementById('aql-rows');
+
+    function clearResults() {
+      errorBox.style.display = 'none';
+      resultsTable.style.display = 'none';
+      columnsRow.innerHTML = '';
+      rowsBody.innerHTML = '';
+    }
+
+    function showError(message) {
+      errorBox.textContent = message;
+      errorBox.style.display = 'block';
+    }
+
+    function showResults(data) {
+      data.columns.forEach(function (column) {
+        const th = document.createElement('th');
+        th.textContent = column.name;
+        columnsRow.appendChild(th);
+      });
+      data.rows.forEach(function (row) {
+        const tr = document.createElement('tr');
+        row.forEach(function (value) {
+          const td = document.createElement('td');
+          td.textContent = (typeof value === 'object') ? JSON.stringify(value) : String(value);
+          tr.appendChild(td);
+        });
+        rowsBody.appendChild(tr);
+      });
+      resultsTable.style.display = data.rows.length ? 'table' : 'none';
+      status.textContent = data.rows.length + ' row(s)';
+    }
+
+    runButton.addEventListener('click', function () {
+      clearResults();
+      status.textContent = 'Running...';
+
+      let queryParameters = {};
+      if (paramsInput.value.trim()) {
+        try {
+          queryParameters = JSON.parse(paramsInput.value);
+        } catch (error) {
+          status.textContent = '';
+          showError('Invalid JSON in query parameters: ' + error.message);
+          return;
+        }
+      }
+
+      fetch('<%= query_aql_path %>', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ q: queryInput.value, query_parameters: queryParameters })
+      }).then(function (response) {
+        return response.json().then(function (json) { return { ok: response.ok, json: json }; });
+      }).then(function (result) {
+        status.textContent = '';
+        if (result.ok) {
+          showResults(result.json);
+        } else {
+          showError(result.json.error || 'Query failed');
+        }
+      }).catch(function (error) {
+        status.textContent = '';
+        showError('Request failed: ' + error);
+      });
+    });
+  })();
+</script>

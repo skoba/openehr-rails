@@ -7,6 +7,14 @@ OpenehrRails::Engine.routes.draw do
     end
   end
 
+  # AQL query console (HTML). Executes against the same JSON API below
+  # (POST /v1/query/aql) via fetch, so there is exactly one execution path.
+  get 'query', to: 'queries#show', as: :query_console
+
+  # Patient timeline: cross-template view of everything recorded against
+  # one EHR, grouped by date. :id is the ehr_id (openEHR EHR identifier).
+  resources :ehrs, only: %i[index show]
+
   # HL7 FHIR R5 facade (base URL: <mount-point>/fhir).
   scope :fhir, defaults: { format: :json } do
     get 'metadata', to: 'fhir#metadata'
@@ -25,7 +33,7 @@ OpenehrRails::Engine.routes.draw do
 
     post 'ehr', to: 'openehr_api/ehrs#create', as: :create_ehr
     put 'ehr/:ehr_id', to: 'openehr_api/ehrs#upsert', as: :upsert_ehr
-    get 'ehr/:ehr_id', to: 'openehr_api/ehrs#show', as: :ehr
+    get 'ehr/:ehr_id', to: 'openehr_api/ehrs#show', as: :api_ehr
     get 'ehr/:ehr_id/ehr_status', to: 'openehr_api/ehrs#ehr_status', as: :ehr_status
 
     post 'ehr/:ehr_id/composition', to: 'openehr_api/compositions#create', as: :create_composition

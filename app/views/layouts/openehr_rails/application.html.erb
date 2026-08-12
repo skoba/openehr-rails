@@ -17,9 +17,21 @@
     #upload-status { margin-top: .5rem; min-height: 1.2rem; font-size: .9rem; }
     .actions form { display: inline; }
     button { cursor: pointer; }
+    nav.openehr-nav { margin-bottom: 1.5rem; font-size: .95rem; }
+    nav.openehr-nav a { margin-right: 1rem; }
+    nav.openehr-nav a.active { font-weight: bold; }
+    .timeline { list-style: none; padding-left: 0; }
+    .timeline li { padding: .5rem 0; border-bottom: 1px solid #eee; }
+    details { margin-top: .35rem; }
+    details pre { background: #f8f9fa; padding: .75rem; overflow-x: auto; font-size: .85rem; }
   </style>
 </head>
 <body>
+  <nav class="openehr-nav">
+    <%= link_to 'Templates', templates_path %>
+    <%= link_to 'AQL Query', query_console_path %>
+    <%= link_to 'Patients', ehrs_path %>
+  </nav>
   <% if notice.present? %><p class="notice"><%= notice %></p><% end %>
   <% if alert.present? %><p class="alert"><%= alert %></p><% end %>
   <%= yield %>
