@@ -1,5 +1,19 @@
 # 引き継ぎプロンプト: openehr gem の `Factory.params`/`convert_value` が `_type` の無いネスト Hash で例外になる
 
+> ✅ **解決済み**: openehr 2.0.2（コミット `8b53b76 Fix: Factory.params/
+> convert_value crashes on _type-less non-polymorphic Hash`）で修正されま
+> した。2026-08-12、openehr-rails 側で下記ケース1・2の再現コードを 2.0.2
+> で再実行し、`archetype_id.class == ArchetypeID` /
+> `terminology_id.class == TerminologyID` になることを確認済み。
+>
+> ただし「関連」セクションに記載の通り、本チケットの修正だけでは実際の
+> scaffold レコードの `rm_composition` は `create_from_json` を最後まで
+> 通らない（openehr-rails 側の別課題 — 構造ノードの `name` 欠落 — が残って
+> いるため、`ArgumentError: name should not be empty` で止まる。これは
+> openehr-rails 側の課題であり本チケットの対象外）。
+>
+> 以下は元の引き継ぎ文書（歴史的記録として残す）。
+
 > このファイルは `openehr` gem 本体（`/home/skoba/src/openehr-ruby`, gem 名
 > `openehr`, version 2.0.1, branch master）側で作業するセッションへ渡すための
 > プロンプトです。`/home/skoba/src/openehr-ruby` を開いたセッションに以下を

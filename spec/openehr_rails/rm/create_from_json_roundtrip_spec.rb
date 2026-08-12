@@ -19,13 +19,21 @@ require_relative '../storable_spec_model'
 # Storable's own canonical JSON does not populate for structural nodes like
 # HISTORY/POINT_EVENT/ITEM_TREE) as a regression guard.
 #
+# Fixed upstream again in openehr 2.0.2: Factory.params/convert_value no
+# longer crashes on _type-less non-polymorphic Hashes (ARCHETYPED's
+# archetype_id/template_id, CODE_PHRASE's terminology_id), which is exactly
+# the shape Storable's own canonical JSON uses (doc/HANDOFF_openehr_factory_
+# missing_type.md).
+#
 # create_from_json is still not used as OpenehrRails::Aql::DatasetAdapter's
-# feed, though: Storable's own rm_composition JSON omits `name` on those
-# structural nodes (RmObjectBuilder papers over this by synthesizing a name
-# from archetype_node_id when none is stored), so create_from_json would
-# raise ArgumentError on real scaffolded data even now that the array gap is
-# fixed. The RM graph path (Rm::Composition#to_rm via RmObjectBuilder)
-# remains DatasetAdapter's feed; the last example below documents why.
+# feed, though: Storable's own rm_composition JSON omits `name` on structural
+# nodes like HISTORY/POINT_EVENT/ITEM_TREE (RmObjectBuilder papers over this
+# by synthesizing a name from archetype_node_id when none is stored), so
+# create_from_json still raises ArgumentError ("name should not be empty")
+# on real scaffolded data -- now the ONLY remaining gap, and it's on the
+# openehr-rails side, not openehr-ruby's. The RM graph path
+# (Rm::Composition#to_rm via RmObjectBuilder) remains DatasetAdapter's feed;
+# the last example below documents why.
 describe 'feeding OpenEHR::AQL::Dataset from a Composition built via create_from_json' do
   let(:json) do
     {
@@ -101,14 +109,15 @@ describe 'feeding OpenEHR::AQL::Dataset from a Composition built via create_from
     expect(OpenEHR::AQL.execute(query, dataset).rows).to eq([[170.0]])
   end
 
-  it 'still cannot round-trip real Storable output (missing `name`/`_type` on structural attributes it never wrote)' do
+  it 'still cannot round-trip real Storable output (missing `name` on structural nodes it never wrote)' do
     record = BmiCalculation.create!(height: 170.0)
 
-    # Exact failure mode is an openehr-ruby implementation detail (as of
-    # 2.0.1: Factory.params recurses into archetype_details, whose
-    # archetype_id/template_id sub-hashes have no `_type`, before ever
-    # reaching the missing-`name` problem) -- what matters here is that
-    # Storable's own canonical JSON still doesn't round-trip, at all.
+    # As of 2.0.2 the _type-less archetype_id/template_id/terminology_id gap
+    # is fixed upstream, so this now fails for the one remaining (and
+    # openehr-rails-side) reason: ArgumentError "name should not be empty"
+    # on a structural node such as HISTORY/POINT_EVENT/ITEM_TREE. Kept as a
+    # generic StandardError match since the exact node/message is this
+    # library's own implementation detail, not a contract to pin exactly.
     expect { OpenEHR::RM::CompositionFactory.create_from_json(record.rm_composition.to_json) }
       .to raise_error(StandardError)
   end
