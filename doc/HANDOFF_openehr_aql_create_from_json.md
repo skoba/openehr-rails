@@ -1,5 +1,26 @@
 # 引き継ぎプロンプト: openehr gem の `CompositionFactory.create_from_json` 配列変換バグ
 
+> ✅ **解決済み**: openehr 2.0.1 で修正されました。openehr-rails 側は
+> `bundle update openehr` で追随済み（2026-08-12）。
+> `spec/openehr_rails/rm/create_from_json_roundtrip_spec.rb` を「バグを
+> 固定する」specから「修正を回帰させない」specへ書き換え、実際に
+> `composition.content.first` が `Pathable` になり AQL クエリが正しく
+> ヒットすることを確認済み。
+>
+> ただし **別の理由で `create_from_json` はまだ `OpenehrRails::Aql::DatasetAdapter`
+> の主経路にはできない**: openEHR RM の LOCATABLE は `name` が必須だが、
+> `Storable#rm_content` は HISTORY/POINT_EVENT/ITEM_TREE のような構造ノードに
+> `name` を書き込んでいない（`RmObjectBuilder` はグラフ→RMオブジェクト変換時に
+> `archetype_node_id` からの合成名でこれを埋めている）。そのため実際に
+> scaffold されたレコードの `rm_composition` を `create_from_json` に渡すと
+> 今も例外になる（`archetype_details.archetype_id`/`template_id` に `_type`
+> が無いことに起因する別のエラーが先に出る場合もある）。DatasetAdapter は
+> 引き続き `Rm::Composition#to_rm`（RmObjectBuilder）を使う設計のままで良い。
+> これらは openehr-rails 側（Storable の正準JSON生成）の課題であり、
+> openehr-ruby 側の追加対応は不要。
+>
+> 以下は元の引き継ぎ文書（歴史的記録として残す）。
+
 > このファイルは `openehr` gem 本体（`/home/skoba/src/openehr-ruby`, gem 名
 > `openehr`, version 2.0.0, branch master）側で作業するセッションへ渡すための
 > プロンプトです。`/home/skoba/src/openehr-ruby` を開いたセッションに以下を
