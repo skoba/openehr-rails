@@ -28,6 +28,7 @@ module OpenehrRails
         'DV_PROPORTION' => :float,
         'DV_COUNT' => :integer,
         'DV_ORDINAL' => :integer,
+        'DV_SCALE' => :float,
         'DV_TEXT' => :string,
         'DV_CODED_TEXT' => :string,
         'DV_IDENTIFIER' => :string,
@@ -160,6 +161,7 @@ module OpenehrRails
         }
         field.merge!(quantity_constraints(constraint)) if rm_type == 'DV_QUANTITY'
         field.merge!(coded_text_constraints(constraint, entry[:archetype_id])) if rm_type == 'DV_CODED_TEXT'
+        field.merge!(symbol_constraints(constraint, entry[:archetype_id])) if %w[DV_ORDINAL DV_SCALE].include?(rm_type)
         field
       end
 
@@ -191,6 +193,24 @@ module OpenehrRails
           code_list: codes,
           code_labels: codes.to_h { |code| [code, term_text(archetype_id, code) || code] },
           terminology_id: code_phrase.terminology_id&.value
+        }
+      end
+
+      # DV_ORDINAL/DV_SCALE constrain their value to a fixed list of
+      # (numeric value, symbol) pairs; the symbol's defining_code is the
+      # only identifier the OPT carries, so it doubles as both the stored
+      # code and the label fallback when the ontology has no term for it.
+      def symbol_constraints(constraint, archetype_id)
+        items = (constraint.list || []).select { |item| item.symbol&.defining_code&.code_string }
+        return {} if items.empty?
+
+        codes = items.map { |item| item.symbol.defining_code.code_string }
+        {
+          code_list: codes,
+          code_labels: codes.to_h { |code| [code, term_text(archetype_id, code) || code] },
+          # DV_ORDINAL/DV_SCALE store a numeric magnitude, not the symbol
+          # code, so the write path needs this to reconstruct the symbol.
+          value_code_map: items.to_h { |item| [item.value, item.symbol.defining_code.code_string] }
         }
       end
 

@@ -22,7 +22,7 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
   gem.required_ruby_version = '>= 3.0.0'
   
-  gem.add_dependency('openehr', '~> 1.3.0')
+  gem.add_dependency('openehr', '~> 2.0')
   gem.add_dependency('rails', '>= 7.0', '< 9.0')
   gem.add_dependency('nokogiri', '>= 1.10')
   

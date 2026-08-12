@@ -68,6 +68,41 @@ describe OpenehrRails::Storable do
       expect(restored.body_mass_index).to be_nil
     end
   end
+
+  describe '#rm_value for DV_ORDINAL/DV_SCALE (openehr ~> 2.0 constraint types)' do
+    let(:ordinal_field) do
+      {
+        rm_type: 'DV_ORDINAL',
+        value_code_map: { 0 => 'at0034', 1 => 'at0035' },
+        code_labels: { 'at0034' => 'None', 'at0035' => 'Mild' }
+      }
+    end
+
+    it 'reconstructs the coded symbol from the stored magnitude' do
+      node = record.send(:rm_value, ordinal_field, 1)
+
+      expect(node).to eq(
+        '_type' => 'DV_ORDINAL',
+        'value' => 1,
+        'symbol' => {
+          '_type' => 'DV_CODED_TEXT',
+          'value' => 'Mild',
+          'defining_code' => {
+            '_type' => 'CODE_PHRASE',
+            'terminology_id' => { 'value' => 'local' },
+            'code_string' => 'at0035'
+          }
+        }
+      )
+    end
+
+    it 'round-trips through .rm_value_to_attribute' do
+      node = record.send(:rm_value, ordinal_field, 0)
+      restored = BmiCalculation.send(:rm_value_to_attribute, node, ordinal_field)
+
+      expect(restored).to eq(0)
+    end
+  end
 end
 
 describe OpenehrRails::AqlQueryable do

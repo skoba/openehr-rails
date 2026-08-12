@@ -209,6 +209,22 @@ module OpenehrRails
             'code_string' => value
           }
         }
+      when 'DV_ORDINAL', 'DV_SCALE'
+        magnitude = field[:rm_type] == 'DV_ORDINAL' ? value.to_i : value.to_f
+        code = field[:value_code_map]&.fetch(magnitude, nil)
+        {
+          '_type' => field[:rm_type],
+          'value' => magnitude,
+          'symbol' => {
+            '_type' => 'DV_CODED_TEXT',
+            'value' => field[:code_labels]&.fetch(code, code) || code,
+            'defining_code' => {
+              '_type' => 'CODE_PHRASE',
+              'terminology_id' => { 'value' => field[:terminology_id] || 'local' },
+              'code_string' => code
+            }
+          }
+        }
       when 'DV_BOOLEAN'
         { '_type' => 'DV_BOOLEAN', 'value' => value }
       when 'DV_DATE', 'DV_TIME', 'DV_DATE_TIME'
