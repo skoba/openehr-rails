@@ -11,12 +11,11 @@ module OpenehrRails
     end
 
     def create
-      file = params[:file]
-      return render json: { error: 'no file given' }, status: :unprocessable_entity unless file
+      record = params[:url].present? ? TemplateImporter.call(url: params[:url]) : upload_template
+      return unless record
 
-      record = TemplateUploader.call(file: file)
       render json: { template_id: record.template_id, name: record.name }, status: :created
-    rescue TemplateUploader::InvalidTemplate, ActiveRecord::RecordInvalid => e
+    rescue TemplateUploader::InvalidTemplate, TemplateImporter::InvalidTemplate, ActiveRecord::RecordInvalid => e
       render json: { error: e.message }, status: :unprocessable_entity
     end
 
@@ -44,6 +43,16 @@ module OpenehrRails
     end
 
     private
+
+    def upload_template
+      file = params[:file]
+      unless file
+        render json: { error: 'no file or url given' }, status: :unprocessable_entity
+        return nil
+      end
+
+      TemplateUploader.call(file: file)
+    end
 
     def require_runtime_scaffolding
       return if OpenehrRails.runtime_scaffolding_allowed?

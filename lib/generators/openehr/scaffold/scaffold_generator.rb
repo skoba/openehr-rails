@@ -23,7 +23,8 @@ module Openehr
                           desc: 'Also generate FHIR R5 StructureDefinition profiles'
 
       def parse_opt_file
-        @opt = OpenehrRails::Opt.parse(opt_file)
+        @opt_content = fetch_remote_opt if remote_url?
+        @opt = OpenehrRails::Opt.parse(@opt_content || opt_file)
         @template_id = @opt.template_id.value
         @model_name = model_name_from_template_id(@template_id)
         @human_name = (@opt.concept || @model_name).humanize
@@ -38,8 +39,7 @@ module Openehr
       end
 
       def copy_opt_into_app
-        create_file "app/templates/operational/#{opt_basename}",
-                    File.read(opt_file)
+        create_file "app/templates/operational/#{opt_basename}", @opt_content || File.binread(opt_file)
       end
 
       def register_template_in_seeds
@@ -143,7 +143,20 @@ module Openehr
         [options[:namespace], @model_name].compact.join('_')
       end
 
+      def remote_url?
+        opt_file.to_s.match?(%r{\Ahttps?://})
+      end
+
+      def fetch_remote_opt
+        say "Fetching OPT from #{opt_file}"
+        OpenehrRails::Opt::RemoteFetcher.fetch(opt_file)
+      rescue OpenehrRails::Opt::RemoteFetcher::FetchError => e
+        raise Thor::Error, "Could not fetch OPT from #{opt_file}: #{e.message}"
+      end
+
       def opt_basename
+        return "#{@template_id}.opt" if remote_url?
+
         File.basename(opt_file)
       end
 

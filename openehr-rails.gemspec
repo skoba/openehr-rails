@@ -36,4 +36,5 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency('rubocop-rails', '>= 2.20')
   gem.add_development_dependency('simplecov', '>= 0.21')
   gem.add_development_dependency('sqlite3', '>= 2.1')
+  gem.add_development_dependency('webmock', '>= 3.19')
 end

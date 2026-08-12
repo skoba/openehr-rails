@@ -9,8 +9,10 @@ module OpenehrRails
     # need to parse XML already held in memory, so #parse is overridden with
     # that as the only change — uid/occurrences tolerance now lives upstream.
     class Parser < OpenEHR::Parser::OPTParser
+      UTF8_BOM = "\xEF\xBB\xBF".freeze
+
       def parse
-        source = if @filename.to_s.lstrip.start_with?('<')
+        source = if raw_xml_content?(@filename)
                    @filename # raw OPT XML content
                  else
                    File.open(@filename)
@@ -33,6 +35,17 @@ module OpenehrRails
           terminology_extracts: @component_terminologies || {},
           adl_version: '1.4'
         )
+      end
+
+      private
+
+      # A leading UTF-8 BOM (common in OPT exports from Windows-authored
+      # tools) survives #lstrip, since it's not whitespace, so it has to be
+      # stripped before checking whether this is raw content vs. a path.
+      def raw_xml_content?(filename)
+        # .b avoids Encoding::CompatibilityError when filename is a
+        # BINARY-encoded String (e.g. read from an uploaded Rack file).
+        filename.to_s.b.delete_prefix(UTF8_BOM.b).lstrip.start_with?('<')
       end
     end
   end

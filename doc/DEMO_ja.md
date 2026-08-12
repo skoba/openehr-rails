@@ -264,6 +264,12 @@ bin/rails runner 'r=BmiCalculation.first; puts r.rm_composition.keys.inspect'
 - 登録済みテンプレート（`bmi_calculation` / `ProblemList` /
   `patient_blood_pressure`）の一覧表示。
 - OPT ファイルをドラッグ＆ドロップでアップロード。
+- URL 欄に OPT ファイルの URL（HTTP/HTTPS）を入力して「Import」— 取得 →
+  検証 → `app/templates/operational/` へ保存 → 登録、という流れをブラウザ
+  操作だけで実行します（`rails g openehr:scaffold <URL>` と
+  `rails g openehr:fhir_profile <URL>` も同様に URL を直接渡せます。
+  リダイレクト追従・タイムアウト・サイズ上限・スキーム制限は
+  `OpenehrRails::Opt::RemoteFetcher` が担当）。
 - 「Generate UI」ボタンで、**実行中のアプリ内**で scaffold ジェネレータを起動
   （ファイル生成 → マイグレーション → ルート再読込）。サーバを再起動せずに
   新しいリソースが使えるようになります。

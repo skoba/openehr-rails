@@ -30,4 +30,18 @@ describe 'OPT parsing functionality' do
     expect(template.uid).to be_nil
     expect(template.template_id.value).to eq('bmi_calculation')
   end
+
+  it 'parses raw OPT XML content passed directly (not a file path)' do
+    template = OpenehrRails::Opt.parse(File.read(opt_file))
+
+    expect(template.template_id.value).to eq('bmi_calculation')
+  end
+
+  it 'parses raw OPT XML content with a leading UTF-8 BOM (common in real-world exports)' do
+    bom_prefixed = "\xEF\xBB\xBF#{File.read(opt_file)}"
+
+    template = OpenehrRails::Opt.parse(bom_prefixed)
+
+    expect(template.template_id.value).to eq('bmi_calculation')
+  end
 end

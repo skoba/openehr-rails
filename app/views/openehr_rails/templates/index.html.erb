@@ -45,6 +45,13 @@
 <input type="file" id="opt-file-input" accept=".opt" multiple hidden>
 <p id="upload-status"></p>
 
+<h2>Import from URL</h2>
+<form id="import-form">
+  <input type="url" id="import-url-input" placeholder="https://example.com/my_template.opt" size="60" required>
+  <button type="submit">Import</button>
+</form>
+<p id="import-status"></p>
+
 <script>
   (function () {
     const dropzone = document.getElementById('dropzone');
@@ -93,5 +100,33 @@
     });
     dropzone.addEventListener('click', function () { input.click(); });
     input.addEventListener('change', function () { upload(input.files); });
+
+    const importForm = document.getElementById('import-form');
+    const importUrlInput = document.getElementById('import-url-input');
+    const importStatus = document.getElementById('import-status');
+
+    importForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+      const url = importUrlInput.value;
+      const formData = new FormData();
+      formData.append('url', url);
+      importStatus.textContent = 'Importing ' + url + ' ...';
+      fetch('<%= templates_path %>', {
+        method: 'POST',
+        headers: { 'X-CSRF-Token': csrfToken },
+        body: formData
+      }).then(function (response) {
+        return response.json().then(function (json) {
+          if (response.ok) {
+            importStatus.textContent = 'Imported ' + json.template_id;
+            window.location.reload();
+          } else {
+            importStatus.textContent = 'Import failed: ' + json.error;
+          }
+        });
+      }).catch(function (error) {
+        importStatus.textContent = 'Import failed: ' + error;
+      });
+    });
   })();
 </script>
