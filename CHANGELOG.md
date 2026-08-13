@@ -25,6 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Docker: `docker/demo.Dockerfile` + `docker/docker-compose.yml` run the
   full demo app in a container with no local Ruby/Rails install needed;
   `.devcontainer/` for gem development itself.
+- `templates/openehr_template.rb`: a Rails application template
+  (`rails new myehr -m <url>`) that wires up a brand new app with
+  openehr-rails end to end, optionally scaffolding the same 3 sample
+  templates as the demo. `script/build_starter.sh` wraps it into a
+  standalone repo (README + CI) suitable for a GitHub template repository.
 - CI matrix expanded to Ruby 3.2/3.3/3.4/4.0 x Rails 7.2/8.0/8.1
   (`gemfiles/rails_{7_2,8_0,8_1}.gemfile`), plus a demo-smoke job that
   builds the demo app and runs its generated request specs end to end.

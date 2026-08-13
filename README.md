@@ -86,6 +86,26 @@ Mapping is derived automatically from openEHR RM types
 DV_CODED_TEXT→CodeableConcept, ...; see
 `OpenehrRails::Fhir::TypeMap`).
 
+### Starting a new app from scratch
+
+[`templates/openehr_template.rb`](templates/openehr_template.rb) is a
+Rails application template that wires up a brand new app with
+openehr-rails (`openehr:install`, migrated) in one command:
+
+```sh
+rails new myehr -m https://raw.githubusercontent.com/skoba/openehr-rails/master/templates/openehr_template.rb
+```
+
+Set `OPENEHR_SAMPLES=1` to also scaffold the 3 sample templates used by
+this repo's own demo (BMI, problem list, blood pressure), fetched over
+HTTP via `OpenehrRails::Opt::RemoteFetcher`. See the file's header
+comment for all options.
+
+[`script/build_starter.sh`](script/build_starter.sh) wraps the same
+template to produce a standalone repo (with its own README and CI
+workflow) suitable for pushing to GitHub as a
+[template repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-template-repository).
+
 ### デモ環境（OPT → Rails アプリ）
 
 `script/build_demo.sh` は、この gem を使って **OPT から Rails アプリを生成し
@@ -104,7 +124,7 @@ cd demo && bin/rails server   # http://localhost:3000
 ## License
 This product is under Apache 2.0 license
 
- Copyright [2012-2020] Shinji Kobayashi, openEHR.jp
+ Copyright 2012-2026 Shinji Kobayashi, openEHR.jp
  
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
