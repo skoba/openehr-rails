@@ -56,6 +56,7 @@ after_bundle do
       generate 'openehr:scaffold', "#{samples_base}/#{name}.opt", '--fhir'
     end
     rails_command 'db:migrate'
+    rails_command 'db:seed' # registers each scaffolded template (db/seeds.rb) in the openehr_templates table
   end
 
   # Fall back to a local (repo-only) git identity when none is
