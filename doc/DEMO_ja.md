@@ -368,9 +368,14 @@ Language）を実行できる管理画面です。テキストエリアにクエ
 横断検索）をそのまま実行できます。
 
 クエリは `OpenehrRails::Aql.execute` / `Model.aql` と同じ実行エンジンを通る
-ため、LIKE・MATCHES・CONTAINS 内の standardPredicate/nodePredicate・集約と
-非集約列の混在・VERSION 系クエリは実行前に検証され、分かりやすいエラー
-メッセージ（例:「LIKE is parsed but not yet executable」）が返ります。
+ため、実行できないクエリは事前に検証され、分かりやすいエラーメッセージが
+返ります。LIKE（AQL仕様のglob構文——`*`/`?`。SQLの`%`/`_`ではない点に注意）・
+MATCHES（リテラル値リストに対して）・CONTAINS 内の
+standardPredicate/nodePredicate（`[at0004]`形式）・集約と非集約列の混在
+（暗黙GROUP BY）は openehr 2.3.0 以降実行できます。実行できないのは、
+MATCHES の値リストに `TERMINOLOGY(...)` を含む場合（外部の用語サーバへの
+value-set展開が必要で未対応）と、VERSION/LATEST_VERSION/ALL_VERSIONS/
+VERSIONED_COMPOSITION のようなバージョン対応クエリ（対象外）です。
 
 ### 9.2 患者タイムライン（`/openehr/ehrs`）
 

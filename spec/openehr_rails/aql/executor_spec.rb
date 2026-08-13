@@ -38,9 +38,55 @@ describe OpenehrRails::Aql::Executor do
   end
 
   it 'raises UnsupportedFeature for a query the validator rejects, without touching the dataset' do
-    query = "SELECT c FROM EHR e CONTAINS COMPOSITION c WHERE c/archetype_node_id LIKE 'foo%'"
+    query = 'SELECT v FROM EHR e CONTAINS VERSIONED_COMPOSITION v'
 
-    expect { described_class.execute(query) }.to raise_error(OpenehrRails::Aql::UnsupportedFeature, /LIKE/)
+    expect { described_class.execute(query) }
+      .to raise_error(OpenehrRails::Aql::UnsupportedFeature, /VERSIONED_COMPOSITION/)
+  end
+
+  describe 'constructs newly executable since openehr 2.3.0 (real RM-graph data)' do
+    it 'executes a LIKE query using AQL glob syntax (not SQL %/_)' do
+      BmiCalculation.create!(height: 170.0)
+      query = 'SELECT c/name/value FROM EHR e CONTAINS COMPOSITION c ' \
+              "WHERE c/name/value LIKE 'openEHR-EHR-COMPOSITION.*'"
+
+      result = described_class.execute(query)
+
+      expect(result.rows).to eq([['openEHR-EHR-COMPOSITION.report-result.v1']])
+    end
+
+    it 'executes a MATCHES query against a literal value list' do
+      BmiCalculation.create!(height: 170.0)
+      query = 'SELECT c/name/value FROM EHR e CONTAINS COMPOSITION c ' \
+              "WHERE c/name/value MATCHES {'openEHR-EHR-COMPOSITION.report-result.v1', 'other'}"
+
+      result = described_class.execute(query)
+
+      expect(result.rows).to eq([['openEHR-EHR-COMPOSITION.report-result.v1']])
+    end
+
+    it 'executes a CONTAINS nodePredicate ([at-code]) form, not just the archetype predicate form' do
+      BmiCalculation.create!(height: 170.0)
+      # at0004 is the ELEMENT node_id the height value lives under
+      # (see height_query's "items[at0004]/value/magnitude" path above) --
+      # a nodePredicate on CONTAINS ELEMENT, not the archetype-id predicate.
+      query = 'SELECT e/value/magnitude FROM EHR ehr ' \
+              'CONTAINS COMPOSITION c CONTAINS OBSERVATION o[openEHR-EHR-OBSERVATION.height.v2] ' \
+              'CONTAINS ELEMENT e[at0004]'
+
+      result = described_class.execute(query)
+
+      expect(result.rows).to eq([[170.0]])
+    end
+
+    it 'executes a SELECT mixing a plain column with an aggregate (implicit GROUP BY)' do
+      BmiCalculation.create!(height: 170.0)
+      query = 'SELECT c/name/value, COUNT(c) FROM EHR e CONTAINS COMPOSITION c'
+
+      result = described_class.execute(query)
+
+      expect(result.rows).to eq([['openEHR-EHR-COMPOSITION.report-result.v1', 1]])
+    end
   end
 
   describe 'OpenehrRails::Aql.execute (module-level convenience API)' do

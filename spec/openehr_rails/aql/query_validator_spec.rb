@@ -28,6 +28,27 @@ describe OpenehrRails::Aql::QueryValidator do
       query = 'SELECT c FROM EHR e CONTAINS COMPOSITION c CONTAINS OBSERVATION o[openEHR-EHR-OBSERVATION.height.v2]'
       expect(validate(query)).to be_a(OpenEHR::AQL::Model::Query)
     end
+
+    it 'accepts LIKE in WHERE (executable since openehr 2.3.0)' do
+      query = "SELECT c FROM EHR e CONTAINS COMPOSITION c WHERE c/archetype_node_id LIKE 'foo*'"
+      expect(validate(query)).to be_a(OpenEHR::AQL::Model::Query)
+    end
+
+    it 'accepts MATCHES against a literal value list (executable since openehr 2.3.0)' do
+      query = "SELECT c FROM EHR e CONTAINS COMPOSITION c WHERE c/archetype_node_id MATCHES {'a', 'b'}"
+      expect(validate(query)).to be_a(OpenEHR::AQL::Model::Query)
+    end
+
+    it 'accepts mixing aggregate and non-aggregate SELECT columns (executable since openehr 2.3.0)' do
+      query = 'SELECT c/archetype_node_id, COUNT(c) ' \
+              'FROM EHR e CONTAINS COMPOSITION c'
+      expect(validate(query)).to be_a(OpenEHR::AQL::Model::Query)
+    end
+
+    it 'accepts a nodePredicate inside CONTAINS (executable since openehr 2.3.0)' do
+      query = 'SELECT c FROM EHR e CONTAINS COMPOSITION c CONTAINS ELEMENT e2[at0004]'
+      expect(validate(query)).to be_a(OpenEHR::AQL::Model::Query)
+    end
   end
 
   describe 'rejected queries (parse-time)' do
@@ -37,25 +58,10 @@ describe OpenehrRails::Aql::QueryValidator do
   end
 
   describe 'rejected queries (unsupported constructs)' do
-    it 'rejects LIKE in WHERE' do
-      query = "SELECT c FROM EHR e CONTAINS COMPOSITION c WHERE c/archetype_node_id LIKE 'foo%'"
-      expect { validate(query) }.to raise_error(OpenehrRails::Aql::UnsupportedFeature, /LIKE/)
-    end
-
-    it 'rejects MATCHES in WHERE' do
-      query = "SELECT c FROM EHR e CONTAINS COMPOSITION c WHERE c/archetype_node_id MATCHES {'a', 'b'}"
-      expect { validate(query) }.to raise_error(OpenehrRails::Aql::UnsupportedFeature, /MATCHES/)
-    end
-
-    it 'rejects mixing aggregate and non-aggregate SELECT columns' do
-      query = 'SELECT c/archetype_node_id, COUNT(c) ' \
-              'FROM EHR e CONTAINS COMPOSITION c'
-      expect { validate(query) }.to raise_error(OpenehrRails::Aql::UnsupportedFeature, /aggregate/)
-    end
-
-    it 'rejects a nodePredicate inside CONTAINS' do
-      query = 'SELECT c FROM EHR e CONTAINS COMPOSITION c CONTAINS ELEMENT e2[at0004]'
-      expect { validate(query) }.to raise_error(OpenehrRails::Aql::UnsupportedFeature, /predicate/)
+    it 'rejects MATCHES against a TERMINOLOGY(...) value-set expansion' do
+      query = 'SELECT c FROM EHR e CONTAINS COMPOSITION c ' \
+              "WHERE c/archetype_node_id MATCHES {TERMINOLOGY('expand', 'local', 'x')}"
+      expect { validate(query) }.to raise_error(OpenehrRails::Aql::UnsupportedFeature, /TERMINOLOGY|value-set/)
     end
 
     it 'rejects VERSIONED_COMPOSITION-based FROM classes' do

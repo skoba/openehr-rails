@@ -1,5 +1,25 @@
 # 引き継ぎプロンプト: openehr gem への軽い要望・提案 3件（2026-08-13 時点）
 
+> ✅ **提案1・2は openehr 2.3.0 で対応済み**（2026-08-13 リリース確認、
+> openehr-rails 側も `bundle update openehr` で追随・
+> `spec/openehr_rails/aql/query_validator_spec.rb`/`executor_spec.rb` を
+> 「実行できないことを固定するspec」から「実行できることを確認するspec」へ
+> 書き換え済み）:
+> - `Factory.create('COMPOSITION', ...)` の NoMethodError → 修正済み
+>   （コミット`b065687`、`CompositionFactory.self.create`実装）
+> - AQL実行ギャップ4件（LIKE/MATCHES値リスト/CONTAINS内
+>   standardPredicate・nodePredicate/集約と非集約混在）→ 全て実行可能に
+>   （コミット`9b74385`）。ただしMATCHESの値リストに`TERMINOLOGY(...)`が
+>   含まれる場合は、明確な説明付きのExecutionErrorのまま（外部の用語サーバ
+>   value-set展開が必要で、意図的に対象外——妥当な判断）。
+>
+> 提案3（Rubyサポートバージョン低下時のsemver運用）について明示的な採否表明
+> は無し。2.2.0でのRuby 3.2打ち切り（コミット`498c7dd`）はこの提案より前の
+> ものなので、提案を受けての運用変更かどうかは不明。強い要望ではないため
+> 再掲はしない。
+>
+> 以下は元の引き継ぎ文書（歴史的記録として残す）。
+
 > このファイルは `openehr` gem 本体（`/home/skoba/src/openehr-ruby`, gem 名
 > `openehr`, version 2.1.0, branch master）側で作業するセッションへ渡すための
 > プロンプトです。`/home/skoba/src/openehr-ruby` を開いたセッションに以下を

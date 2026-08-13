@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Upgraded the `openehr` runtime dependency to 2.3.0 (from 2.1.0; gemspec
+  constraint raised from `~> 2.0` to `~> 2.3`). `OpenehrRails::Aql::QueryValidator`
+  no longer rejects four AQL constructs that now execute correctly as of
+  openehr 2.3.0: `LIKE` (AQL's glob syntax -- `*`/`?`, not SQL's `%`/`_`),
+  `MATCHES` against a literal value list, `CONTAINS` with a
+  standardPredicate/nodePredicate (e.g. `[at0004]`, not just an archetype
+  predicate), and a `SELECT` mixing an aggregate and a plain column (implicit
+  `GROUP BY`). Queries using these constructs, previously rejected with
+  `OpenehrRails::Aql::UnsupportedFeature`, now execute. `MATCHES` against a
+  `TERMINOLOGY(...)` value-set expansion is still rejected (no
+  terminology-server value-set lookup is wired up). Also picks up the
+  `openehr` 2.2.0 fixes for `SELECT TOP` and the EHR-root predicate (both
+  previously silently ignored at execution) and the `Factory.create('COMPOSITION', ...)`
+  `NoMethodError` fix in 2.3.0.
 - Upgraded the `openehr` runtime dependency to 2.1.0 (from 2.0.2). Fixes
   two AQL execution bugs (`SELECT TOP` and the EHR-root predicate were
   both silently ignored at execution rather than raising), adds RM 1.1.0
