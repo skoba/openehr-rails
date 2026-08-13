@@ -58,6 +58,13 @@ after_bundle do
     rails_command 'db:migrate'
   end
 
+  # Fall back to a local (repo-only) git identity when none is
+  # configured -- e.g. a fresh CI runner -- so the commit below doesn't
+  # blow up with "Please tell me who you are." Doesn't touch an already-
+  # configured identity (local or global).
+  run 'git config --get user.email >/dev/null || git config user.email "openehr-rails-template@example.com"'
+  run 'git config --get user.name  >/dev/null || git config user.name  "openehr-rails-template"'
+
   git add: '-A'
   git commit: %( -m "Set up openehr-rails" )
 
