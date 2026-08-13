@@ -8,7 +8,7 @@ still working exeperimental codes.
 ## Requirements
 
 * Current version supports Rails 7.0+ and Rails 8.x
-* Requires Ruby 3.0 or later (tested with Ruby 3.4)
+* Requires Ruby 3.3 or later (tested with Ruby 3.4)
 * Developed with CRuby 3.4 on Linux
 * Previous versions supported older Ruby/Rails versions (see git history)
 

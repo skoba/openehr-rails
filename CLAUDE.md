@@ -67,7 +67,7 @@ This is `openehr-rails`, a Rails engine gem that turns an openEHR Operational Te
 
 ## Development Notes
 
-- Ruby 3.0+ required; CI matrix covers 3.2/3.3/3.4/4.0, local dev pinned via `.ruby-version` (currently 4.0.6)
+- Ruby 3.3+ required (raised from 3.0 in 2026-08 to track the `openehr` gem dependency dropping Ruby 3.2 support at EOL); CI matrix covers 3.3/3.4/4.0, local dev pinned via `.ruby-version` (currently 4.0.6)
 - Rails 7.0+ and Rails 8.x supported (CI matrix: `gemfiles/rails_{7_2,8_0,8_1}.gemfile`; demo app runs on Rails 8.1)
 - URI compatibility workaround implemented for Ruby 3.4
 - `ostruct` is an explicit development dependency — it left Ruby's default gems as of 4.0, and a couple of specs use `OpenStruct` as a lightweight test double

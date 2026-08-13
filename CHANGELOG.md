@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- Upgraded the `openehr` runtime dependency to 2.1.0 (from 2.0.2). Fixes
+  two AQL execution bugs (`SELECT TOP` and the EHR-root predicate were
+  both silently ignored at execution rather than raising), adds RM 1.1.0
+  attributes (`DV_MULTIMEDIA.size`, `ELEMENT.null_reason`) and DV_DURATION
+  arithmetic, and fixes a `DvAmount#+/-/-@` bug affecting `DvProportion`.
+  No openehr-rails code changes were needed for the AQL fixes --
+  `OpenehrRails::Aql::QueryValidator` never explicitly guarded either
+  construct.
+- **Raised the minimum supported Ruby version from 3.0 to 3.3**, dropping
+  Ruby 3.2 from the CI matrix. This follows the `openehr` gem itself
+  raising its own minimum to Ruby 3.3 in 2.1.0 (Ruby 3.2 is past its own
+  upstream EOL).
+- Consolidated on `OpenehrRails` as the sole module name, removing the
+  vestigial `OpenEHR::Rails` (previously held only the gem's `VERSION`
+  constant, now moved to `OpenehrRails::VERSION`) and an unused empty
+  `Openehr::Rails` stub. No public API changed -- `OpenehrRails` was
+  already the real, load-bearing namespace throughout the engine and the
+  only one ever referenced by host-app-facing docs or generated code.
+
 ## [0.4.0] - 2026-08-13
 
 ### Added
