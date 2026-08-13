@@ -11,6 +11,10 @@ module OpenehrRails
       rescue_from ActiveRecord::RecordInvalid, with: :render_invalid
       rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
 
+      def openehr_access_scope
+        :rest_api
+      end
+
       # POST /v1/ehr  (server-generated ehr_id)
       def create
         ehr = OpenehrRails::Rm::Ehr.create!(ehr_attributes.merge(ehr_id: SecureRandom.uuid))
@@ -75,6 +79,7 @@ module OpenehrRails
       end
 
       def render_error(error)
+        log_openehr_error(error)
         render json: { error: error.message }, status: :bad_request
       end
     end

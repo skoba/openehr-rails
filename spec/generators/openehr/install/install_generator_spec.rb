@@ -40,6 +40,8 @@ describe Openehr::Generators::InstallGenerator do
       .to contain("require 'openehr_rails'")
     expect(file('config/initializers/openehr.rb'))
       .to contain('rm_persistence_enabled')
+    expect(file('config/initializers/openehr.rb'))
+      .to contain('OpenehrRails.authenticate_with')
   end
 
   it 'creates the operational template directory' do

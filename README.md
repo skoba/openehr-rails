@@ -65,6 +65,61 @@ enabled in the development environment only. Override with:
 OpenehrRails.enable_runtime_scaffolding = true # or false
 ```
 
+### Authentication
+
+Everything the engine serves — the template admin UI, the AQL console,
+the patient timeline, the openEHR REST API (`/openehr/v1`) and the FHIR
+facade (`/openehr/fhir`) — handles clinical data, so outside the
+`development` and `test` environments the engine is **closed by
+default**: every request gets `403 Forbidden` until you configure an
+authentication hook.
+
+The hook runs as a `before_action` inside the engine controller handling
+the request (`instance_exec`'d, so it can use `request`, `render`,
+`redirect_to`, and any helper your app mixes into `ActionController::Base`).
+Deny by rendering or redirecting — a hook that raises would be caught
+and reported as a misleading error by some engine controllers'
+`rescue_from StandardError`.
+
+```ruby
+# config/initializers/openehr.rb
+
+# Devise:
+OpenehrRails.authenticate_with = -> { authenticate_user! }
+
+# Bearer token:
+OpenehrRails.authenticate_with = lambda do
+  authenticate_or_request_with_http_token do |token, _options|
+    ActiveSupport::SecurityUtils.secure_compare(
+      token, Rails.application.credentials.openehr_api_token.to_s
+    )
+  end
+end
+```
+
+To use a different mechanism per surface, branch on `openehr_access_scope`
+(`:admin` — template UI / AQL console / timeline, `:rest_api` — `/v1`,
+`:fhir` — the FHIR facade):
+
+```ruby
+OpenehrRails.authenticate_with = lambda do
+  case openehr_access_scope
+  when :admin then authenticate_user!
+  else authenticate_or_request_with_http_token { |t, _| valid_api_token?(t) }
+  end
+end
+```
+
+To intentionally run without authentication (e.g. behind a reverse
+proxy that already authenticates, or a network-isolated internal app):
+
+```ruby
+OpenehrRails.allow_unauthenticated_access = true
+```
+
+Note: the JSON API controllers (`/v1`, `/fhir`) skip CSRF protection, so
+prefer token authentication over session cookies for those.
+
 ### HL7 FHIR R5 facade
 
 The engine also serves a FHIR R5 API under `<mount>/fhir`

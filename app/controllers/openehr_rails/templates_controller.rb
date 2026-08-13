@@ -30,6 +30,7 @@ module OpenehrRails
         redirect_to root_path, notice: "Generated UI at /#{result.route_path}"
       end
     rescue StandardError => e
+      log_openehr_error(e)
       redirect_to root_path, alert: "Generation failed: #{e.message}"
     end
 

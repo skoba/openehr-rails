@@ -15,6 +15,10 @@ module OpenehrRails
 
     FHIR_CONTENT_TYPE = 'application/fhir+json'
 
+    def openehr_access_scope
+      :fhir
+    end
+
     def metadata
       render_fhir OpenehrRails::Fhir::CapabilityStatement.build(base_url: request.base_url)
     end
@@ -125,6 +129,7 @@ module OpenehrRails
     end
 
     def render_operation_outcome(error)
+      log_openehr_error(error)
       status = case error
                when OpenehrRails::Fhir::Deserializer::UnmappedResource then :unprocessable_entity
                when ActiveRecord::RecordInvalid then :unprocessable_entity

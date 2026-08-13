@@ -63,4 +63,29 @@ module OpenehrRails
 
     defined?(::Rails.env) && ::Rails.env.development?
   end
+
+  # Authentication hook, run via before_action ahead of every engine
+  # action (all controllers inherit from OpenehrRails::ApplicationController).
+  # A zero-arity proc, instance_exec'd in the controller -- so it can use
+  # request/render/redirect_to/head and any helper the host mixes into
+  # ActionController::Base (e.g. Devise's authenticate_user!). Deny by
+  # rendering or redirecting (standard before_action halting); some engine
+  # controllers rescue_from StandardError, so a hook that raises instead
+  # of rendering would be masked as a misleading error response --
+  # render/redirect only.
+  mattr_accessor :authenticate_with, default: nil
+
+  # Explicit escape hatch for intentionally-open deployments (e.g. behind
+  # a reverse proxy that already authenticates, or network-isolated
+  # internal-only apps). Overrides the environment-based default in
+  # EITHER direction: true forces access even in production; false forces
+  # denial even in development.
+  mattr_accessor :allow_unauthenticated_access, default: nil
+
+  def self.unauthenticated_access_allowed?
+    return allow_unauthenticated_access unless allow_unauthenticated_access.nil?
+    return false unless defined?(::Rails.env)
+
+    ::Rails.env.development? || ::Rails.env.test?
+  end
 end

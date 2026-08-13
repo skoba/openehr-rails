@@ -20,3 +20,34 @@ require 'openehr_rails'
 # OpenehrRails.default_category = %w[433 event]  # [code, value]
 # OpenehrRails.default_composer_name = 'unknown'
 # OpenehrRails.default_encoding = 'UTF-8'
+
+# Authentication (REQUIRED before deploying outside development/test):
+# the engine (admin UI, AQL console, /v1 REST API, /fhir facade) serves
+# clinical data, so it denies every request with 403 in any environment
+# other than development/test until you configure a hook here. The hook
+# runs as a before_action inside the engine controller handling the
+# request (instance_exec'd) -- deny by rendering/redirecting, not
+# raising, since some engine controllers rescue_from StandardError.
+#
+# Devise:
+# OpenehrRails.authenticate_with = -> { authenticate_user! }
+#
+# Bearer token:
+# OpenehrRails.authenticate_with = lambda do
+#   authenticate_or_request_with_http_token do |token, _options|
+#     ActiveSupport::SecurityUtils.secure_compare(
+#       token, Rails.application.credentials.openehr_api_token.to_s
+#     )
+#   end
+# end
+#
+# Different mechanism per surface (openehr_access_scope is :admin,
+# :rest_api or :fhir):
+# OpenehrRails.authenticate_with = lambda do
+#   openehr_access_scope == :admin ? authenticate_user! : authenticate_or_request_with_http_token { |t, _| valid_api_token?(t) }
+# end
+#
+# Explicit opt-out for intentionally-open deployments (e.g. behind a
+# reverse proxy that already authenticates, network-isolated internal
+# apps) -- NOT recommended for anything reachable outside your network:
+# OpenehrRails.allow_unauthenticated_access = true

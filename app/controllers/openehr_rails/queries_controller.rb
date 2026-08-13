@@ -11,6 +11,10 @@ module OpenehrRails
     rescue_from StandardError, with: :render_error
     rescue_from OpenehrRails::Aql::Error, with: :render_aql_error
 
+    def openehr_access_scope
+      action_name == 'execute' ? :rest_api : :admin
+    end
+
     # GET /query -- HTML console. Executes via fetch against
     # POST /v1/query/aql below, so there is exactly one execution path.
     def show; end
@@ -50,6 +54,7 @@ module OpenehrRails
     end
 
     def render_error(error)
+      log_openehr_error(error)
       render json: { error: error.message }, status: :bad_request
     end
   end

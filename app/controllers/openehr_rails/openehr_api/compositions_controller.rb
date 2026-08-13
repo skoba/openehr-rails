@@ -20,6 +20,10 @@ module OpenehrRails
       rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
       rescue_from PreconditionFailed, with: :render_precondition_failed
 
+      def openehr_access_scope
+        :rest_api
+      end
+
       # POST /v1/ehr/:ehr_id/composition
       def create
         ehr = find_ehr!
@@ -110,6 +114,7 @@ module OpenehrRails
       end
 
       def render_error(error)
+        log_openehr_error(error)
         render json: { error: error.message }, status: :bad_request
       end
     end

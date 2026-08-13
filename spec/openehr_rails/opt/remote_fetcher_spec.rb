@@ -68,4 +68,39 @@ describe OpenehrRails::Opt::RemoteFetcher do
     expect { described_class.fetch('https://example.com/slow.opt') }
       .to raise_error(described_class::FetchError)
   end
+
+  describe 'SSRF protection' do
+    # No stub_request for any of these: a correctly-blocked URL must never
+    # reach Net::HTTP at all (WebMock would raise its own "real requests
+    # are not allowed" error if it did, which -- being a different error
+    # class -- would also fail these expectations).
+    [
+      '127.0.0.1',        # loopback
+      '169.254.169.254',  # link-local, incl. cloud metadata endpoints
+      '10.1.2.3',         # private
+      '172.16.0.5',       # private
+      '192.168.1.1',      # private
+      '[::1]' # IPv6 loopback
+    ].each do |host|
+      it "rejects a URL targeting the blocked address #{host}" do
+        expect { described_class.fetch("http://#{host}/x.opt") }
+          .to raise_error(described_class::FetchError, /internal|private|blocked/i)
+      end
+    end
+
+    it 'rejects a redirect to a blocked address, not just the initial URL' do
+      stub_request(:get, 'https://example.com/external.opt')
+        .to_return(status: 302, headers: { 'Location' => 'http://127.0.0.1/internal.opt' })
+
+      expect { described_class.fetch('https://example.com/external.opt') }
+        .to raise_error(described_class::FetchError, /internal|private|blocked/i)
+    end
+
+    it 'still allows a normal public host' do
+      stub_request(:get, 'https://example.com/bmi_calculation.opt')
+        .to_return(status: 200, body: opt_body)
+
+      expect(described_class.fetch('https://example.com/bmi_calculation.opt')).to eq(opt_body)
+    end
+  end
 end

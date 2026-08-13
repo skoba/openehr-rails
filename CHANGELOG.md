@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- `OpenehrRails.authenticate_with`: a pluggable authentication hook, run
+  as a `before_action` ahead of every engine action (admin UI, AQL
+  console, patient timeline, the `/v1` openEHR REST API, and the `/fhir`
+  facade). Host apps wire in their own mechanism (Devise, HTTP token,
+  anything) with the controller as context. Per-surface differentiation
+  via `openehr_access_scope` (`:admin`/`:rest_api`/`:fhir`).
+- `OpenehrRails.allow_unauthenticated_access`: explicit opt-out for
+  intentionally-open deployments.
+
+### Changed (behavior change -- read before upgrading)
+- **The engine now denies all requests with `403 Forbidden` outside the
+  `development` and `test` environments unless `authenticate_with` or
+  `allow_unauthenticated_access` is configured.** Previously every
+  engine route (including the full openEHR REST API and the FHIR
+  facade's create endpoint) was open with no access control whatsoever.
+  Apps running 0.3.0 in production must configure one of the two before
+  upgrading, or the engine will start responding 403 to everything.
+- `RemoteFetcher` now also rejects loopback/private/link-local (including
+  cloud metadata) addresses, both on the initial URL and on every
+  redirect hop, closing an SSRF gap (previously only the URL scheme was
+  validated).
+- Every generic `rescue_from StandardError` handler across the engine's
+  controllers now logs the exception (class, message, and a short
+  backtrace) via `Rails.logger` before responding -- previously errors
+  were rendered to the client and left no server-side trace at all.
+
 ## [0.3.0] - 2026-08-13
 
 ### Added
