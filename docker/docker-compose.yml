@@ -1,0 +1,12 @@
+services:
+  demo:
+    build:
+      context: ..
+      dockerfile: docker/demo.Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - demo-storage:/rails/demo/storage
+
+volumes:
+  demo-storage:

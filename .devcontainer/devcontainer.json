@@ -1,0 +1,13 @@
+{
+  "name": "openehr-rails (gem development)",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "postCreateCommand": "bundle install",
+  "forwardPorts": [3000],
+  "customizations": {
+    "vscode": {
+      "extensions": ["Shopify.ruby-lsp"]
+    }
+  }
+}

@@ -1,0 +1,12 @@
+# Keep .git -- openehr-rails.gemspec shells out to `git ls-files` at
+# runtime (Bundler re-evaluates path gemspecs on every boot), so it must
+# survive into the build context and the final image.
+
+demo
+coverage
+pkg
+log/*.log
+tmp
+.bundle
+*.lock
+.gem

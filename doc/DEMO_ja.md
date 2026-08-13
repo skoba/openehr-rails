@@ -82,6 +82,21 @@ bin/rails server
 `demo/` は再現可能なため git では追跡しません（`.gitignore` に登録済み）。
 作り直したいときは `demo/` を消して再実行すれば、毎回同じ結果になります。
 
+### 3.1 Docker で試す（ローカルに Ruby/Rails を入れずに）
+
+Docker だけあれば、同じデモをコンテナ内で再現できます。
+
+```sh
+cd /path/to/openehr-rails
+docker compose -f docker/docker-compose.yml up --build
+```
+
+<http://localhost:3000/openehr> がブラウザで開けます。SQLite のデータは
+`demo-storage` という named volume に永続化されるので、コンテナを再作成
+してもデータは残ります（`docker compose -f docker/docker-compose.yml down -v`
+で完全に消去）。開発環境（`RAILS_ENV=development`）で起動するため、管理UI
+の実行時生成（「Generate UI」ボタン・URL Import）もそのまま使えます。
+
 ---
 
 ## 4. 手動手順（スクリプトの中身を 1 ステップずつ）
