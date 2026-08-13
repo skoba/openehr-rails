@@ -11,6 +11,7 @@ require 'openehr/am'
 require 'openehr/rm'
 require 'openehr/parser'
 
+require 'openehr_rails/version'
 require 'openehr_rails/naming'
 require 'openehr_rails/opt'
 require 'openehr_rails/opt/parser'

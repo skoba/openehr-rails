@@ -23,3 +23,26 @@ describe "'openehr_rails' as a real host app would load it" do
     expect(output).to include('yes'), "expected OpenehrRails::Rm to be defined; got:\n#{output}"
   end
 end
+
+# 'openehr-rails' (hyphenated) is what Bundler auto-requires in a host app's
+# config/application.rb (Bundler.require(*Rails.groups) maps the gem name
+# "openehr-rails" to `require 'openehr-rails'`), so it's the real entry
+# point in practice, not just the underscored file. It used to also define
+# an empty, unused `Openehr::Rails` module (leftover from a removed
+# Railtie) -- guard against that reappearing, and confirm the version
+# constant now lives on the real (flat) OpenehrRails module rather than
+# the vestigial `OpenEHR::Rails` used only by the gemspec.
+describe "'openehr-rails' (hyphenated) as Bundler would auto-require it" do
+  it 'defines OpenehrRails::Engine and OpenehrRails::VERSION, and no stray Openehr constant' do
+    root = File.expand_path('../..', __dir__)
+    script = "require 'rails/all'; require 'openehr-rails'; " \
+             "puts defined?(OpenehrRails::Engine) ? 'engine-yes' : 'engine-no'; " \
+             "puts defined?(OpenehrRails::VERSION) ? \"version-\#{OpenehrRails::VERSION}\" : 'version-no'; " \
+             "puts defined?(Openehr) ? 'openehr-stub-present' : 'openehr-stub-absent'"
+    output = IO.popen(['bundle', 'exec', 'ruby', '-e', script], chdir: root, err: %i[child out], &:read)
+
+    expect(output).to include('engine-yes'), "expected OpenehrRails::Engine to be defined; got:\n#{output}"
+    expect(output).to include('version-'), "expected OpenehrRails::VERSION to be defined; got:\n#{output}"
+    expect(output).to include('openehr-stub-absent'), "expected no stray Openehr constant; got:\n#{output}"
+  end
+end

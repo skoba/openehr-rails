@@ -1,10 +1,10 @@
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require "openehr-rails/version"
+require "openehr_rails/version"
 
 Gem::Specification.new do |gem|
   gem.name = "openehr-rails"
-  gem.version = OpenEHR::Rails::VERSION
+  gem.version = OpenehrRails::VERSION
   gem.platform = Gem::Platform::RUBY
   gem.authors = ["Shinji KOBAYASHI"]
   gem.email = "skoba@moss.gr.jp"
