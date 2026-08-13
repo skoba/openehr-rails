@@ -1,9 +1,19 @@
 [![CI](https://github.com/skoba/openehr-rails/actions/workflows/ci.yml/badge.svg)](https://github.com/skoba/openehr-rails/actions/workflows/ci.yml)
 
-# Synopsys
+# Synopsis
 
-This is a support library for openEHR on Rails implementation and
-still working exeperimental codes.
+openehr-rails turns an openEHR Operational Template (`.opt`) into a
+working Rails resource in one command — model, migration, CRUD UI,
+i18n locale, and HL7 FHIR R5 profiles. What sets it apart: usability
+and openEHR conformance usually trade off against each other, but here
+you get both. The generated model behaves like any ordinary
+ActiveRecord model (typed columns, familiar forms and queries), while
+every save also persists a fully conformant openEHR RM Composition —
+canonical JSON plus a versioned, audit-trailed node graph — with no
+hand-written mapping code. HL7 FHIR R5 support is derived automatically
+from the same RM type mapping rather than hand-coded per resource, and
+AQL (openEHR's query language) works identically from a Ruby model API
+(`Model.aql`), a REST endpoint, and a browser console.
 
 ## Requirements
 
