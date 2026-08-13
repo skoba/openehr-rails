@@ -10,14 +10,20 @@ Gem::Specification.new do |gem|
   gem.email = "skoba@moss.gr.jp"
 
   gem.summary = "Rails extension for the openEHR archetypes"
-  gem.description = "This product is a Rails extansion for openEHR"
+  gem.description = "This product is a Rails extension for openEHR"
   gem.homepage = "http://openehr.jp"
-  gem.license = "Apache 2.0"
+  gem.license = "Apache-2.0"
   gem.extra_rdoc_files = [
     "README.md"
   ]
   gem.files         = `git ls-files`.split("\n")
-  gem.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
+
+  gem.metadata = {
+    "source_code_uri" => "https://github.com/skoba/openehr-rails",
+    "changelog_uri" => "https://github.com/skoba/openehr-rails/blob/master/CHANGELOG.md",
+    "bug_tracker_uri" => "https://github.com/skoba/openehr-rails/issues",
+    "rubygems_mfa_required" => "true"
+  }
 
   gem.require_paths = ["lib"]
   gem.required_ruby_version = '>= 3.0.0'
