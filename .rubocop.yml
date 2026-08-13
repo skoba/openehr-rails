@@ -1,0 +1,25 @@
+plugins:
+  - rubocop-rails
+  - rubocop-rspec
+
+inherit_from: .rubocop_todo.yml
+
+AllCops:
+  NewCops: enable
+  TargetRubyVersion: 3.3
+  SuggestExtensions: false
+  Exclude:
+    - 'bin/**/*'
+    - 'db/schema.rb'
+    - 'gemfiles/**/*'
+    - 'vendor/**/*'
+    - 'demo/**/*'
+    - 'tmp/**/*'
+    - 'coverage/**/*'
+    - 'lib/generators/**/templates/**/*'
+
+Metrics/BlockLength:
+  Exclude:
+    - 'spec/**/*'
+    - '*.gemspec'
+    - 'lib/tasks/**/*.rake'
