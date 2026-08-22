@@ -11,7 +11,7 @@ module OpenehrRails
     #   path:            RM path from the COMPOSITION content
     #   rm_type:         openEHR data value type (e.g. 'DV_QUANTITY')
     #   node_id:         at-code of the ELEMENT
-    #   archetype_id:    id of the enclosing archetype root (entry)
+    #   archetype_id:    id of the nearest enclosing archetype root (entry or embedded C_ARCHETYPE_ROOT)
     #   column_type:     ActiveRecord column type symbol
     #   units:           unit string for DV_QUANTITY
     #   magnitude_range: [lower, upper] for DV_QUANTITY
@@ -104,7 +104,7 @@ module OpenehrRails
       def build_entry(root, path_prefix)
         archetype_id = root.archetype_id.value
         concept = concept_of(archetype_id)
-        elements = collect_elements(root, path_prefix)
+        elements = collect_elements(root, path_prefix, archetype_id)
         entry = {
           archetype_id: archetype_id,
           rm_type: root.rm_type_name,
@@ -113,14 +113,14 @@ module OpenehrRails
           occurrences: root.occurrences,
           required: mandatory?(root)
         }
-        entry[:fields] = elements.map do |element, path|
-          build_field(element, path, entry, elements.size)
+        entry[:fields] = elements.map do |element, path, element_archetype_id|
+          build_field(element, path, element_archetype_id, entry, elements.size)
         end
         entry
       end
 
-      # Depth-first walk collecting [ELEMENT, rm_path] pairs under an entry.
-      def collect_elements(node, path)
+      # Depth-first walk collecting [ELEMENT, rm_path, archetype_id] tuples under an entry.
+      def collect_elements(node, path, archetype_id)
         return [] unless node.respond_to?(:attributes) && node.attributes
 
         node.attributes.flat_map do |attribute|
@@ -135,18 +135,24 @@ module OpenehrRails
             node_path += "[#{child.node_id}]" if child.respond_to?(:node_id) && child.node_id
 
             if child.rm_type_name == 'ELEMENT'
-              [[child, node_path]]
+              [[child, node_path, archetype_id]]
             else
-              collect_elements(child, node_path)
+              # rm_type_name is the constrained RM type, not "C_ARCHETYPE_ROOT".
+              child_archetype_id = if child.respond_to?(:archetype_id) && child.archetype_id
+                                     child.archetype_id.value
+                                   else
+                                     archetype_id
+                                   end
+              collect_elements(child, node_path, child_archetype_id)
             end
           end
         end
       end
 
-      def build_field(element, path, entry, sibling_count)
+      def build_field(element, path, archetype_id, entry, sibling_count)
         constraint = value_constraint(element)
         rm_type = constraint&.rm_type_name || 'DV_TEXT'
-        label = term_text(entry[:archetype_id], element.node_id)
+        label = term_text(archetype_id, element.node_id)
 
         field = {
           name: field_name(entry[:concept], label, element.node_id, sibling_count),
@@ -154,14 +160,14 @@ module OpenehrRails
           path: "#{path}/value",
           rm_type: rm_type,
           node_id: element.node_id,
-          archetype_id: entry[:archetype_id],
+          archetype_id: archetype_id,
           entry_rm_type: entry[:rm_type],
           column_type: COLUMN_TYPES.fetch(rm_type, :string),
           required: entry[:required] && mandatory?(element)
         }
         field.merge!(quantity_constraints(constraint)) if rm_type == 'DV_QUANTITY'
-        field.merge!(coded_text_constraints(constraint, entry[:archetype_id])) if rm_type == 'DV_CODED_TEXT'
-        field.merge!(symbol_constraints(constraint, entry[:archetype_id])) if %w[DV_ORDINAL DV_SCALE].include?(rm_type)
+        field.merge!(coded_text_constraints(constraint, archetype_id)) if rm_type == 'DV_CODED_TEXT'
+        field.merge!(symbol_constraints(constraint, archetype_id)) if %w[DV_ORDINAL DV_SCALE].include?(rm_type)
         field
       end
 
