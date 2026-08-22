@@ -21,6 +21,15 @@ area. No code changes accompany entries here — this file is a record only.
   GitHub Actions workflow (just `bundle exec rspec` on PR) before the project's planned
   public release (targeted around December). Optional until then.
 
+## Compatibility
+
+- **STRICT-incompatible fixture: 1 known case** — `spec/templates/lab_result_report_reduced.opt`'s
+  leading comment uses `--` as an em dash (a double hyphen, invalid inside an XML comment);
+  under STRICT-mode XML parsing this file would fail to parse at all. See
+  openehr-ruby#36. Not fixed now — the current form is a live reproduction case for #36; if
+  #36 moves toward making STRICT the default, this comment's punctuation is the prerequisite
+  fix on this repo's side.
+
 ## Versioning
 
 - **Next release must be >= 0.5.0, regardless of its own content**, to retroactively
