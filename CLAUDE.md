@@ -75,6 +75,7 @@ This is `openehr-rails`, a Rails engine gem that turns an openEHR Operational Te
 - `spec/openehr_rails/{opt,rm,fhir}/`, `spec/openehr_rails/*_spec.rb` - runtime library specs.
 - `spec/models/openehr_template_spec.rb`, `spec/unit/opt_parser_spec.rb` - registry model and parser specs.
 - OPT fixtures live in `spec/generators/templates/` and `spec/templates/`; do not hand-edit an existing `.opt` fixture (add a new one instead) — **opt files must not be changed automatically.**
+- A fixture's provenance comment must describe its lineage as measured (checked against the actual design/implementation record), not as instructed — if an instructed lineage doesn't match what actually went into the fixture, write it to match reality instead.
 
 ## Development Notes
 
