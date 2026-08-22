@@ -16,6 +16,11 @@ Follow the TDD framework as advocated by t-wada:
 - Write tests for areas of concern first
 - opt files must not be changed automatically.
 
+## Working with implementation agents (e.g. Codex)
+
+Codex delivers only working-tree changes; it does not commit. Claude Code reviews the
+diff, then commits, recording the implementer in a commit message trailer (e.g.
+`Implemented-by: Codex`).
 
 ## Project Overview
 
