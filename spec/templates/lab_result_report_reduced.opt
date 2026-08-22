@@ -2,9 +2,11 @@
 <!--
   Reduced, hand-authored regression fixture for the FieldExtractor terminology-scope
   fix (issue #25). Not derived from a real CKM archetype or Archetype Designer
-  export -- no "LabResultReport.opt" source file exists in this repo or in the
-  openehr-ruby gem's own fixtures (see docs/design/fix-terminology-scope-plan.md,
-  section 4). The structure is modeled on a genuine embedded-archetype at-code
+  export -- Anlage has a real LabResultReport.opt (see openehr-ruby#36), but this
+  file is not a literal reduction of it; no such source file exists in this repo
+  or in the openehr-ruby gem's own fixtures (see
+  docs/design/fix-terminology-scope-plan.md, section 4). The structure is modeled
+  on a genuine embedded-archetype at-code
   collision confirmed in openehr-ruby's own (CKM-derived) test fixture
   spec/lib/openehr/opt_parser/eReferral.opt, trimmed to the minimum XML needed to
   reproduce the bug: an outer OBSERVATION.laboratory_test_result entry with its own
