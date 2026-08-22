@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `FieldExtractor` now resolves embedded-archetype element terminology in the nearest
+  enclosing `C_ARCHETYPE_ROOT`, preventing both silent at-code collisions with the outer
+  entry and fallback to raw at-codes when the outer terminology lacks a definition.
+  Embedded fields' `archetype_id` and generated FHIR profile coding now use that same
+  owning archetype id.
+
 ### Changed
 - Upgraded the `openehr` runtime dependency to 2.3.0 (from 2.1.0; gemspec
   constraint raised from `~> 2.0` to `~> 2.3`). `OpenehrRails::Aql::QueryValidator`
