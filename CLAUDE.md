@@ -75,7 +75,28 @@ This is `openehr-rails`, a Rails engine gem that turns an openEHR Operational Te
 - `spec/openehr_rails/{opt,rm,fhir}/`, `spec/openehr_rails/*_spec.rb` - runtime library specs.
 - `spec/models/openehr_template_spec.rb`, `spec/unit/opt_parser_spec.rb` - registry model and parser specs.
 - OPT fixtures live in `spec/generators/templates/` and `spec/templates/`; do not hand-edit an existing `.opt` fixture (add a new one instead) — **opt files must not be changed automatically.**
-- A fixture's provenance comment must describe its lineage as measured (checked against the actual design/implementation record), not as instructed — if an instructed lineage doesn't match what actually went into the fixture, write it to match reality instead.
+- Fixtures fall into four kinds; each fixture's leading comment must say which kind it is:
+  - **real** — a genuine artifact (CKM export, Archetype Designer output, a real host-app
+    template), used as-is.
+  - **reduced** — a trimmed-down real artifact; the comment must name the real source it
+    was reduced from.
+  - **synthetic** — hand-authored, not derived from any real artifact. real/reduced are
+    preferred by default; synthetic is only for structural test cases whose reproduction
+    conditions can't be controlled with a real artifact. The leading comment must say it's
+    synthetic and cite its design authority (e.g. a design doc section). Archetype
+    IDs/at-codes should use self-evidently invented names that can't be mistaken for real
+    ones — don't rename an existing fixture to fix this after the fact; its at-codes/
+    archetype IDs are reference anchors other specs/docs already point to, and freezing
+    those anchors takes priority.
+  - **security** — built to exercise an attack/abuse case; the comment must say it is not
+    a clinical artifact.
+  - A fixture's provenance comment must describe its lineage as measured (checked against
+    the actual design/implementation record), not as instructed — if an instructed lineage
+    doesn't match what actually went into the fixture, write it to match reality instead.
+  - Example: `spec/templates/lab_result_report_reduced.opt` is **synthetic** (design
+    authority: `docs/design/fix-terminology-scope-plan.md` §4; lineage confirmed
+    2026-08-22) — its filename says "reduced" for historical reasons, but per this
+    convention its actual kind is synthetic; the name stays as-is (reference anchor).
 
 ## Development Notes
 
