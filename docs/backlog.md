@@ -21,6 +21,14 @@ area. No code changes accompany entries here — this file is a record only.
   GitHub Actions workflow (just `bundle exec rspec` on PR) before the project's planned
   public release (targeted around December). Optional until then.
 
+## Versioning
+
+- **Next release must be >= 0.5.0, regardless of its own content**, to retroactively
+  acknowledge in the version series that 0.4.1 was substantively a minor release (see the
+  errata in `CHANGELOG.md`'s `[0.4.1]` entry and the release convention added to
+  `CLAUDE.md`). Applies even if the next release's own changes would otherwise only
+  warrant a patch bump.
+
 ## Queue gating (do not start without an explicit go-ahead)
 
 - **#3** (registry checksum/version/status): gated on Anlage Slice 1 operational experience,
