@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.1] - 2026-08-22
 
+Errata: this release includes minor-level changes (Ruby >= 3.3 requirement,
+OpenehrRails namespace consolidation) and should be treated as a minor release
+when upgrading from 0.4.0.
+
 ### Fixed
 - `FieldExtractor` now resolves embedded-archetype element terminology in the nearest
   enclosing `C_ARCHETYPE_ROOT`, preventing both silent at-code collisions with the outer
