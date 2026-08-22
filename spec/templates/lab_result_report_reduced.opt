@@ -1,15 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Reduced, hand-authored regression fixture for the FieldExtractor terminology-scope
-  fix (issue #25). Not derived from a real CKM archetype or Archetype Designer
-  export -- Anlage has a real LabResultReport.opt (see openehr-ruby#36), but this
-  file is not a literal reduction of it; no such source file exists in this repo
-  or in the openehr-ruby gem's own fixtures (see
-  docs/design/fix-terminology-scope-plan.md, section 4). The structure is modeled
-  on a genuine embedded-archetype at-code
-  collision confirmed in openehr-ruby's own (CKM-derived) test fixture
-  spec/lib/openehr/opt_parser/eReferral.opt, trimmed to the minimum XML needed to
-  reproduce the bug: an outer OBSERVATION.laboratory_test_result entry with its own
+  Reduced, synthetic regression fixture for the FieldExtractor terminology-scope fix
+  (issue #25). Lineage, as measured against the actual design record -- not the real
+  CKM archetypes "laboratory_test_result"/"laboratory_test_analyte" (no evidence
+  either exists in CKM), not a reduction of Anlage's real LabResultReport.opt (see
+  openehr-ruby#36 for that file's existence; this fixture is not derived from it),
+  and not sourced from issue #25's own body (it contains no at-code examples or
+  line citations to draw from). The at-codes, archetype IDs, and label text below
+  were specified from scratch in docs/design/fix-terminology-scope-plan.md section
+  4 (the TDD plan) -- modeled structurally, not by content, on the real
+  embedded-archetype at-code collision confirmed in openehr-ruby's own (CKM-derived)
+  test fixture spec/lib/openehr/opt_parser/eReferral.opt -- and then implemented as
+  XML per that spec: an outer OBSERVATION.laboratory_test_result entry with its own
   at0001 term ("検査状態" -- test status), embedding a CLUSTER.laboratory_test_analyte
   via C_ARCHETYPE_ROOT whose own terminology defines both a colliding at0001
   ("分析結果" -- analysis result) and a CLUSTER-only at0024 ("分析名" -- analysis
