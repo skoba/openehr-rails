@@ -4,6 +4,59 @@ Non-blocking follow-ups noted during work on the upstream sprint queue. Not sche
 pick up when the relevant gate opens or when convenient alongside other work in the same
 area. No code changes accompany entries here — this file is a record only.
 
+## CI status (verified, not a follow-up item)
+
+Both `.github/workflows/ci.yml` (`rspec` matrix on Ruby 3.3/3.4/4.0 x Rails
+7.2/8.0/8.1, plus `demo-smoke` and `application template smoke test` jobs; triggers
+on `push` to `master`, all `pull_request`s, and `workflow_call`) and
+`.github/workflows/release.yml` (triggers on `v*` tags, reuses `ci.yml` via
+`workflow_call`, then runs a RubyGems release job) exist on `master` — introduced at
+`412712d` (2026-08-12) and `2263298` (2026-08-13) respectively — and were confirmed
+actually running, not just present:
+
+- PR #26 (`fix/field-extractor-terminology-scope`): `pull_request` runs `32549486071`
+  and `32550157259` (2026-08-22, both success), post-merge `master` `push` run
+  `32550193330` (success). The merge landed (03:53:04Z) about 1m43s before the final
+  PR run finished (03:54:47Z) — CI ran and passed, but this doesn't demonstrate
+  merge-blocking enforcement.
+- Tag `v0.4.1`: `release.yml` run `32550344344` (2026-08-22T03:56:26Z) — all 11 reused
+  CI jobs green, but the run's overall conclusion is **failure**: the `Release to
+  RubyGems` job's `Release` step (`rubygems/release-gem@v1`) fails at "Configure
+  trusted publishing credentials" ("No trusted publisher configured for this workflow
+  found on https://rubygems.org for audience rubygems.org"); the actual gem-push
+  sub-steps are skipped, so CI never attempted to publish. rubygems.org's 0.4.1
+  listing was published by the human running `gem push` manually — no harm to the
+  actual release, only to the workflow run's color. Same failure shape on every tag
+  to date: v0.3.0 (runs `31655140867`, `31655495221`, `31655778244`) and v0.4.0 (run
+  `31660884406`), both failure. **This is structural, not incidental**: as long as
+  `release.yml` keeps a live RubyGems-publish step while the actual publish stays a
+  manual human `gem push` (the current, intended operating model), every future tag
+  push will reproduce the same red run. See "Release automation" below.
+- Most recent `master` push at the time of this record (`4055ec3`): CI run
+  `32569774700`, success.
+
+Recorded here after this file previously claimed "this repo currently has no CI
+workflow gating pull requests" — wrong on both existence and execution. This file is
+the primary record for openehr-rails CI/release facts; openehr-ruby's own
+`docs/backlog.md` defers to it rather than duplicating (see that file's 2026-08-23
+correction, commit `bf17be7`) — do not duplicate this record back into openehr-ruby.
+
+## Release automation
+
+- **Unify the release path**: remove `release.yml`'s RubyGems-publish job/step and
+  change tag-push handling to CI + `gem build` + artifact upload only, so the workflow
+  matches how releases are actually done today (human-gated `gem push`) and stops
+  going red on every tag for a step that was never meant to run automatically.
+  Automatic publishing via RubyGems Trusted Publishing can be re-evaluated when the
+  project's planned December public release and external-contributor model are
+  actually being designed — revisit the tag-before-inventory convention (`CLAUDE.md`'s
+  "Release convention" section) together with that decision at the same time, since
+  automatic publishing changes what "ready to tag" needs to mean. Timing: before the
+  next release (>= 0.5.0, per the "Versioning" item below). Out of scope for this
+  docs-only pass — implementing the workflow change goes through an Issue (once
+  ticket-driven work applies to it) plus the normal explore → plan → approval gate,
+  not a direct docs commit.
+
 ## From #25 / PR #26 (FieldExtractor terminology scope fix, 2026-08-22)
 
 - **Multi-level nesting regression test (CLUSTER in CLUSTER)**: the 0.4.1 fix and its
@@ -16,10 +69,6 @@ area. No code changes accompany entries here — this file is a record only.
   `OBSERVATION.lab_test` -> `OBSERVATION.imaging` -> `CLUSTER.imaging`, per
   `docs/design/fix-terminology-scope-plan.md` section 4). Suitable for a follow-on PR, not
   urgent.
-- **PR-triggered minimal CI (rspec)**: this repo currently has no CI workflow gating pull
-  requests — `bundle exec rspec` was run manually before merging #26. Worth adding a minimal
-  GitHub Actions workflow (just `bundle exec rspec` on PR) before the project's planned
-  public release (targeted around December). Optional until then.
 
 ## Compatibility
 
