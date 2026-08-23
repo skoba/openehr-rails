@@ -28,6 +28,13 @@ Before tagging, make the final semver determination from the actual content of
 `[Unreleased]`, not from a pre-assigned version number. If the instructed version number
 contradicts the actual content, stop instead of tagging and ask for re-arbitration.
 
+## Verification
+
+- **Verify against the repo before recording a fact in it**, even when a prompt or an
+  earlier report already stated it as true - a premise that went unverified once tends
+  to get repeated, not corrected, if the next write also skips checking (e.g. "CI is
+  unconfigured" repeated across two turns before anyone ran `gh run list`).
+
 ## Project Overview
 
 This is `openehr-rails`, a Rails engine gem that turns an openEHR Operational Template (`.opt`, ADL2/XML) into a working Rails resource in one command: `rails generate openehr:scaffold path/to/template.opt --fhir` emits a model, migration, controller, views, i18n locale, and (with `--fhir`) HL7 FHIR R5 `StructureDefinition` profiles. Generated models persist both as typed columns (for forms/search) and as full openEHR RM data (canonical JSON + a typed node graph with immutable-append versioning), and are queryable via a growing AQL surface. A mountable admin engine (`/openehr`) provides template upload/management, runtime scaffolding, and a FHIR R5 facade. Legacy ADL-archetype-only generators (model/controller/migration/helper/assets/i18n/template/template_model, based on `Openehr::Generators::ArchetypedBase`) have been removed — OPT is the only supported input format for scaffolding.
