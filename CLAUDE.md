@@ -16,6 +16,24 @@ Follow the TDD framework as advocated by t-wada:
 - Write tests for areas of concern first
 - opt files must not be changed automatically.
 
+## Ticket-driven workflow
+
+- A change touching runtime behavior, public API, or install-time dependencies requires
+  a GitHub Issue filed before work starts — no code-change commit without one. Changes
+  limited to docs, CI, or dev-tooling config are Issue-optional.
+- **This repo's surface for that rule is not just `lib/`**: `lib/generators/**/templates/`
+  (the migrations and scaffolding code shipped to, and expanded inside, host
+  applications) is shipped product too. Changes there are Issue-required and subject to
+  the same semver judgment as any other runtime-behavior change.
+- Write Acceptance criteria in a spec-verifiable form.
+- Three resolution kinds, signaled in the PR body and in spec comments:
+  - **bug** — a reproduction spec goes red first, then gets fixed green.
+  - **enhancement** — a new-behavior spec goes red first, then gets implemented green.
+  - **pin/hardening** — fixing an existing property in place, where red isn't possible.
+    Mark this `regression pin` in a spec comment instead of staging a fake red.
+- 1 issue = 1 branch = 1 PR (reaffirms the existing convention); the PR closes with
+  `Fixes #N`. A `docs/design/` plan doc opens with the issue number.
+
 ## Working with implementation agents (e.g. Codex)
 
 Codex delivers only working-tree changes; it does not commit. Claude Code reviews the

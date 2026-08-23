@@ -104,6 +104,17 @@ status entry above for verification details.
   `CLAUDE.md`). Applies even if the next release's own changes would otherwise only
   warrant a patch bump.
 
+## December public release prep
+
+- **Issue templates: done (2026-08-23, #29)** — `.github/ISSUE_TEMPLATE/` (bug_report,
+  enhancement, config.yml) is in place, along with `CLAUDE.md`'s "Ticket-driven
+  workflow" section.
+- **demo_assets README**: deferred to December prep. Note: no prior record of this
+  deferral was found anywhere in this repo's docs (`docs/`, `CLAUDE.md`,
+  `demo_assets/`) at the time of writing this entry — `demo_assets/` currently has no
+  README at all, only `demo_seed.rb` and `templates/`. Recording it here now as the
+  first record, not as confirmation of an earlier one.
+
 ## Queue gating (do not start without an explicit go-ahead)
 
 - **#3** (registry checksum/version/status): gated on Anlage Slice 1 operational experience,
