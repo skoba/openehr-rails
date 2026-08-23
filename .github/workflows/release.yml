@@ -12,20 +12,22 @@ jobs:
   ci:
     uses: ./.github/workflows/ci.yml
 
-  release:
-    name: Release to RubyGems
+  build:
+    name: Build gem artifact
     needs: ci
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write # required for RubyGems Trusted Publishing (OIDC)
-      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: '4.0'
           bundler-cache: true
       - name: release:check (clean tree, sibling-file tracking, gemspec validity)
         run: bundle exec rake release:check
-      - name: Release
-        uses: rubygems/release-gem@v1
+      - name: Build gem
+        run: bundle exec rake build
+      - name: Upload gem artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: gem
+          path: pkg/*.gem
