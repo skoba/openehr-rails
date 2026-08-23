@@ -53,16 +53,37 @@ contradicts the actual content, stop instead of tagging and ask for re-arbitrati
   to get repeated, not corrected, if the next write also skips checking (e.g. "CI is
   unconfigured" repeated across two turns before anyone ran `gh run list`).
 
-## Repository boundary
+## Repository-context-dependent commands confirm their target explicitly
 
-- Before running a git state-changing command (`checkout`, `pull`, `commit`, `push`,
-  `merge`, etc.), confirm the most recent `pwd` output is this repository. In a session
-  whose default working directory isn't this repo, always include `cd` on the same
-  command line as the state-changing git command (e.g.
-  `cd /path/to/repo && git checkout ...`) rather than relying on a separate `cd` from an
-  earlier turn - cwd can drift back to the session's default between tool calls.
-  (Prompted by a 2026-08-22 mistaken `checkout`/`pull` run against the wrong repo -
-  caught and self-reported immediately, no lasting effect.)
+A command whose target (repository, branch, or resumed session) is decided by
+ambient state - cwd, current branch, or session history - rather than an
+explicit argument, must have that target pinned before it runs; never assume
+the shell or session is still where an earlier step left it.
+
+- If the tool has an explicit target option, always use it: `git` takes a `cd`
+  to the intended directory on the same command line (or `-C <path>`); `gh`
+  takes `-R <owner>/<repo>` (or `--repo`) on every invocation.
+- If the tool has no such option (e.g. `codex exec`, `codex exec resume`),
+  print `pwd` immediately before the call and confirm it names the intended
+  repository first.
+- Before adopting a new repository-context-dependent command for the first
+  time, decide how this principle applies to it before using it.
+
+(Generalized 2026-08-24, consolidating this repo's prior narrower
+`checkout`/`pull` rule with `openehr-ruby`'s branch-confirmation rule, after a
+third incident of the same class surfaced the need for one shared principle
+covering non-git tools too. Three incidents on record: (1) this repo,
+2026-08-22 - a mistaken `checkout`/`pull` ran against the wrong repo, caught
+and self-reported immediately, no lasting effect; (2) `openehr-ruby`,
+2026-08-23 - a docs-only commit intended for `master` landed on a
+checked-out PR feature branch instead; (3) `anlage`, 2026-08-24 - `codex exec
+resume --last`, run after cwd had silently drifted back to `openehr-ruby`,
+resumed an unrelated stale session in the wrong repo instead of the intended
+one; Codex itself detected the mismatch and made no changes, so there was no
+lasting effect, but the near-miss is what prompted this generalization. See
+`openehr-ruby`'s own copy of this rule and its `docs/backlog.md` entry
+logging the underlying structural fix under consideration - one
+worktree/session per repo instead of per-command vigilance.)
 
 ## Project Overview
 
