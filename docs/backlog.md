@@ -41,7 +41,24 @@ the primary record for openehr-rails CI/release facts; openehr-ruby's own
 `docs/backlog.md` defers to it rather than duplicating (see that file's 2026-08-23
 correction, commit `bf17be7`) — do not duplicate this record back into openehr-ruby.
 
+**Release automation fix landed (2026-08-23, PR #28, `Fixes #27`)**: `release.yml`'s
+RubyGems-publish job is gone; tag pushes now run `ci` + `rake build` +
+`actions/upload-artifact` only (see "Release automation" below for the item this
+closes). Also bumped `actions/checkout` v4 -> v7 to clear the Node 20 deprecation
+warning noted in the v0.4.1 entry above. Verified, not just green: PR #28's own
+`pull_request` run `32611109196` — all 11 `ci.yml` jobs success, and the Node 20
+deprecation annotation is gone from every one of those 11 jobs (checked via the
+GitHub check-runs annotations API, not just the run log — each job's annotations
+array is empty, `[]`). Post-merge `master` `push` run `32611237453` — success. The
+renamed `build` job in `release.yml` (with `actions/checkout@v7` and the new
+`actions/upload-artifact@v7` step) is tag-triggered only and was not exercised by
+either of those runs; per PR #28's own body, no test tag was pushed to verify it —
+that verification is deferred to the next real release (>= 0.5.0), not simulated.
+
 ## Release automation
+
+**Done (2026-08-23, PR #28)** — kept below for the original rationale; see the CI
+status entry above for verification details.
 
 - **Unify the release path**: remove `release.yml`'s RubyGems-publish job/step and
   change tag-push handling to CI + `gem build` + artifact upload only, so the workflow
