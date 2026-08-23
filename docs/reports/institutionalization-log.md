@@ -37,3 +37,15 @@ criteria/Compatibility notes, with the compatibility checklist explicitly listin
 generator-output impact per the same clarification), and `config.yml`
 (`blank_issues_enabled: true`). YAML frontmatter and config.yml validated with
 `YAML.load`.
+
+## R4 -- Landed (Step 3)
+
+Committed everything (CLAUDE.md, docs/backlog.md, this log, .github/ISSUE_TEMPLATE/)
+directly to `master` in one commit, `af94d55`, `Fixes #29` -- confirmed closed
+(`closedAt: 2026-08-23T03:57:03Z`). `docs/backlog.md` gained a "December public
+release prep" section: issue templates marked done, and the demo_assets README
+follow-up recorded as newly noted here (no prior record of that deferral was found
+anywhere in this repo's docs -- flagged rather than asserted as already recorded).
+No branch/PR used, per the task's explicit instruction (small docs-only bootstrapping
+task, semver-neutral) -- not a deviation from the 1issue=1branch=1PR convention just
+institutionalized, which governs code changes going forward from here.
