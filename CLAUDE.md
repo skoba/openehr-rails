@@ -35,6 +35,17 @@ contradicts the actual content, stop instead of tagging and ask for re-arbitrati
   to get repeated, not corrected, if the next write also skips checking (e.g. "CI is
   unconfigured" repeated across two turns before anyone ran `gh run list`).
 
+## Repository boundary
+
+- Before running a git state-changing command (`checkout`, `pull`, `commit`, `push`,
+  `merge`, etc.), confirm the most recent `pwd` output is this repository. In a session
+  whose default working directory isn't this repo, always include `cd` on the same
+  command line as the state-changing git command (e.g.
+  `cd /path/to/repo && git checkout ...`) rather than relying on a separate `cd` from an
+  earlier turn - cwd can drift back to the session's default between tool calls.
+  (Prompted by a 2026-08-22 mistaken `checkout`/`pull` run against the wrong repo -
+  caught and self-reported immediately, no lasting effect.)
+
 ## Project Overview
 
 This is `openehr-rails`, a Rails engine gem that turns an openEHR Operational Template (`.opt`, ADL2/XML) into a working Rails resource in one command: `rails generate openehr:scaffold path/to/template.opt --fhir` emits a model, migration, controller, views, i18n locale, and (with `--fhir`) HL7 FHIR R5 `StructureDefinition` profiles. Generated models persist both as typed columns (for forms/search) and as full openEHR RM data (canonical JSON + a typed node graph with immutable-append versioning), and are queryable via a growing AQL surface. A mountable admin engine (`/openehr`) provides template upload/management, runtime scaffolding, and a FHIR R5 facade. Legacy ADL-archetype-only generators (model/controller/migration/helper/assets/i18n/template/template_model, based on `Openehr::Generators::ArchetypedBase`) have been removed — OPT is the only supported input format for scaffolding.
