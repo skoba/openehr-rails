@@ -322,11 +322,15 @@ at all, so this is the bug-repro red case; (c) neither → no `binding` key, unc
 - `openehr-rails.gemspec:31`: `gem.add_dependency('openehr', '~> 2.3', '>= 2.3.1')` —
   2.3.0 crashes parsing `C_CODE_REFERENCE` (#30, fixed 2.3.1); this compound constraint
   raises the floor without forcing `~> 2.4` (no 2.4-only API is used).
-- **All four lockfiles** move together: `Gemfile.lock:201` plus
-  `gemfiles/rails_{7_2,8_0,8_1}.gemfile.lock` (all currently pin `openehr 2.3.0`) —
-  `bundle update openehr` (expected to resolve to 2.4.2, the current release). Missing
-  one leaves a CI leg crashing on the new fixture instead of exercising the new
-  behavior.
+- **Correction (found during implementation, not part of the original design
+  sketch)**: `*.lock` is gitignored in this repo (`.gitignore:30`) — `Gemfile.lock`
+  and `gemfiles/rails_{7_2,8_0,8_1}.gemfile.lock` are **not tracked in git at all**.
+  CI (`ruby/setup-ruby@v1` with `bundler-cache: true`, `.github/workflows/ci.yml`)
+  resolves a fresh lockfile from the gemspec constraint on every run — there is no
+  committed lockfile to fall out of sync. So the gemspec floor raise alone is
+  sufficient for CI; no lockfile commit step exists. (Locally, `bundle update openehr`
+  still needs to be run once per gemfile to unblock local `bundle exec rspec` against
+  each — done directly, not delegated — but produces no git diff to commit.)
 
 ## 6. Fixture
 
@@ -372,12 +376,14 @@ the arbitrated SNOMED-literal budget (no new real code strings enter the repo;
 
 Ordered within one branch:
 
-1. **Dependency-floor prerequisite** (new spec, e.g.
-   `spec/openehr_rails/opt/parser_spec.rb` addition or a dedicated spec): "parsing
-   `problem_list.opt` does not raise". **Red** under the current lock (openehr 2.3.0 —
-   parse-time crash, #30). **Green** after the gemspec floor + all four lockfile
-   bumps (bump alone changes no rails runtime behavior — run the *full* existing suite
-   in this commit to confirm).
+1. **Dependency-floor prerequisite** (`spec/openehr_rails/opt/parser_problem_list_spec.rb`,
+   new; regression pin, not enhancement — comment says so): "parsing `problem_list.opt`
+   does not raise". **Red** under the then-current lock (openehr 2.3.0 — parse-time
+   crash, `NoMethodError: undefined method 'c_code_reference'`, #30), confirmed via
+   `bundle exec rspec` directly. **Green** after the gemspec floor raise + local
+   `bundle update openehr` (no lockfile commit needed — see §5.4 correction). Full
+   existing suite run in this same step confirmed unchanged (265 examples, 0 failures)
+   — the bump alone changes no rails runtime behavior.
 2. `spec/openehr_rails/opt/parser_term_bindings_spec.rb` (new; **enhancement**,
    spec comment states this). Parses `bmi_calculation_without_uid.opt` and asserts
    `component_terminologies['openEHR-EHR-OBSERVATION.body_mass_index.v2']

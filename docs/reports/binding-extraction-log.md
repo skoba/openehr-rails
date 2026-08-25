@@ -113,3 +113,47 @@ notes (CHANGELOG draft, host-app cache regeneration, semver=minor rationale), an
 deferred/out-of-scope register (§9).
 
 Gate: reporting to the user for approval before Step 2 (branch + Codex implementation).
+
+## R3 -- Step 2 kickoff: push, CLAUDE.md addendum, fixture, dependency floor
+
+User approved Step 2 with five conditions (0-4, plus a no-tag note). Executed
+immediately (condition 0): pushed the two local-only R1/R2 commits to
+`origin/master` (`c586a8c`, `5470d29`). Added the one-line CLAUDE.md addendum the
+user specified ("gate report artifacts must be pushed"), as its own commit
+(`c7a577f`), pushed.
+
+Created branch `feature/field-extractor-terminology-bindings` (1 issue = 1 branch =
+1 PR). Copied anlage's `ProblemList.opt` into `spec/templates/problem_list.opt`
+(condition 2: provenance header declares Anlage canonical, cites both the file's
+sha256 and the anlage commit that introduced it, `7466c80`, verified present as of
+anlage HEAD `706e4a7`). Verified the copy byte-identical to the source via `diff`
+before committing (`0bbbc47`).
+
+Directly smoke-tested parsing `problem_list.opt` against the then-current openehr
+2.3.0 lock: raises `NoMethodError: undefined method 'c_code_reference'` — the exact
+#30 crash the design doc predicted. Wrote
+`spec/openehr_rails/opt/parser_problem_list_spec.rb` (regression-pin, not
+enhancement: pins that the floor raise fixes what it claims to, not new
+FieldExtractor/ProfileGenerator behavior) and confirmed it red via `bundle exec
+rspec` before touching the gemspec.
+
+**Correction found while executing (not part of the original design)**: `*.lock` is
+gitignored in this repo (`.gitignore:30`) -- `Gemfile.lock` and the three
+`gemfiles/rails_*.gemfile.lock` files are not tracked in git at all. CI
+(`ruby/setup-ruby@v1` with `bundler-cache: true`) resolves a fresh lockfile from the
+gemspec constraint on every run. This means the design doc's "all four lockfiles
+must move together or a CI leg breaks" framing was wrong -- there is no committed
+lockfile to go stale. Corrected `docs/design/binding-extraction-plan.md` §5.4 and §7
+step 1 accordingly. The gemspec floor raise (`~> 2.3`, `>= 2.3.1`) is the only
+committed change; `bundle update openehr` was still run locally across all four
+gemfiles (to unblock local test runs against each), producing no diff to commit.
+
+Raised the gemspec floor, ran `bundle update openehr` locally (resolved to 2.4.2),
+confirmed the new spec green, then ran the full existing suite: **265 examples, 0
+failures** -- the dependency bump alone changes no existing rails behavior, as
+expected.
+
+Design-doc TDD plan's step 1 (§7) is complete. Next: hand off to Codex for steps
+2-5 (parser.rb term_bindings enrichment, FieldExtractor key additions +
+primary_value_alternative port, ProfileGenerator restructure, remaining specs),
+per condition 1.
