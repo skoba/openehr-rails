@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `OpenehrRails::Fhir::FshGenerator` renders one FHIR Shorthand profile per
+  openEHR entry, including metadata, archetype codes, value constraints,
+  component slicing, quantity units, fixed terminology codes, and required
+  external value-set bindings. Observation-mapped output is Sushi-verified;
+  multi-leaf non-Observation entries have a known structural gap tracked as #33.
+
 ## [0.5.0] - 2026-08-25
 
 ### Added
