@@ -34,6 +34,23 @@ actually running, not just present:
   push will reproduce the same red run. See "Release automation" below.
 - Most recent `master` push at the time of this record (`4055ec3`): CI run
   `32569774700`, success.
+- **Tag `v0.5.0` (2026-08-25, #30): `release.yml` run
+  [32831263811](https://github.com/skoba/openehr-rails/actions/runs/32831263811) --
+  overall conclusion **success**, all 12 jobs green (9 reused `ci.yml` spec-matrix
+  jobs, `demo smoke`, `application template smoke test`, `Build gem artifact`).**
+  First fully-green tag-push run on record -- confirms the "Release automation fix
+  landed (2026-08-23, PR #28)" note below actually fixed the structural red
+  described above, not just that the workflow file changed (`v0.4.1`/`v0.4.0`/`v0.3.0`
+  were all red at the now-removed RubyGems-publish step; `v0.5.0` has no such step to
+  fail at). Downloaded the run's `gem` artifact and independently built
+  `pkg/openehr-rails-0.5.0.gem` locally at the same tagged commit (`69db63f`): both
+  197632 bytes, identical sha256
+  `e07815bd1c86736403cbb558fec869fbe04666f695e6cc12a41dad9be77230e6`. RubyGems
+  publish (human `gem push`, per "Release automation" below) confirmed complete via
+  `https://rubygems.org/api/v1/versions/openehr-rails.json`: version `0.5.0`,
+  `created_at: 2026-08-25T09:26:15.342Z`, published `sha` field matches the same
+  sha256 above exactly -- local build, CI artifact, and the published gem are all
+  byte-identical.
 
 Recorded here after this file previously claimed "this repo currently has no CI
 workflow gating pull requests" — wrong on both existence and execution. This file is

@@ -386,3 +386,26 @@ something this session executes -- the sha256 above is the value to check the
 locally-published gem against before/after `gem push`, and after publish confirms.
 Awaiting that confirmation before the final backlog/CHANGELOG follow-up (condition 5)
 and returning to dormancy.
+
+## R9 -- RubyGems publish confirmed, backlog updated, dormant
+
+User reported publish complete. Verified directly rather than trusting the report at
+face value: queried `https://rubygems.org/api/v1/versions/openehr-rails.json`.
+`openehr-rails` `0.5.0` is listed, `created_at: 2026-08-25T09:26:15.342Z`, and its
+published `sha` field (`e07815bd1c86736403cbb558fec869fbe04666f695e6cc12a41dad9be77230e6`)
+matches R8's CI-artifact and local-build sha256 exactly -- full chain confirmed
+byte-identical: local build == CI artifact == published gem.
+
+Added a bullet to `docs/backlog.md`'s "CI status" section recording the `v0.5.0`
+tag run (first fully-green tag-push run, confirming PR #28's release-path fix)
+and the three-way sha256 match including the now-confirmed RubyGems listing.
+Verified `CHANGELOG.md`'s `[0.5.0] - 2026-08-25` section is correctly finalized
+with a fresh empty `[Unreleased]` above it -- no further edit needed. Full suite
+re-confirmed green (275 examples, 0 failures) before this commit.
+
+**Issue #30 fully closed out**: filed, designed, implemented (Codex + independent
+review), merged, released as `0.5.0`, published to RubyGems, and the upstream
+knowledge shared back to `skoba/openehr-ruby#31`. `anlage`'s FSH export
+(`skoba/anlage#17`) can now pick up `field[:value_set_uri]`/`field[:code_bindings]`
+via a normal `bundle update` -- the consumption prerequisite flagged in R7 is
+satisfied. Returning to dormancy.
