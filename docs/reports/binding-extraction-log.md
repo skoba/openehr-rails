@@ -262,3 +262,24 @@ Next: condition 4 (comment on `skoba/openehr-ruby#31` with three findings, Engli
 addendum to the existing WP2-style comment) and condition 5 (release inventory +
 0.5.0 proposal, noting Anlage's FSH downstream dependency on this release actually
 shipping).
+
+## R6 -- Upstream knowledge comment on openehr-ruby#31 (cross-repo, target: skoba/openehr-ruby)
+
+Posted an addendum comment to `skoba/openehr-ruby#31` (English, matching the
+existing WP2-comment's numbered-section format, explicitly framed as a follow-up to
+that comment rather than a duplicate):
+https://github.com/skoba/openehr-ruby/issues/31#issuecomment-5407936806
+
+Three findings recorded there: (1) OPT's `term_bindings` XML shape differs
+structurally from `XMLArchetypeParser`'s (flat attribute+text vs. nested
+items/value) -- only the target in-memory shape should be reused by a future
+`OPTParser` fix, not the ADL-side XML-reading logic; (2) a second, independent
+reference implementation now exists (`openehr-rails`'s `populate_term_bindings!`,
+populating `ArchetypeOntology#term_bindings` directly with a nil-guard removal
+condition, vs. anlage's side-channel `Hash`) -- two independent implementations
+converging on the same target shape is a signal for what the upstream shape should
+be; (3) a single at-code can carry simultaneous bindings to more than one
+terminology (BMI's `at0004`: both SNOMED-CT and LOINC at once) -- not previously
+recorded on this issue, and a constraint the eventual fix's data shape must support.
+Explicitly did not commit anlage or openehr-rails to auto-removing their bypasses
+once this issue ships (separate future work on each side).
