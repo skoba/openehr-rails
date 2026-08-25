@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-08-25
+
 ### Added
 - `FieldExtractor` fields now always include `value_set_uri` for external
   `C_CODE_REFERENCE` value sets and `code_bindings` for ontology-level fixed-code
