@@ -96,6 +96,21 @@ status entry above for verification details.
   #36 moves toward making STRICT the default, this comment's punctuation is the prerequisite
   fix on this repo's side.
 
+## Fixture conventions
+
+- **Licensed terminology-code literals in spec expectations: keep minimal, cite the
+  source fixture's file:line.** Adopted from Anlage's C2 firewall precedent (SNOMED
+  CT is a licensed terminology; reproducing its codes verbatim in more places than
+  necessary widens exposure for no test-coverage benefit). Applies to SNOMED CT
+  specifically; **LOINC is exempt** (permissively licensed). Current count (#30,
+  2026-08-25): **2 SNOMED literal occurrences** in spec expectation code, both the
+  same code value `60621009`, both traceable to the same source fixture line --
+  `spec/openehr_rails/opt/field_extractor_binding_spec.rb:40` and
+  `spec/openehr_rails/opt/parser_term_bindings_spec.rb:28`, both citing
+  `spec/templates/bmi_calculation_without_uid.opt:1689` (and the identical
+  `spec/generators/templates/bmi_calculation.opt:1692`). No new SNOMED literal was
+  introduced by #30 -- reused the code already present in these existing fixtures.
+
 ## Versioning
 
 - **Next release must be >= 0.5.0, regardless of its own content**, to retroactively
