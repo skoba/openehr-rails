@@ -157,3 +157,60 @@ Design-doc TDD plan's step 1 (§7) is complete. Next: hand off to Codex for step
 2-5 (parser.rb term_bindings enrichment, FieldExtractor key additions +
 primary_value_alternative port, ProfileGenerator restructure, remaining specs),
 per condition 1.
+
+## R4 -- Codex implementation, independent review, commit (#30 steps 2-4/5)
+
+Launched `codex exec -C /home/skoba/src/openehr-rails --approve-for-me` (first
+attempt with `-s workspace-write` combined with `--approve-for-me` errored --
+those two flags are mutually exclusive on this codex-cli version; retried with
+`--approve-for-me` alone, which succeeded) against a prompt covering design doc
+sections 5.1-5.3 and TDD-plan steps 2-4, explicitly scoped away from step 1 (already
+done) and from touching fixtures/gemspec/lockfiles.
+
+Codex delivered working-tree-only changes (no commits, as required): `parser.rb`
+(`populate_term_bindings!` + 3 helper methods, matching the design doc's method
+sketch closely including the exact Japanese 撤去条件 comment),
+`field_extractor.rb` (`value_set_uri`/`code_bindings` keys, `primary_value_alternative`
+port into `value_constraint`, a `defining_code_of` refactor unifying duplicated
+lookup logic), `profile_generator.rb` (the DV_CODED_TEXT branch restructure), three
+spec files, and a `CHANGELOG.md` [Unreleased] entry. Self-reported: 275 examples/0
+failures, RuboCop clean on touched files, no commits made.
+
+**Independent review performed** (not just trusting the self-report): read every
+diff hunk against the design doc section by section (5.1/5.2/5.3 each matched
+closely); re-ran the full suite myself (confirmed 275 examples, 0 failures) and
+RuboCop on all seven touched/added files myself (found one offense --
+`Style/ExpandPathArguments` -- in `parser_problem_list_spec.rb`, a file I had
+authored in R3, not a Codex file; fixed directly). Verified `git diff --check`
+clean and that no fixture/gemspec/lockfile was touched. Spot-checked the trickier
+spec assertion (`profile_generator_spec.rb`'s "keeps a local code-list binding free
+of a valueSet" -- walks `elements.drop(code_index + 1).find { |e| e[:type] }` to
+locate the matching value element) against `ProfileGenerator#component_slice`'s
+actual output shape and confirmed it's unambiguous (code_path/code_constraint have
+no `:type` key; the immediately-following value_constraint does).
+
+**Incident, caught and recovered before it caused loss**: while splitting Codex's
+delivery into staged commits (isolating the parser.rb change to verify it was
+independently green via `git stash push --keep-index -u`), the stash command
+printed a pathspec error (`Too many revisions...` / a pathspec-magic parse error)
+for `field_extractor_binding_spec.rb` specifically, and that untracked file then
+appeared to be missing from both the working tree and `git stash show -p`'s
+summary. Before assuming data loss, verified: the file's exact content was still
+present in this session's own context (read via `cat` minutes earlier for the
+diff review above), recreated it from that content, then confirmed via
+`git ls-tree stash@{0}^3` that the stash's untracked-files commit had, in fact,
+captured the file all along (the error was cosmetic/non-fatal) -- diffed my
+recreated file against the stash's copy: byte-identical. No data was actually
+lost; dropped the redundant stash and re-ran the full suite to confirm the working
+tree was intact (275 examples, 0 failures) before proceeding. Abandoned the
+per-step stash-verification approach as not worth the risk for marginal benefit;
+committed steps 2-4 as one cohesive commit instead (the three files are tightly
+coupled -- one feature, reviewed and tested together).
+
+Committed as two commits: `2448588` (the RuboCop fix, mine) and `6efc161` (Codex's
+implementation, `Implemented-by: Codex` trailer, full description of every
+component). Pushed both.
+
+Gate: proceeding to PR (`Fixes #30`) and the pre-merge gate report per condition 3
+(pushed SHAs, full suite/CI, both binding types' actual extraction, and a
+ProfileGenerator JSON diff showing `valueSet` appear).
