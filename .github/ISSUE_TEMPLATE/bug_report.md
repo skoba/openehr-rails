@@ -16,6 +16,9 @@ assignees: ''
 - `openehr` version: <!-- e.g. ~> 2.3 -->
 - Rails version: <!-- e.g. 8.1 -->
 - Ruby version: <!-- e.g. 3.3, 3.4, 4.0 -->
+- If the report involves an OPT/ADL file: the generating tool and its
+  version (e.g. Better Archetype Designer / Ocean Template Designer 2.6 /
+  ADL Workbench / LinkEHR / HMC).
 
 ## Reproduction
 
