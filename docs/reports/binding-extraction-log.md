@@ -214,3 +214,51 @@ component). Pushed both.
 Gate: proceeding to PR (`Fixes #30`) and the pre-merge gate report per condition 3
 (pushed SHAs, full suite/CI, both binding types' actual extraction, and a
 ProfileGenerator JSON diff showing `valueSet` appear).
+
+## R5 -- PR, merge, and the three pre-merge conditions
+
+Opened PR #31 (`Fixes #30`). CI: 11/11 checks passed (spec matrix x9, demo smoke,
+template smoke), GitHub Actions run 32823731709. Ran a scratch demonstration
+(`/tmp/.../gate_evidence_spec.rb`, not committed) proving both binding types extract
+from real fixtures and that `ProfileGenerator`'s JSON facade now emits `valueSet`;
+included in the pre-merge gate report to the user alongside the pushed-SHA list and
+suite/CI results.
+
+User approved merge with three small pre-merge conditions, all addressed before
+merging:
+
+1. **Fixture provenance check** -- `problem_list.opt`'s header already had the
+   canonical declaration (anlage SHA `b821b98b...`, introducing commit `7466c80`,
+   verified-as-of anlage HEAD `706e4a7`) from R3. Found a real disambiguation need
+   though: this repo already has `demo_assets/templates/problem_list.opt` (English,
+   2024-02-16, `repositoryId=openehr-lesson`, zero `term_bindings`/`referenceSetUri`)
+   -- a same-named but unrelated fixture used by the demo app. Added a one-line
+   disambiguation to the header (`924c37a`); verified the XML body still
+   byte-identical to anlage's source both before and after.
+2. **SNOMED literal-budget count** -- counted directly: 2 occurrences in spec
+   expectation code (`field_extractor_binding_spec.rb:40`,
+   `parser_term_bindings_spec.rb:28`), both the same code value `60621009`, both
+   citing the same source fixture line. Recorded a new `docs/backlog.md` "Fixture
+   conventions" section adopting Anlage's C2-firewall-style budget policy (SNOMED CT
+   minimal-and-cited; LOINC exempt, permissive license) with this count as the
+   baseline (`8edb25a`).
+3. **Incident-recovery principle** -- added to `CLAUDE.md`'s Verification section:
+   search git's own storage (stash/reflog/fsck) before reconstructing a seemingly-lost
+   file from memory, and independently diff-verify any reconstruction used (`8edb25a`,
+   same commit as item 2).
+
+Both docs commits landed on the feature branch (not master directly, unlike the
+earlier gate-reporting-push CLAUDE.md addition in R3) -- a minor inconsistency in
+where repo-wide convention changes land, accepted rather than corrected via further
+git surgery, since they reach master via the merge regardless.
+
+**Merged PR #31** via `gh pr merge 31 --merge --delete-branch=false` (regular merge
+commit, no squash/rebase, per condition). Merge commit `eb08b23`. Fast-forwarded
+local `master` to it, re-ran the full suite directly on `master`: **275 examples, 0
+failures**. Confirmed issue **#30 auto-closed** (`state: CLOSED`,
+`stateReason: COMPLETED`, `closedAt` matching the merge timestamp exactly).
+
+Next: condition 4 (comment on `skoba/openehr-ruby#31` with three findings, English,
+addendum to the existing WP2-style comment) and condition 5 (release inventory +
+0.5.0 proposal, noting Anlage's FSH downstream dependency on this release actually
+shipping).
