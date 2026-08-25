@@ -283,3 +283,63 @@ terminology (BMI's `at0004`: both SNOMED-CT and LOINC at once) -- not previously
 recorded on this issue, and a constraint the eventual fix's data shape must support.
 Explicitly did not commit anlage or openehr-rails to auto-removing their bypasses
 once this issue ships (separate future work on each side).
+
+## R7 -- Release inventory (v0.4.1..master) and 0.5.0 proposal
+
+Classified every non-merge commit since `v0.4.1` (33 commits; per-commit file lists
+pulled directly via `git log --name-only`, not asserted from memory) against
+CLAUDE.md's release convention:
+
+- **Neutral (30 commits)**: everything touching only `CLAUDE.md`, `docs/**`,
+  `.github/ISSUE_TEMPLATE/**`, `.github/workflows/**`, or a `spec/**` fixture/spec
+  file. Includes the institutionalization work (#29), the release-path CI fix (#28),
+  and #30's own docs/fixture/spec-only commits (`0bbbc47`, `924c37a`, `2448588`,
+  design doc and report log commits). Fixture-comment-only fixes (`6d8f284`,
+  `03d3808`) classified neutral too, consistent with how `v0.4.1`'s own CHANGELOG
+  entry treated the same kind of change (not mentioned there either) -- test assets
+  are packaged via `gem.files = \`git ls-files\`` but are not shipped runtime code,
+  not executed by any consuming application, and don't change public API or
+  install-time dependencies.
+- **`c571bf5`** (openehr dependency floor `~> 2.3` -> `~> 2.3, >= 2.3.1`): touches
+  the gemspec's runtime dependency declaration -- one of the three surfaces the
+  convention names explicitly. Classified **minor**, following this repo's own
+  `v0.4.1` errata precedent (a `required_ruby_version` floor raise was called
+  minor-level there; an equivalent gem-dependency floor raise here gets the same
+  treatment).
+- **`6efc161`** (the FieldExtractor/Parser/ProfileGenerator feature commit): touches
+  `lib/` directly, adds two new always-present field-hash keys (new public API
+  surface) and fixes the `ProfileGenerator` `valueSet` omission bug. Classified
+  **minor** (new backward-compatible functionality dominates; the bug fix alone
+  would only be patch).
+
+No commit removes or breaks existing public API -- the `ProfileGenerator` change is
+purely additive (adds a binding where none existed; the existing local-`code_list`
+case is regression-pinned unchanged) and the multi-alternative `rm_type` change only
+affects OPT shapes no existing fixture has. **Overall: minor**, i.e. `v0.4.1 ->
+v0.5.0`. This is a content-driven conclusion (not merely riding the pre-existing
+`docs/backlog.md` "next release must be >= 0.5.0" floor, though it also satisfies
+that floor with no conflict to arbitrate). `CHANGELOG.md`'s current `[Unreleased]`
+content (Added/Fixed/Changed, already written at merge time per this repo's
+record-batching convention) matches this classification with no further edits
+needed beyond finalizing the version header.
+
+**Downstream dependency flagged**: `anlage`'s FSH export (`skoba/anlage#17`,
+`docs/design/fsh-plan.md` "コミット分割" 後段) has its binding-mapping step blocked
+specifically on `openehr-rails` actually **shipping** a release containing this
+work -- anlage consumes `openehr-rails` as a gem dependency and can only pick up
+`field[:value_set_uri]`/`field[:code_bindings]` via a `bundle update` once `0.5.0`
+(or later) is published, not merely merged to this repo's `master`. Merging PR #31
+(R5) satisfies anlage's *design* prerequisite; it does not yet satisfy anlage's
+*consumption* prerequisite -- that needs an actual tagged, gem-pushed release.
+
+**Recommendation: proceed to 0.5.0.** Not executed yet in this pass -- prepared
+mechanically (version bump, CHANGELOG header) and the tag itself are held for an
+explicit go-ahead, since tag-push is a public, only-partially-reversible action.
+Noted for that step: this repo's `release.yml` (fixed in PR #28, per `docs/backlog.md`
+"Release automation") only runs CI + `rake build` + artifact-upload on a `v*` tag
+push -- it does **not** push to RubyGems automatically (that remains a deliberate,
+separate human `gem push`, the established operating model per the same backlog
+section). So tagging `v0.5.0` and pushing the tag is lower-risk than it might sound;
+publishing to RubyGems is a distinct, later, human-executed step. This would also be
+the **first real tag to exercise PR #28's fixed release path end-to-end** -- its own
+body deferred that verification to "the next real release (>= 0.5.0)," which this is.
