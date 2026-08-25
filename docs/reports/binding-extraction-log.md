@@ -68,3 +68,48 @@ sha256 and CKM/Archetype-Designer lineage) rather than hand-reducing it.
 
 Full design detail: `docs/design/binding-extraction-plan.md` (to be written in Step 1,
 opening with issue #30 per convention).
+
+## R2 -- Design doc (Step 1)
+
+Wrote `docs/design/binding-extraction-plan.md` (opens with issue #30, per convention).
+Direct verification performed while writing (not just carried forward from R1's
+Explore-agent findings):
+
+- Confirmed `OpenEHR::RM::DataTypes::Text::CodePhrase` and
+  `OpenEHR::RM::Support::Identification::TerminologyID` are the correct fully-qualified
+  constant paths (openehr-ruby `lib/openehr/rm/data_types/text.rb:6-9,60`,
+  `lib/openehr/rm/support/identification.rb:4-8,152`).
+- Read OPT's actual `term_bindings` XML structure directly
+  (`spec/templates/bmi_calculation_without_uid.opt:1683-1702`) and found it is
+  **structurally different** from ADL/XML-archetype `term_bindings`
+  (`xml_archetype_parser.rb:189,214-230`) — the latter is a flat
+  `terminology="..." code="..."` + single qualified-reference text node, split by
+  `code_phrase_from_binding`; OPT's is a `term_bindings[@terminology]` wrapping nested
+  `items[@code]/value/{terminology_id/value, code_string}` (a serialized CODE_PHRASE,
+  already bracketed-qualified, no `::`-splitting needed). This meant the initial design
+  sketch's "reuse XMLArchetypeParser's ontology_bindings logic" framing was corrected
+  to: match its **target in-memory shape** only, read OPT's own XML structure directly
+  (mirroring anlage's `extract_code_bindings`, not `ontology_bindings`).
+- Probed a `term_bindings` element's ancestor chain directly (small Python/lxml script
+  against the bmi fixture) and confirmed the nearest ancestor carrying `archetype_id`
+  is the owning `children[@archetype_id]` (`C_ARCHETYPE_ROOT`) node — so a
+  nearest-ancestor-first walk attributes bindings correctly, including for embedded
+  archetypes (consistent with #25's per-element archetype_id threading).
+- Computed anlage `ProblemList.opt`'s sha256 directly
+  (`b821b98beebfba9e758cc0429a91bb98aedb7d50de684424f0eb58d51e4a47c1`) rather than
+  transcribing the Explore agent's (truncated) citation, for the fixture's provenance
+  comment text.
+- Confirmed `ArchetypeOntology#term_bindings=` has no validation/mandatory-arg
+  constraint (`ontology.rb:7-24`), so post-construction assignment
+  (`terminology.term_bindings = bindings`) is safe.
+
+Design doc records: parse-time enrichment location and exact method sketch, the
+corrected XML-structure understanding above, the primary-value-alternative port
+(§4, user-arbitrated 2026-08-25 to include in this same issue), the ProfileGenerator
+restructure (not a one-line fix), the dependency-floor/lockfile prerequisite, the real
+`problem_list.opt` fixture plan with provenance text, a 5-step TDD sequence with
+red/green expectations and resolution-kind (enhancement vs bug) per spec, compatibility
+notes (CHANGELOG draft, host-app cache regeneration, semver=minor rationale), and a
+deferred/out-of-scope register (§9).
+
+Gate: reporting to the user for approval before Step 2 (branch + Codex implementation).
