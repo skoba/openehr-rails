@@ -123,9 +123,11 @@ module OpenehrRails
             code: field[:units]
           }
         when 'DV_CODED_TEXT'
-          return if field[:code_list].nil? || field[:code_list].empty?
+          has_local_codes = !(field[:code_list].nil? || field[:code_list].empty?)
+          return unless has_local_codes || field[:value_set_uri]
 
           element[:binding] = { strength: 'required' }
+          element[:binding][:valueSet] = field[:value_set_uri] if field[:value_set_uri]
         end
       end
 

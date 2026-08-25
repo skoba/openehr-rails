@@ -18,7 +18,10 @@ module OpenehrRails
     #   code_list:       allowed codes for DV_CODED_TEXT
     #   code_labels:     {code => text} resolved from the terminology
     #   terminology_id:  terminology of the code list
+    #   value_set_uri:   external value-set URI for DV_CODED_TEXT
+    #   code_bindings:   [{system_uri:, code:}] ontology bindings for the node
     #   required:        true when the entry and element are both mandatory
+    # rubocop:disable Metrics/ClassLength
     class FieldExtractor
       ENTRY_TYPES = %w[OBSERVATION EVALUATION INSTRUCTION ACTION ADMIN_ENTRY].freeze
       SECTION_TYPE = 'SECTION'.freeze
@@ -163,6 +166,8 @@ module OpenehrRails
           archetype_id: archetype_id,
           entry_rm_type: entry[:rm_type],
           column_type: COLUMN_TYPES.fetch(rm_type, :string),
+          value_set_uri: nil,
+          code_bindings: code_bindings_for(archetype_id, element.node_id),
           required: entry[:required] && mandatory?(element)
         }
         field.merge!(quantity_constraints(constraint)) if rm_type == 'DV_QUANTITY'
@@ -174,7 +179,11 @@ module OpenehrRails
       def value_constraint(element)
         attrs = element.attributes || []
         value = attrs.find { |a| a.rm_attribute_name == 'value' }
-        value&.children&.first
+        children = value&.children || []
+        return children.first if children.size <= 1
+
+        code_reference_class = OpenEHR::AM::OpenEHRProfile::DataTypes::Text::CCodeReference
+        children.find { |child| defining_code_of(child).is_a?(code_reference_class) } || children.first
       end
 
       def quantity_constraints(constraint)
@@ -189,17 +198,39 @@ module OpenehrRails
       end
 
       def coded_text_constraints(constraint, archetype_id)
-        defining_code = (constraint.attributes || [])
-                        .find { |a| a.rm_attribute_name == 'defining_code' }
-        code_phrase = defining_code&.children&.first
+        code_phrase = defining_code_of(constraint)
         return {} unless code_phrase
 
         codes = (code_phrase.code_list || []).reject { |c| c.nil? || c.empty? }
         {
           code_list: codes,
           code_labels: codes.to_h { |code| [code, term_text(archetype_id, code) || code] },
-          terminology_id: code_phrase.terminology_id&.value
+          terminology_id: code_phrase.terminology_id&.value,
+          value_set_uri: value_set_uri(code_phrase)
         }
+      end
+
+      def defining_code_of(constraint)
+        defining_code = (constraint.attributes || [])
+                        .find { |attribute| attribute.rm_attribute_name == 'defining_code' }
+        defining_code&.children&.first
+      end
+
+      def value_set_uri(code_phrase)
+        code_reference_class = OpenEHR::AM::OpenEHRProfile::DataTypes::Text::CCodeReference
+        code_phrase.reference_set_uri if code_phrase.is_a?(code_reference_class)
+      end
+
+      def code_bindings_for(archetype_id, node_id)
+        terminology = @template.component_terminologies[archetype_id]
+        bindings = terminology.respond_to?(:term_bindings) ? terminology.term_bindings : nil
+        return [] unless bindings
+
+        bindings.flat_map do |system_uri, codes|
+          Array(codes[node_id]).map do |code_phrase|
+            { system_uri: system_uri, code: code_phrase.code_string }
+          end
+        end
       end
 
       # DV_ORDINAL/DV_SCALE constrain their value to a fixed list of
@@ -272,5 +303,6 @@ module OpenehrRails
         nil
       end
     end
+    # rubocop:enable Metrics/ClassLength
   end
 end
