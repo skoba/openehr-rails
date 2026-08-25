@@ -343,3 +343,46 @@ section). So tagging `v0.5.0` and pushing the tag is lower-risk than it might so
 publishing to RubyGems is a distinct, later, human-executed step. This would also be
 the **first real tag to exercise PR #28's fixed release path end-to-end** -- its own
 body deferred that verification to "the next real release (>= 0.5.0)," which this is.
+
+## R8 -- v0.5.0 tagged, release.yml verified green, artifact reproducibility confirmed
+
+User approved tagging. Executed:
+
+1. `lib/openehr_rails/version.rb` bumped `0.4.1` -> `0.5.0`; `CHANGELOG.md`'s
+   `[Unreleased]` retitled to `## [0.5.0] - 2026-08-25` (fresh empty `[Unreleased]`
+   left above it), matching the exact pattern the `0.4.1` release-bump commit used
+   (`2cddb0d`, verified by reading its diff directly rather than guessing the
+   convention). Full suite re-run after the bump: 275 examples, 0 failures.
+   `bundle exec rake release:check` failed first (dirty tree, expected -- the check
+   requires a clean tree), then passed clean after committing (`69db63f`, pushed).
+   `git tag -a v0.5.0` (annotated, full CHANGELOG-derived message) and
+   `git push origin v0.5.0`.
+
+2. **`release.yml` run verified green end-to-end** -- GitHub Actions run
+   [32831263811](https://github.com/skoba/openehr-rails/actions/runs/32831263811),
+   triggered by the `v0.5.0` tag push. Overall conclusion: **success** (confirmed via
+   the run's own `conclusion` field, not inferred from individual step icons). All 12
+   jobs green: the 9 reused `ci.yml` spec-matrix jobs, `demo smoke`, `application
+   template smoke test`, and `Build gem artifact` (its `release:check`, `Build gem`,
+   and `Upload gem artifact` steps all succeeded). This is the **first tag-push run
+   with a fully green overall conclusion** -- `v0.4.1`
+   (`32550344344`) and `v0.4.0` (`31660884406`) were both structurally red at the
+   now-removed RubyGems-publish step (`docs/backlog.md` "CI status" section); that
+   step no longer exists in `release.yml` (PR #28), and this run empirically confirms
+   its removal actually fixed the red -- not just that the workflow file changed.
+
+3. **Artifact/local-build reproducibility confirmed** -- downloaded the run's `gem`
+   artifact (`gh run download 32831263811 -n gem`):
+   `openehr-rails-0.5.0.gem`, 197632 bytes, sha256
+   `e07815bd1c86736403cbb558fec869fbe04666f695e6cc12a41dad9be77230e6`. Ran
+   `bundle exec rake build` locally at the same tagged commit (`69db63f`, clean
+   tree): `pkg/openehr-rails-0.5.0.gem`, same size, **identical sha256**. CI's
+   built artifact and a local build from the same commit are byte-identical --
+   confirms build reproducibility, not just "both builds succeeded."
+
+RubyGems publish is next: per condition, that remains a deliberate human `gem push`
+step (established operating model, `docs/backlog.md` "Release automation"), not
+something this session executes -- the sha256 above is the value to check the
+locally-published gem against before/after `gem push`, and after publish confirms.
+Awaiting that confirmation before the final backlog/CHANGELOG follow-up (condition 5)
+and returning to dormancy.
