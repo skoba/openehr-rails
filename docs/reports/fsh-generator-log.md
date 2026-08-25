@@ -38,3 +38,127 @@ codes already checked into this repo's fixtures.
 Design doc written: `docs/design/fsh-generator-plan.md`. Proceeding to
 implementation (Codex, reviewed and committed by Claude Code per this
 repo's division of labor).
+
+---
+
+## R2 -- Implementation, two correction rounds, commit `5f669af` (2026-08-26)
+
+### Round 0: Codex's first delivery
+
+Codex implemented `FshGenerator` covering the full v1 scope table.
+Self-reported: "SUSHI 3.16.0 was present, but could not finish loading
+its R5 package under restricted network access" -- Codex's own sandbox
+could not actually verify the generated FSH compiles. Claude Code has
+unrestricted network access in this session and re-verified directly.
+
+### Round 1 finding: conflicting CodeableConcept assignments
+
+Regenerated FSH from Codex's actual committed code (not a
+paraphrase) and piped it through `sushi` (v3.16.0, real local install)
+myself. `bmi_calculation.opt`'s `body_mass_index.v2` (2 code_bindings
+on `at0004`: SNOMED-CT + LOINC) produced:
+
+```
+error Cannot assign http://snomed.info/sct to this element; a different
+uri is already assigned: "http://openehr.org/ckm/archetypes".
+error Cannot assign http://loinc.org to this element; a different uri
+is already assigned: "http://openehr.org/ckm/archetypes".
+```
+
+Root cause: the original `binding_rules` wrote one `* path =
+SYSTEM#code` fixed-value assignment per `code_bindings` entry, stacked
+after the archetype_id anchor's `.coding.system`/`.coding.code` pair.
+`* path = SYSTEM#code` is FSH shorthand for fixing an *entire*
+CodeableConcept to one coding -- writing it twice (or after an
+existing `.coding.system`/`.coding.code` pair) is a conflicting
+reassignment of the same slot, not an append.
+
+Explored the fix space empirically (all runs actually compiled with
+`sushi`, not assumed):
+- `code.coding[0]`/`code.coding[1]` explicit indexing without a prior
+  slicing declaration: **fails** ("No element found at path
+  code.coding[0]") -- FHIR profile differentials don't support
+  indexing into an un-sliced repeating element this way.
+- `code.coding[+]`/`[=]` append syntax, same issue: **fails**,
+  identical error.
+- Unindexed `code.coding.system = X` / `code.coding.code = Y` alone
+  (no second coding attempted): **compiles** (0 Errors) -- but this
+  form sets a *pattern* on the coding sub-elements
+  (`patternUri`/`patternCode` in the resulting differential), not an
+  indexed instance value, which is why indexing on top of it doesn't
+  work.
+- **Slicing `code.coding` by the `system` value discriminator, one
+  named slice per source** (`ckm` for the archetype_id anchor, one per
+  `code_bindings` entry, using the terminology alias downcased as the
+  slice name): **compiles, 0 Errors**, both standalone (`code.coding`)
+  and nested inside a `component[slice].code.coding` path. This is the
+  fix that shipped.
+
+Sent Codex the exact verified-working FSH pattern (both the standalone
+and nested-in-component forms, copy-pasteable) plus the failing
+pattern and its error, and asked for a rewrite -- not a vague "fix the
+conflict" instruction. Codex's fix matches: `code_rules` now branches
+on whether `bindings` is empty (`simple_code_rules`, unchanged
+unindexed form) vs non-empty (new sliced form via `binding_slices`).
+
+### Round 2 finding: `component` doesn't exist on `Condition`
+
+Re-verified again after the round-1 fix -- `bmi_calculation.opt`
+(all-`Observation` entries) now compiles with **0 Errors**, confirmed
+independently (regenerated from the committed code, not from Codex's
+pasted example). `problem_list.opt` (single `EVALUATION` entry, 5
+leaves) does not: **29 errors**, all `"No element found at path
+component..."` for `Condition`.
+
+Root cause: `TypeMap::ENTRY_RESOURCES` maps `EVALUATION` → `Condition`
+(`type_map.rb:14`). `Condition` has no `component` element -- that's
+`Observation`-specific in FHIR R5. `FshGenerator`'s multi-leaf branch
+(mirroring `ProfileGenerator#component_elements`) always emits
+`component`-path rules whenever `entry[:fields].size > 1`, with no
+check for whether the target `resource_type` actually has a
+`component` slot. This is a **pre-existing gap**, not something this
+Issue introduced -- `ProfileGenerator`'s JSON output for the same
+fixture almost certainly has the identical semantic defect, just never
+caught (JSON isn't schema-validated the way FSH is by Sushi, and
+`profile_generator_spec.rb` only exercises all-`Observation` fixtures).
+
+Filed separately: `skoba/openehr-rails#33`. Out of scope for `#32` --
+needs its own explore/plan (candidate directions: an extension,
+restricting multi-leaf support to `Observation`-mapped entries with an
+explicit documented limitation, or something else not yet decided).
+
+Narrowed `#32`'s scope to match reality rather than over-claim: added
+a 2-line code comment on the multi-leaf branch citing `#33`, and a
+CHANGELOG note distinguishing "Observation-mapped output is
+Sushi-verified" from "multi-leaf non-Observation entries have a known
+gap tracked as #33". The `value_set_binding` spec assertion for
+`problem_list.opt` stays as a text-level substring check (the `from
+<uri> (required)` write itself is correct FSH, verified in isolation
+in `docs/reports/fsh-log.md` R1 in `skoba/anlage`) -- it does not claim
+whole-document Sushi compilation, which would be false for this
+fixture.
+
+### Final verification (Claude Code, independent of Codex's own reports)
+
+- Regenerated FSH from the final committed `fsh_generator.rb` for both
+  `bmi_calculation.opt` and `problem_list.opt`, piped each through
+  `sushi` directly: **0 Errors** for `bmi_calculation.opt` (3
+  profiles), **29 errors** for `problem_list.opt` (expected, tracked
+  as `#33`, not a regression from anything this Issue claims)
+- `bundle exec rspec spec/openehr_rails/fhir/`: 28 examples, 0 failures
+- `bundle exec rspec` (full suite, this session's own environment, not
+  Codex's more restricted sandbox): **281 examples, 0 failures** --
+  the 18 failures Codex reported (`Errno::EPERM`/`getifaddrs` in
+  remote-fetch specs) did not reproduce here, consistent with this
+  project's prior observation that this class of sandbox network
+  restriction doesn't reproduce on GitHub Actions runners either
+- `bundle exec rubocop`: 108 files, no offenses
+- Committed `5f669af`, pushed, CI run verified green (see bundle
+  report for run ID)
+
+### Closure
+
+`#32`'s acceptance criteria are met for the scope that's actually
+Sushi-clean (`Observation`-mapped entries). `#33` tracks the
+`Condition`/`component` gap as separate follow-up work, not a blocker
+for closing `#32`.
