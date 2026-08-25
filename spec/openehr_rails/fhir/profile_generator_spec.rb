@@ -82,4 +82,32 @@ describe OpenehrRails::Fhir::ProfileGenerator do
       expect(parsed['resourceType']).to eq('StructureDefinition')
     end
   end
+
+  describe 'DV_CODED_TEXT bindings' do
+    let(:problem_file) { File.expand_path('../../templates/problem_list.opt', __dir__) }
+    let(:template) { OpenehrRails::Opt.parse(problem_file) }
+    let(:elements) { generator.profiles.flat_map { |profile| profile.dig(:differential, :element) } }
+
+    it 'emits a required value-set binding for C_CODE_REFERENCE constraints' do
+      # bug repro for issue #30: the empty local code list previously suppressed binding entirely.
+      expect(elements).to include(
+        hash_including(
+          binding: {
+            strength: 'required',
+            valueSet: 'terminology:http://id.who.int/icd/release/11/mms'
+          }
+        )
+      )
+    end
+
+    it 'keeps a local code-list binding free of a valueSet' do
+      # regression pin: a local code_list binding stays exactly strength-only.
+      code_index = elements.index do |element|
+        element.dig(:patternCodeableConcept, :coding, 0, :code)&.end_with?('#at0073')
+      end
+      value_element = elements.drop(code_index + 1).find { |element| element[:type] }
+
+      expect(value_element[:binding]).to eq(strength: 'required')
+    end
+  end
 end

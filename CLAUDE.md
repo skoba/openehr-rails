@@ -57,6 +57,18 @@ contradicts the actual content, stop instead of tagging and ask for re-arbitrati
   report. (Added 2026-08-25, after a gate report cited two docs-only commits - the #30
   issue-filing log and its design doc - that were still local-only `master` commits,
   not yet on `origin/master`.)
+- **After a git command appears to lose a file, search git's own storage
+  (`git stash show`/`stash@{n}^3`, `git reflog`, `git fsck --unreachable`) before
+  reconstructing content from memory.** Reconstruction from a model's own memory of
+  a file it recently read is a last resort, and if used, the result must be
+  independently diffed against the recovered original before trusting it - matching
+  by eye is not enough. (Added 2026-08-25, after a `git stash push -u` with a
+  multi-pathspec argument printed a pathspec error for one untracked file and that
+  file appeared to vanish from both the working tree and the stash's summary output;
+  it was in fact captured in the stash's untracked-files commit the whole time - the
+  error was cosmetic. The file was reconstructed from the session's own recent read
+  before that was confirmed, and only verified byte-identical against the actual
+  stashed copy afterward - the right outcome, but by the wrong order of operations.)
 
 ## Repository-context-dependent commands confirm their target explicitly
 

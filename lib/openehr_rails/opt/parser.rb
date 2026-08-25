@@ -21,6 +21,7 @@ module OpenehrRails
         @opt.remove_namespaces!
 
         defs = definition
+        populate_term_bindings!
 
         OpenEHR::AM::Template::OperationalTemplate.new(
           uid: build_uid,
@@ -38,6 +39,63 @@ module OpenehrRails
       end
 
       private
+
+      # 撤去条件: openehr-ruby#31（OPTParser drops term_bindings）の上流解消後。
+      # 上流OPTParserがcomponent_terminologiesの各ArchetypeTerminologyへ
+      # term_bindingsを投入するようになれば、下のnilガードで本メソッドは
+      # no-opになるため、このメソッド群と#parseからの呼び出しを削除する。
+      # それまでは、OPT文書のterm_bindings（items/valueの入れ子構造。ADL/XML
+      # アーキタイプのterm_bindings ── 属性+単一テキストの平坦構造 ──とは
+      # XML構造が異なる点に注意）を@optから直接読み、上流ArchetypeOntology#
+      # term_bindingsと同じ正規形 { terminology => { code => [CodePhrase] } }
+      # へ投入する暫定バイパス。
+      def populate_term_bindings!
+        raw_term_bindings_by_archetype.each do |archetype_id, bindings|
+          terminology = (@component_terminologies || {})[archetype_id]
+          next unless terminology
+          next if terminology.term_bindings
+
+          terminology.term_bindings = bindings
+        end
+      end
+
+      def raw_term_bindings_by_archetype
+        @opt.xpath('//term_bindings').each_with_object({}) do |term_binding, by_archetype|
+          archetype_id = nearest_archetype_id(term_binding)
+          next unless archetype_id
+
+          system_uri = term_binding['terminology']
+          term_binding.xpath('./items').each do |item|
+            code_phrase = binding_code_phrase(item, system_uri)
+            next unless code_phrase
+
+            systems = (by_archetype[archetype_id] ||= {})
+            codes = (systems[system_uri] ||= {})
+            (codes[item['code']] ||= []) << code_phrase
+          end
+        end
+      end
+
+      def binding_code_phrase(item, fallback_terminology)
+        code_string = item.at_xpath('./value/code_string')&.text
+        return if code_string.to_s.empty?
+
+        terminology_text = item.at_xpath('./value/terminology_id/value')&.text
+        terminology_text = fallback_terminology if terminology_text.to_s.empty?
+
+        OpenEHR::RM::DataTypes::Text::CodePhrase.new(
+          terminology_id: OpenEHR::RM::Support::Identification::TerminologyID.new(value: terminology_text),
+          code_string: code_string
+        )
+      end
+
+      def nearest_archetype_id(node)
+        node.ancestors.each do |ancestor|
+          value = ancestor.at_xpath('./archetype_id/value')
+          return value.text if value
+        end
+        nil
+      end
 
       # A leading UTF-8 BOM (common in OPT exports from Windows-authored
       # tools) survives #lstrip, since it's not whitespace, so it has to be

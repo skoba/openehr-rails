@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `FieldExtractor` fields now always include `value_set_uri` for external
+  `C_CODE_REFERENCE` value sets and `code_bindings` for ontology-level fixed-code
+  bindings. `OpenehrRails::Opt::Parser` temporarily enriches OPT terminology objects
+  with `term_bindings` until `skoba/openehr-ruby#31` is available upstream.
+
+### Fixed
+- `ProfileGenerator` now emits a required FHIR `binding.valueSet` for
+  `DV_CODED_TEXT` fields constrained by `C_CODE_REFERENCE`; these fields previously
+  received no binding. Existing local-code-list bindings remain strength-only. Host
+  applications must regenerate cached `app/fhir/profiles/*.json` files to receive
+  the new bindings.
+- For multi-alternative `value` constraints, `FieldExtractor` now prefers a
+  `C_CODE_REFERENCE`-backed alternative. This can change the extracted `rm_type` and
+  scaffold column behavior from `DV_TEXT` to `DV_CODED_TEXT` for affected templates.
+
+### Changed
+- Raised the `openehr` dependency floor to 2.3.1 because 2.3.0 cannot parse
+  `C_CODE_REFERENCE` constraints (`skoba/openehr-ruby#30`).
+
 ## [0.4.1] - 2026-08-22
 
 Errata: this release includes minor-level changes (Ruby >= 3.3 requirement,
