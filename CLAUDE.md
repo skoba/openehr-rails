@@ -52,6 +52,11 @@ contradicts the actual content, stop instead of tagging and ask for re-arbitrati
   earlier report already stated it as true - a premise that went unverified once tends
   to get repeated, not corrected, if the next write also skips checking (e.g. "CI is
   unconfigured" repeated across two turns before anyone ran `gh run list`).
+- **The document a gate report points to must be pushed**, not just committed locally,
+  before the report is sent - a local-only SHA is unverifiable by anyone reading the
+  report. (Added 2026-08-25, after a gate report cited two docs-only commits - the #30
+  issue-filing log and its design doc - that were still local-only `master` commits,
+  not yet on `origin/master`.)
 
 ## Repository-context-dependent commands confirm their target explicitly
 
