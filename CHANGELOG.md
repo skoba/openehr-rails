@@ -14,6 +14,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   external value-set bindings. Observation-mapped output is Sushi-verified;
   multi-leaf non-Observation entries have a known structural gap tracked as #33.
 
+### Changed
+- `FshGenerator` no longer depends on `active_support/core_ext/string`; the
+  three String helpers it used are now small plain-Ruby private methods,
+  verified byte-identical output. Restores the Rails-independence this class
+  was designed for (see `anlage`'s `docs/design/fsh-plan.md`), so it can move
+  wholesale to a future satellite gem without a Rails dependency riding along.
+
 ## [0.5.0] - 2026-08-25
 
 ### Added
