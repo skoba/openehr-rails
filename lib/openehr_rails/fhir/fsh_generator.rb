@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'active_support/core_ext/string'
-
 module OpenehrRails
   module Fhir
     # Generates one FHIR Shorthand profile per openEHR ENTRY.
@@ -54,12 +52,25 @@ module OpenehrRails
 
       def metadata(entry, id, resource_type)
         [
-          "Profile: #{id.tr('-', '_').camelize}",
+          "Profile: #{camelize(id.tr('-', '_'))}",
           "Parent: #{resource_type}",
           "Id: #{id}",
-          "Title: \"openEHR #{entry[:concept].humanize} (#{entry[:archetype_id]})\"",
+          "Title: \"openEHR #{humanize(entry[:concept])} (#{entry[:archetype_id]})\"",
           ''
         ]
+      end
+
+      # Plain-Ruby equivalent of ActiveSupport's String#camelize on an
+      # underscore-separated input: "foo_bar" -> "FooBar".
+      def camelize(str)
+        str.split('_').map { |word| word[0].upcase + word[1..].to_s }.join
+      end
+
+      # Plain-Ruby equivalent of ActiveSupport's String#humanize on an
+      # already-lowercase, underscore-separated input: "foo_bar" -> "Foo bar".
+      def humanize(str)
+        spaced = str.tr('_', ' ')
+        spaced[0] ? spaced[0].upcase + spaced[1..].to_s.downcase : spaced
       end
 
       def code_rules(archetype_id, path = 'code', bindings = [])
@@ -141,7 +152,14 @@ module OpenehrRails
       end
 
       def profile_id(archetype_id)
-        "openehr-#{archetype_id.delete_prefix('openEHR-EHR-').parameterize.dasherize}"
+        "openehr-#{parameterize(archetype_id.delete_prefix('openEHR-EHR-'))}"
+      end
+
+      # Plain-Ruby equivalent of ActiveSupport's String#parameterize.dasherize:
+      # downcase, collapse every run of non-alphanumeric characters to a
+      # single "-", and strip any leading/trailing "-".
+      def parameterize(str)
+        str.downcase.gsub(/[^a-z0-9]+/, '-').gsub(/\A-+|-+\z/, '')
       end
     end
   end
