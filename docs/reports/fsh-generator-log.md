@@ -162,3 +162,44 @@ fixture.
 Sushi-clean (`Observation`-mapped entries). `#33` tracks the
 `Condition`/`component` gap as separate follow-up work, not a blocker
 for closing `#32`.
+
+---
+
+## R3 -- Remove active_support from FshGenerator (0.6.0 task, condition 1)
+
+Codex's `#32` delivery required `active_support/core_ext/string` for three
+`String` methods (`camelize`, `humanize`, `parameterize.dasherize`),
+violating the structural clause `anlage`'s `docs/design/fsh-plan.md`
+already committed to (追記1, 2026-08-26): FshGenerator must depend on
+`openehr` only (Rails-independent), so it can move wholesale to the
+future `openehr-fhirbridge` satellite gem -- explicitly named review
+criterion: no dependency on `ActiveRecord::Base` or the `Rails`
+namespace. `require 'active_support/core_ext/string'` doesn't touch
+either directly, but ActiveSupport is Rails-family tooling, not
+`openehr`-only; the clause's spirit is what's being restored here, not a
+literal `ActiveRecord::Base`/`Rails` grep hit.
+
+Measured exact behavior before replacing anything (not guessed): ran the
+three ActiveSupport methods against representative inputs directly, then
+cross-checked plain-Ruby candidate replacements against every entry from
+every fixture this generator is exercised against (`bmi_calculation.opt`,
+`bmi_calculation_without_uid.opt`, `problem_list.opt`,
+`lab_result_report_reduced.opt`) -- all matched exactly, including the
+one non-obvious case: `.parameterize` alone leaves internal underscores
+intact (`"OBSERVATION.body_mass_index.v2".parameterize` =>
+`"observation-body_mass_index-v2"`); `.dasherize` afterward is doing real
+work (not redundant), converting those to `"observation-body-mass-index-v2"`.
+
+Replaced with three small private helpers (`camelize`, `humanize`,
+`parameterize`) matching the measured behavior. Re-verified with `sushi`
+after the change, not just `rspec`: `bmi_calculation.opt` still 0
+Errors/0 Warnings (3 profiles), `problem_list.opt` still exactly 29
+errors (unchanged `#33` gap). Full suite: 281 examples, 0 failures.
+RuboCop clean. Committed directly to `master` (`0181f7f`, tiny/self-
+contained per the task's own "極小コミット" framing -- no separate
+issue/branch/PR, matching this repo's docs-and-tooling-adjacent-fix
+precedent for changes that don't touch public API or behavior).
+
+`ProfileGenerator` still requires `active_support/core_ext/string` --
+explicitly out of scope: it isn't planned for extraction to
+`openehr-fhirbridge` on its own, so the structural clause doesn't bind it.

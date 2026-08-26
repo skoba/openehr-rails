@@ -102,6 +102,25 @@ lasting effect, but the near-miss is what prompted this generalization. See
 logging the underlying structural fix under consideration - one
 worktree/session per repo instead of per-command vigilance.)
 
+## Cross-repository implementation work needs its own authorization gate
+
+The moment it becomes clear that the actual implementation target for a piece of
+work is a repository other than this one, stop before starting that work and insert
+a gate report confirming the implementation target, rather than sliding from
+read-only cross-repo reference (already permitted for design/evidence-gathering)
+into cross-repo write work on the strength of that same permission. Correctly
+targeting a command once you've decided to cross the boundary (the previous
+section's `cd`/`-C`/`-R` discipline) is a different concern from being authorized to
+cross it at all - following the operational convention precisely does not retroactively
+authorize the crossing.
+
+(Added 2026-08-26, alongside the `#32`/`#33` FSH-generator work continuation, to
+name explicitly a distinction that the existing repository-context rule left
+implicit: it governs *how* to target a cross-repo command correctly, not *whether*
+crossing into implementation work on another repository has actually been
+authorized for the task at hand. A matching line is planned for `anlage`'s own
+`CLAUDE.md` in a later batch - not yet added there as of this entry.)
+
 ## Project Overview
 
 This is `openehr-rails`, a Rails engine gem that turns an openEHR Operational Template (`.opt`, ADL2/XML) into a working Rails resource in one command: `rails generate openehr:scaffold path/to/template.opt --fhir` emits a model, migration, controller, views, i18n locale, and (with `--fhir`) HL7 FHIR R5 `StructureDefinition` profiles. Generated models persist both as typed columns (for forms/search) and as full openEHR RM data (canonical JSON + a typed node graph with immutable-append versioning), and are queryable via a growing AQL surface. A mountable admin engine (`/openehr`) provides template upload/management, runtime scaffolding, and a FHIR R5 facade. Legacy ADL-archetype-only generators (model/controller/migration/helper/assets/i18n/template/template_model, based on `Openehr::Generators::ArchetypedBase`) have been removed — OPT is the only supported input format for scaffolding.
