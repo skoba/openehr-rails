@@ -244,3 +244,37 @@ release-gated anlage dependency.
 Proceeding to version bump, CHANGELOG finalization, and tag per the
 task's condition 3 -- same mechanical process as R8/R9 for `v0.5.0`,
 already reused rather than re-derived.
+
+## R5 -- v0.6.0 tagged, release.yml verified green, artifact reproducibility confirmed
+
+Caught and fixed a missing `CHANGELOG.md` entry for `0181f7f` (the
+active_support removal) while preparing the version bump -- added a
+`### Changed` note (`4b595ca`), full suite re-confirmed green first.
+
+`lib/openehr_rails/version.rb` bumped `0.5.0` -> `0.6.0`;
+`CHANGELOG.md`'s `[Unreleased]` retitled `## [0.6.0] - 2026-08-26` (fresh
+empty `[Unreleased]` left above). Full suite: 281 examples, 0 failures.
+Full-repo RuboCop (not just the touched files): 108 files, no offenses.
+`bundle exec rake release:check`: OK on the first try (tree was already
+clean from the prior commit). Committed (`4080053`), pushed, annotated
+tag `v0.6.0` pushed.
+
+`release.yml` run [32915373663](https://github.com/skoba/openehr-rails/actions/runs/32915373663):
+overall conclusion **success** (confirmed via the run's own `conclusion`
+field), all 12 jobs green -- second consecutive fully-green tag-push run,
+same as `v0.5.0`'s (R8), confirming the release-path fix (PR #28) holds
+across releases, not just as a one-off.
+
+Artifact/local-build reproducibility, same method as R8: downloaded the
+run's `gem` artifact (`gh run download 32915373663 -n gem`):
+`openehr-rails-0.6.0.gem`, sha256
+`08cdd14ab1f3890b0c6b5f0ae0d5ca55615f0b4874ed5efb0cd4d7bda9e573ca`. Built
+`pkg/openehr-rails-0.6.0.gem` locally at the same tagged commit
+(`4080053`, clean tree): **identical sha256**. CI artifact and local
+build byte-identical, second release in a row.
+
+RubyGems publish is the human's step next (established operating model,
+unchanged from `v0.5.0`) -- the sha256 above is what to check the
+published gem against. Awaiting that confirmation, then per condition 4
+of the task moving on to `#33`'s explore/plan (already directed, not a
+new decision to make here) and returning to dormancy in the meantime.
