@@ -203,3 +203,44 @@ precedent for changes that don't touch public API or behavior).
 `ProfileGenerator` still requires `active_support/core_ext/string` --
 explicitly out of scope: it isn't planned for extraction to
 `openehr-fhirbridge` on its own, so the structural clause doesn't bind it.
+
+---
+
+## R4 -- Release inventory (v0.5.0..master) and 0.6.0 proposal (condition 3)
+
+Classified every non-merge commit since `v0.5.0` (8 commits; per-commit
+file lists pulled via `git log --name-only`, not asserted from memory):
+
+- **Neutral (6 commits)**: `19c905f`, `0d2a8ce` (docs, #30 closeout),
+  `ec019b4` (`.github/ISSUE_TEMPLATE/bug_report.md` only -- dev-tooling
+  config), `f7cc0eb` (design doc + report log), `a996ef4` (report log),
+  `7e8014f` (`CLAUDE.md` + report log).
+- **`5f669af`** (adds `FshGenerator`): new file, new public class
+  (`OpenehrRails::Fhir::FshGenerator`, public `to_fsh_files`), touches
+  `lib/openehr_rails.rb` to require it. New backward-compatible public
+  API surface -- **minor**.
+- **`0181f7f`** (drops `active_support` from `FshGenerator`): touches
+  `lib/` directly but verified byte-identical output (R3 above) -- no
+  new capability, no behavior change, no public API change, no gemspec
+  dependency change. Per this repo's own release convention ("a commit
+  touching shipped runtime code is at minimum patch, even when its
+  observable behavior is unchanged"), classified **patch**.
+
+Overall: the range's highest-level commit dominates -- **minor**, i.e.
+`v0.5.0 -> v0.6.0`. No breaking changes; `FshGenerator` is net-new so
+there's no existing consumer to break. `CHANGELOG.md`'s `[Unreleased]`
+content matches (Added: FshGenerator; Changed: the active_support
+removal -- the latter's entry was missing and added in `4b595ca` while
+preparing this inventory, since this repo's convention writes CHANGELOG
+entries at merge/commit time and it had been skipped when `0181f7f`
+landed).
+
+No downstream-consumption blocker analogous to R7's anlage-FSH note is
+outstanding for this release -- `anlage`'s FSH work is what's consuming
+`FshGenerator` itself, and per condition 4 of this task, the immediate
+next step after this release is `#33`'s own explore/plan, not a
+release-gated anlage dependency.
+
+Proceeding to version bump, CHANGELOG finalization, and tag per the
+task's condition 3 -- same mechanical process as R8/R9 for `v0.5.0`,
+already reused rather than re-derived.
