@@ -278,3 +278,40 @@ unchanged from `v0.5.0`) -- the sha256 above is what to check the
 published gem against. Awaiting that confirmation, then per condition 4
 of the task moving on to `#33`'s explore/plan (already directed, not a
 new decision to make here) and returning to dormancy in the meantime.
+
+## R6 -- #33 explore + design doc (condition 4)
+
+Read the issue directly (`gh issue view 33 --json ...`, not summarized
+from memory) and the current `type_map.rb`/`profile_generator.rb`/
+`fsh_generator.rb` source. Confirmed independently against the FHIR R5
+spec: only `Observation` has a `component` element among the five
+resources `TypeMap::ENTRY_RESOURCES` maps to -- the bug is not
+`EVALUATION`-specific, it affects any multi-leaf entry mapped to
+`Condition`/`ServiceRequest`/`Procedure`/`Encounter` (no existing
+fixture exercises the latter three multi-leaf, so only `EVALUATION` is
+empirically confirmed today, but the defect applies by construction).
+
+Found a related dead-code smell while reading `type_map.rb`:
+`TypeMap.value_element(resource_type)` has a comment describing exactly
+the resource-type branch `#33` needs, but its ternary returns the same
+string on both branches and the method is called nowhere in `lib/`
+(confirmed via `grep`) -- a stub for this exact check that was never
+wired up. Recommending its removal/replacement as part of this fix
+rather than leaving misleading dead code.
+
+Checked `anlage`'s `docs/design/fsh-plan.md` directly for prior art on
+this exact problem before designing from scratch -- none exists; the v1
+scope only anticipated `component` slicing, never the non-Observation
+resource-type mismatch.
+
+Design doc written: `docs/design/multi-leaf-non-observation-plan.md`.
+Three options considered (FHIR extension encoding / split into linked
+resources / restrict-to-Observation with an explicit error);
+**recommending the third** -- no unvetted FHIR-modeling decision made
+unilaterally, no silent data loss, verifiable end-to-end today with the
+tools already in hand (`sushi`). Two genuine judgment calls flagged for
+approval rather than decided here: the option choice itself, and whether
+`profiles`/`to_fsh_files` should raise through the whole batch or
+skip-and-report per entry when one entry hits the restriction.
+
+Gate: reporting to the user for approval before implementation.
