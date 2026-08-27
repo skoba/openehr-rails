@@ -46,6 +46,21 @@ Before tagging, make the final semver determination from the actual content of
 `[Unreleased]`, not from a pre-assigned version number. If the instructed version number
 contradicts the actual content, stop instead of tagging and ask for re-arbitration.
 
+**Publish only the CI artifact itself.** `gem push` takes the `.gem` downloaded
+from the tag's Release run (`gh run download <run-id> -n gem`), after its sha256
+has been compared against the value recorded for that run - never a locally built
+`pkg/*.gem`. `gem.files` comes from `git ls-files`, so a build made at any commit
+other than the tag ships different bytes under the same version number, and a
+stale `pkg/` artifact from unrelated local work is indistinguishable by filename
+from a release build.
+
+(Added 2026-08-27, from the 0.6.0 publish: the gem that reached RubyGems was a
+`master`-HEAD build left in `pkg/` by an unrelated verification run, not the
+CI-verified `v0.6.0` artifact. Accepted rather than yanked - the delta was two
+documentation files and `lib/` was byte-identical - but nothing in the release
+path caught it. Measurements in `docs/reports/fsh-generator-log.md` R8; the
+matching `release:check` guard is `skoba/openehr-rails#34`.)
+
 ## Verification
 
 - **Verify against the repo before recording a fact in it**, even when a prompt or an
