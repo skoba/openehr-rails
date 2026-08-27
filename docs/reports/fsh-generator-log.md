@@ -494,3 +494,86 @@ gem. The value of record for published `0.6.0` is therefore
 `08cdd14a...` recorded here as the tag-build value it diverges from.
 
 `#33` remains at its approval gate; nothing implemented.
+
+## R9 -- 0.6.0 incident ruling applied (accept + two preventions)
+
+Ruling: accept 0.6.0 rather than yank, and land both preventions -- the
+operational one first, the code one behind an Issue. All four items done,
+one commit each.
+
+### 1. Accept, with a transparency note (`899fa4c`)
+
+`CHANGELOG.md`'s `[0.6.0]` section now carries a blockquote stating that the
+published gem is the tagged tree plus two documentation files, that `lib/` is
+byte-identical and version/dependencies/`required_ruby_version` unchanged, and
+both sha256 values (`223e3b38...` published, `08cdd14a...` tag build), pointing
+at R8 for the measurements. No yank; `0.6.0` stands.
+
+### 2. Operational prevention first (`9e9f628`)
+
+`CLAUDE.md`'s "Release convention" section gained a **Publish only the CI
+artifact itself** rule: `gem push` takes the `.gem` from
+`gh run download <run-id> -n gem`, after sha256 comparison against that run's
+recorded value -- never a locally built `pkg/*.gem`. The rationale names the
+mechanism (`gem.files` from `git ls-files`) and the trap (a stale `pkg/`
+artifact is indistinguishable by filename from a release build).
+
+### 3. Code prevention behind an Issue (`7b68d7b`, Fixes #34)
+
+Filed `skoba/openehr-rails#34` (bug) with R8 as evidence and spec-verifiable
+acceptance criteria, then implemented t-wada style.
+
+**Red first**: three examples added to
+`spec/openehr_rails/release_check_spec.rb` -- HEAD past the tag flags,
+HEAD exactly at the tag passes, and no matching tag contributes nothing. Run
+before the implementation: **7 examples, 1 failure**,
+`expected "" to match /v0\.1\.0/`.
+
+**Green**: `ReleaseCheck#release_tag_failures` compares
+`rev-parse HEAD` against `rev-parse v<version>^{commit}`, guarded by a
+non-raising `git?` ref-existence probe so an untagged version stays silent
+(ordinary pre-release development). `gemspec_path`/`spec` were memoised so the
+new check reuses the already-loaded gemspec rather than parsing it twice.
+Re-run: **7 examples, 0 failures**.
+
+**Verified against the real incident**, not only the fixture repo -- on
+`master` (`v0.6.0` tagged, HEAD `6bbdf51`) the task now aborts with:
+
+```
+release:check FAILED: HEAD (6bbdf51) is not the v0.6.0 tag commit (4080053) --
+a gem built here would not match the released artifact for that version;
+build from v0.6.0 itself, or publish CI's tag-run artifact
+```
+
+Blast radius checked before accepting that behaviour: `release:check` runs
+only in `release.yml`'s tag-triggered `build` job and by hand before a release
+-- `Rakefile`'s default task is `:spec`, and `ci.yml` runs `rake spec` /
+`rspec` only -- so failing between releases is the intended signal, not noise
+in everyday development.
+
+`bundle exec rspec`: **284 examples, 0 failures** (281 before, +3 new).
+`rubocop` on both changed files: no offenses. Semver **patch** and a
+`[Unreleased]` CHANGELOG entry: `ReleaseCheck` ships in the gem but is a
+release-time dev tool not required by `lib/openehr_rails.rb`, so no host-app
+runtime or public-API change -- yet it touches `lib/`, so not neutral. Rides
+along with the next release; no standalone release for it.
+
+### 4. Backlog evidence line (`829275f`)
+
+`docs/backlog.md`'s Trusted Publishing item gained a sub-bullet recording the
+cross-machine reproducibility evidence in its favour.
+
+**Correction to the directive's SHA**: the ruling cited `89ec115` as the
+commit demonstrating machine- and Ruby-version-crossing byte-identity. Checked
+against R7/R8 rather than transcribed: `89ec115` is `master` HEAD, whose build
+(`223e3b38...`) exists only from this machine -- it demonstrates nothing about
+crossing machines. The commit that does is **`4080053`** (the `v0.6.0` tag),
+which produced `08cdd14a...` from CI, from the old machine (R5), and from a
+rebuild here under local ruby 4.0.6 vs CI's `ruby/setup-ruby@v1` ruby 4.0. The
+backlog line records `4080053`.
+
+### Gate
+
+Back to standby. `#33`
+(`docs/design/multi-leaf-non-observation-plan.md`) is unchanged and still at
+its approval gate; nothing implemented against it.
