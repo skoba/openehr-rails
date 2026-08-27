@@ -1,6 +1,6 @@
 # Fix: multi-leaf non-Observation entries constrain a nonexistent `component`
 
-- Status: draft, awaiting approval
+- Status: **ruled 2026-08-27 — option (d), proper mapping, adopted. §§2-6 below are superseded; §8 is the normative spec.**
 - Target: `openehr-rails` (this repo). No cross-repo work.
 - Issue: [#33](https://github.com/skoba/openehr-rails/issues/33)
 - Log: `docs/reports/fsh-generator-log.md` (continuing R1-R5)
@@ -178,3 +178,83 @@ this repo's division of labor, or directly if the change is judged small enough 
 skip that split — decide at approval time), Claude Code review, full
 `bundle exec rspec` + full-repo `rubocop` + `sushi` re-verification for
 `bmi_calculation.opt`, commit(s), `docs/reports/fsh-generator-log.md` entry.
+
+
+---
+
+# 8. RULING (2026-08-27): option (d), proper mapping to `Condition`
+
+The recommendation in §3 — option (c), restrict multi-leaf non-`Observation`
+entries and raise — **was not adopted**. The ruling directs a *proper mapping*:
+`problem_diagnosis`'s leaves land on the real `Condition` elements that mean the
+same thing. §§2-6 are kept for the record but are superseded by this section.
+
+**This table is the single specification for both outputs.** `ProfileGenerator`
+(the JSON facade) and `FshGenerator` both generate from it; neither may carry a
+mapping decision the other doesn't.
+
+## 8.1 Mapping table — `openEHR-EHR-EVALUATION.problem_diagnosis.v1` → `Condition` (FHIR R5)
+
+Measured, not assumed: leaves are `FieldExtractor#entries` output for
+`spec/templates/problem_list.opt`; every target element was compiled against
+`hl7.fhir.r5.core#5.0.0` with `sushi` 3.16.0 (**0 Errors**) before this table was
+written.
+
+| openEHR leaf | Label (fixture, ja) | RM type | → `Condition` element | Rationale |
+|---|---|---|---|---|
+| *(archetype anchor)* | — | — | `category` — fixed coding `CKM#openEHR-EHR-EVALUATION.problem_diagnosis.v1` | The anchor cannot stay on `code`: under a proper mapping `code` is claimed by at0002, the diagnosis itself. `category` is R5's 0..* CodeableConcept for "what kind of Condition record is this", with an *example* binding, so a fixed archetype coding is legal there. |
+| `at0002` | プロブレム・診断名 | `DV_CODED_TEXT`, value set `http://id.who.int/icd/release/11/mms` | `code` 0..1, `only CodeableConcept`, `from <ICD-11 MMS> (required)` | `Condition.code` is "identification of the condition, problem or diagnosis" — the direct counterpart. Its base binding is *example*, so a profile may tighten it to *required*. |
+| `at0077` | 発症日時 | `DV_DATE_TIME` | `onsetDateTime` 0..1, `only dateTime` | `onset[x]` is the date/time the condition began; the `dateTime` choice matches `DV_DATE_TIME` exactly. (`sushi` normalises the path to `Condition.onset[x]` with `type: [dateTime]` — that is the shape the JSON facade emits.) |
+| `at0003` | 臨床的に認識された日時 | `DV_DATE_TIME` | `recordedDate` 0..1, `only dateTime` | Nearest R5 element. **Approximation, recorded as such**: `recordedDate` is "when this Condition record was created in the system", which is not a synonym for "clinically recognised". No closer element exists in R5; the gap is written down here rather than implied by the mapping. |
+| `at0030` | 治癒日時 | `DV_DATE_TIME` | `abatementDateTime` 0..1, `only dateTime` | `abatement[x]` is "the date the condition resolved or went into remission" — the direct counterpart. |
+| `at0073` | 診断確度 (`at0074` 疑い / `at0075` 推定 / `at0076` 確定) | `DV_CODED_TEXT`, `terminology_id = "local"` | `verificationStatus` 0..1, `only CodeableConcept`, **no value-set binding emitted** | `verificationStatus` (unconfirmed \| provisional \| differential \| confirmed \| refuted \| entered-in-error) is the semantic counterpart of 診断確度. See 8.2 for why the local codes are deliberately *not* bound. |
+
+**Nothing in this archetype is unmappable** — all five leaves land. What is
+deliberately *not* emitted is in 8.2.
+
+## 8.2 Deliberate omissions
+
+- **`at0073`'s local code list (`at0074`/`at0075`/`at0076`) is not bound.**
+  `Condition.verificationStatus` has a **required** binding to
+  `http://hl7.org/fhir/ValueSet/condition-ver-status`; binding an archetype's
+  local at-codes there would be invalid. Translating 疑い/推定/確定 into
+  `provisional`/`confirmed`/etc. is a `ConceptMap` concern, outside what a
+  `StructureDefinition` can express. The profile therefore constrains the
+  element's cardinality and type only. This means the current
+  `apply_value_constraints` behaviour — emitting
+  `binding: { strength: 'required' }` for any `DV_CODED_TEXT` carrying a local
+  `code_list` — must **not** apply to a mapped leaf.
+- **Multi-leaf non-`Observation` entries with no mapping table entry keep their
+  current behaviour.** The ruling scopes this fix to `problem_diagnosis`; the
+  `INSTRUCTION`→`ServiceRequest` case (`request-referral`, arriving with
+  referral v2) is reserved as its own Issue rather than generalised here.
+
+## 8.3 Where the table lives
+
+In `TypeMap`, next to `ENTRY_RESOURCES`, keyed by archetype id — the existing
+RM-type→FHIR-resource mechanism, not a new conditional scattered across the two
+generators. Both generators ask `TypeMap` the same question. The dead
+`TypeMap.value_element` (§1) is removed as part of this: it was a stub for
+exactly this resource-type branch and never implemented it.
+
+## 8.4 TDD
+
+- **Red**: `problem_list.opt`'s generated FSH under `sushi` 3.16.0 — measured
+  **29 Errors** today (all `No element found at path component…`). Pinned as the
+  starting measurement.
+- **Green**: the same fixture compiles with **0 Errors**. The exact rule set the
+  implementation must emit was pre-verified against
+  `hl7.fhir.r5.core#5.0.0` before implementation began.
+- **JSON facade**: `profile_generator_spec.rb` gains expectations for the mapped
+  `Condition` elements, and asserts no `Condition.component` element is produced
+  — the original complaint in #33.
+- **Regression pin**: `bmi_calculation.opt` (multi-leaf `Observation`) is
+  untouched by the new branch and must stay green, `component` slicing intact.
+
+## 8.5 Semver
+
+**Minor.** The JSON facade's output shape changes for `EVALUATION` entries
+(`Condition.component` slices disappear, real `Condition` elements appear), which
+is observable to any host app consuming `app/fhir/profiles/*.json`. Ships with
+`#34`'s `release:check` change; version finalised at release inventory, 0.7.0
+expected.
