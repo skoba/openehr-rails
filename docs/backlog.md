@@ -90,6 +90,13 @@ status entry above for verification details.
   docs-only pass — implementing the workflow change goes through an Issue (once
   ticket-driven work applies to it) plus the normal explore → plan → approval gate,
   not a direct docs commit.
+  - A point in Trusted Publishing's favour, measured 2026-08-27: the gem build is
+    byte-identical across machines and Ruby installs for a given commit — `4080053`
+    (the `v0.6.0` tag) produced sha256 `08cdd14a…` from CI, from the old machine
+    (R5), and from a rebuild on the replacement machine under local ruby 4.0.6 vs
+    CI's `ruby/setup-ruby@v1` ruby 4.0. So a CI- or Trusted-Publishing-published
+    artifact stays independently verifiable against a local rebuild
+    (`docs/reports/fsh-generator-log.md` R8).
 
 ## From #25 / PR #26 (FieldExtractor terminology scope fix, 2026-08-22)
 
