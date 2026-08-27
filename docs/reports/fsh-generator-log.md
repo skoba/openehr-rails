@@ -414,3 +414,83 @@ direction naming that repository.
 `#33` (`docs/design/multi-leaf-non-observation-plan.md`) remains at the
 approval gate opened in R6. No implementation started; standing by for the
 arbitration.
+
+## R8 -- 0.6.0 RubyGems publish: confirmed, but not the CI-verified artifact
+
+The human published `openehr-rails 0.6.0` to RubyGems. `gem list -r -a
+openehr-rails` now shows `0.6.0` as the published latest. Verified the
+published artifact rather than assuming it -- and it is **not** the gem R7
+told them to check against.
+
+### Measurements
+
+`gem fetch openehr-rails -v 0.6.0 --source https://rubygems.org`:
+
+```
+223e3b3897f85c38eaffe7ea39bd7c2acf4c5de9cab7d50fe38f754ff9d65db6   215,040 bytes
+```
+
+- R7's expected value (CI artifact from run `32915373663`, reproduced
+  byte-identically from the `v0.6.0` tag):
+  `08cdd14ab1f3890b0c6b5f0ae0d5ca55615f0b4874ed5efb0cd4d7bda9e573ca`,
+  209,408 bytes -- **does not match**.
+- `cmp` against `pkg/openehr-rails-0.6.0.gem` left in this repo's working
+  tree: **byte-identical**. That file was built during the machine-migration
+  acceptance check, from `master` HEAD (`89ec115`), three docs commits past
+  the tag. Its sha256 was reported in that check as if it were the v0.6.0
+  build; it is the file that got published.
+
+### What actually differs
+
+Unpacked both `data.tar.gz` payloads and diffed recursively (`diff -rq`).
+The **entire** delta is two documentation files:
+
+- added: `docs/design/multi-leaf-non-observation-plan.md` (the `#33` design
+  doc, commit `536384f`)
+- changed: `docs/reports/fsh-generator-log.md` -- this log, carrying R6
+
+`diff -rq` over the whole `lib/` subtree reports **no differences**: the
+shipped runtime code is byte-identical to the CI-verified artifact. The
+`metadata.gz` diff is the single extra `files` entry; version, runtime
+dependencies and `required_ruby_version` are unchanged.
+
+So the published gem is **functionally identical** to what CI built and
+verified at the tag. The extra content is newer in-repo documentation, not
+stale or foreign code.
+
+### Root cause and the convention gap it exposes
+
+`gem.files` comes from `git ls-files` (`openehr-rails.gemspec:19`), so a
+build is only a *release* build if HEAD is at the release tag.
+`release:check` (`lib/openehr_rails/release_check.rb`) guards a clean working
+tree, sibling-file tracking, and gemspec validity -- **it does not assert
+that HEAD is at `v<version>`**. Nothing in the release path catches a gem
+built from a commit past the tag, and a stale `pkg/*.gem` from an unrelated
+local build is publishable by hand without any check firing.
+
+Two follow-ups proposed, neither started (this repo is ticket-driven and
+`#33` is still the standing gate):
+
+1. `release:check` should fail when `version.rb`'s version has a tag in the
+   repo and HEAD is not that tag. This touches `lib/`, so it is at minimum a
+   patch under the Release convention and needs its own Issue.
+2. `rake build` output is a release candidate only under that condition;
+   until then, publishing should come from the CI artifact, not a local
+   `pkg/` file.
+
+Removed the stale `pkg/openehr-rails-0.6.0.gem` from the working tree
+(untracked, `.gitignore`d) so it cannot be picked up again; the identical
+bytes are now on rubygems.org, which is the record.
+
+### Open decision (human's)
+
+Whether to accept the published 0.6.0 as-is or yank and re-release. Note
+RubyGems does not permit re-pushing a yanked version number, so yanking means
+`0.6.1`. Recommendation: **accept**. There is no runtime, dependency or
+license delta -- only two docs files, both newer than the tag -- and a
+version bump would spend a release number to remove documentation from a
+gem. The value of record for published `0.6.0` is therefore
+`223e3b3897f85c38eaffe7ea39bd7c2acf4c5de9cab7d50fe38f754ff9d65db6`, with
+`08cdd14a...` recorded here as the tag-build value it diverges from.
+
+`#33` remains at its approval gate; nothing implemented.
