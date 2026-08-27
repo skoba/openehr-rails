@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `release:check` now fails when a tag matching the gemspec version exists and
+  `HEAD` is not that tag's commit. `gem.files` comes from `git ls-files`, so a
+  gem built at a later commit ships different bytes under the same version
+  number — the defect that let 0.6.0 be published as a `master`-HEAD build
+  (#34). The check stays silent when the version has no tag yet, so ordinary
+  pre-release development is unaffected.
+
 ## [0.6.0] - 2026-08-26
 
 > **Published artifact note.** The gem published to RubyGems for this version

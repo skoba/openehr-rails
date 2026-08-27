@@ -70,6 +70,45 @@ describe OpenehrRails::ReleaseCheck do
     expect(messages).to match(/working tree is not clean/)
   end
 
+  # skoba/openehr-rails#34 (bug). Reproduces the 0.6.0 publish incident: a gem
+  # built at a commit past the release tag differs from the released artifact
+  # under the same version number, and nothing in the release path noticed.
+  # Measurements: docs/reports/fsh-generator-log.md R8.
+  it 'flags a HEAD that has moved past the tag matching the gemspec version' do
+    write('fixture.gemspec', GEMSPEC_BODY)
+    git('add', '-A')
+    git('commit', '-q', '-m', 'release 0.1.0')
+    git('tag', 'v0.1.0')
+    write('docs/note.md', "added after the tag\n")
+    git('add', '-A')
+    git('commit', '-q', '-m', 'docs after the tag')
+
+    messages = described_class.new(root: @repo).failures.map(&:message).join("\n")
+
+    expect(messages).to match(/v0\.1\.0/)
+    expect(messages).to match(/HEAD/)
+  end
+
+  it 'passes when HEAD is exactly the tag matching the gemspec version' do
+    write('fixture.gemspec', GEMSPEC_BODY)
+    git('add', '-A')
+    git('commit', '-q', '-m', 'release 0.1.0')
+    git('tag', 'v0.1.0')
+
+    expect(described_class.new(root: @repo).failures).to eq([])
+  end
+
+  # Ordinary development before the version has ever been tagged: the check
+  # must stay silent rather than fail every pre-release run.
+  it 'does not flag the tag mismatch when no tag matches the gemspec version' do
+    write('fixture.gemspec', GEMSPEC_BODY)
+    git('add', '-A')
+    git('commit', '-q', '-m', 'init')
+    git('tag', 'v0.0.9')
+
+    expect(described_class.new(root: @repo).failures).to eq([])
+  end
+
   it 'flags a gemspec with an invalid SPDX license identifier' do
     write('fixture.gemspec', GEMSPEC_BODY.sub("'Apache-2.0'", "'Apache 2.0'"))
     git('add', '-A')

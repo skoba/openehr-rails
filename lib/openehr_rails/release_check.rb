@@ -27,7 +27,8 @@ module OpenehrRails
       [
         *clean_working_tree_failures,
         *sibling_pair_failures,
-        *gemspec_failures
+        *gemspec_failures,
+        *release_tag_failures
       ]
     end
 
@@ -42,6 +43,13 @@ module OpenehrRails
       raise "git #{args.join(' ')} failed:\n#{out}" unless $?.success? # rubocop:disable Style/SpecialGlobalVars
 
       out
+    end
+
+    # Non-raising variant, for asking git a question whose "no" answer is a
+    # non-zero exit rather than an error (e.g. does this ref exist).
+    def git?(*args)
+      IO.popen(['git', '-C', @root, *args], err: %i[child out], &:read)
+      $?.success? # rubocop:disable Style/SpecialGlobalVars
     end
 
     def tracked_files
@@ -81,11 +89,20 @@ module OpenehrRails
       end
     end
 
-    def gemspec_failures
-      gemspec_path = Dir.glob(File.join(@root, '*.gemspec')).first
-      return [Failure.new('no .gemspec found in the repo root')] unless gemspec_path
+    def gemspec_path
+      return @gemspec_path if defined?(@gemspec_path)
 
-      spec = Dir.chdir(@root) { Gem::Specification.load(gemspec_path) }
+      @gemspec_path = Dir.glob(File.join(@root, '*.gemspec')).first
+    end
+
+    def spec
+      return @spec if defined?(@spec)
+
+      @spec = gemspec_path && Dir.chdir(@root) { Gem::Specification.load(gemspec_path) }
+    end
+
+    def gemspec_failures
+      return [Failure.new('no .gemspec found in the repo root')] unless gemspec_path
       return [Failure.new("Gem::Specification.load(#{gemspec_path}) returned nil")] unless spec
 
       [
@@ -125,6 +142,32 @@ module OpenehrRails
       []
     rescue StandardError => e
       [Failure.new("gemspec failed Gem::Specification#validate: #{e.message}")]
+    end
+
+    # `gem.files` comes from `git ls-files`, so a build is a *release* build
+    # only when HEAD is the release tag's commit. Building one commit later
+    # ships different bytes under the same version number -- which is how
+    # 0.6.0 came to be published as a master-HEAD build rather than the
+    # CI-verified tag artifact (`skoba/openehr-rails#34`,
+    # `docs/reports/fsh-generator-log.md` R8).
+    #
+    # Silent when the version has no tag yet: that is ordinary pre-release
+    # development, not a mismatch.
+    def release_tag_failures
+      return [] unless spec
+
+      tag = "v#{spec.version}"
+      return [] unless git?('rev-parse', '-q', '--verify', "refs/tags/#{tag}")
+
+      head = git('rev-parse', 'HEAD').strip
+      tagged = git('rev-parse', "#{tag}^{commit}").strip
+      return [] if head == tagged
+
+      [Failure.new(
+        "HEAD (#{head[0, 7]}) is not the #{tag} tag commit (#{tagged[0, 7]}) -- " \
+        'a gem built here would not match the released artifact for that version; ' \
+        "build from #{tag} itself, or publish CI's tag-run artifact"
+      )]
     end
 
     def relative(path)
