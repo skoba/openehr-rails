@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.6.0] - 2026-08-26
 
+> **Published artifact note.** The gem published to RubyGems for this version
+> was built from `master` HEAD rather than the `v0.6.0` tag, so it contains the
+> tagged tree plus two documentation files added after the tag
+> (`docs/design/multi-leaf-non-observation-plan.md`, and this project's
+> `docs/reports/fsh-generator-log.md` carrying its R6 entry). `lib/` is
+> byte-identical to the tag artifact and version, runtime dependencies and
+> `required_ruby_version` are unchanged, so the published gem is functionally
+> identical to what CI built and verified at the tag; it was accepted rather
+> than yanked. Published sha256
+> `223e3b3897f85c38eaffe7ea39bd7c2acf4c5de9cab7d50fe38f754ff9d65db6`; tag-build
+> sha256 `08cdd14ab1f3890b0c6b5f0ae0d5ca55615f0b4874ed5efb0cd4d7bda9e573ca`.
+> Full measurements: `docs/reports/fsh-generator-log.md` R8. Prevention:
+> `skoba/openehr-rails#34`.
+
 ### Added
 - `OpenehrRails::Fhir::FshGenerator` renders one FHIR Shorthand profile per
   openEHR entry, including metadata, archetype codes, value constraints,
