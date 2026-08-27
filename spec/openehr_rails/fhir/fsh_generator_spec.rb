@@ -93,10 +93,67 @@ describe OpenehrRails::Fhir::FshGenerator do
     it 'emits a required binding for a C_CODE_REFERENCE constraint' do
       fsh = generator.to_fsh_files.fetch('openehr-evaluation-problem-diagnosis-v1')
 
+      # Since #33 this leaf lands on Condition.code rather than a component
+      # slice; the #30 property under test -- an empty local code_list no
+      # longer suppresses the binding -- is unchanged.
       expect(fsh).to include(
-        '* component[problemdiagnosisat0002].value[x] from ' \
-        'http://id.who.int/icd/release/11/mms (required)'
+        '* code from http://id.who.int/icd/release/11/mms (required)'
       )
+    end
+  end
+
+  # skoba/openehr-rails#33. The 5-leaf EVALUATION entry maps onto real
+  # Condition elements instead of the nonexistent Condition.component; the
+  # mapping and its per-element rationale are
+  # docs/design/multi-leaf-non-observation-plan.md section 8.
+  #
+  # Golden provenance: spec/fixtures/fsh/openehr-evaluation-problem-diagnosis-v1.fsh
+  # is generated output, not a hand-authored artifact -- it is this generator's
+  # expected emission for spec/templates/problem_list.opt, and every rule in it
+  # was compiled against hl7.fhir.r5.core#5.0.0 with sushi 3.16.0 (0 Errors)
+  # before the implementation existed. It therefore carries no leading comment:
+  # the file must byte-match what the generator produces.
+  describe 'a multi-leaf EVALUATION entry (problem_list.opt)' do
+    subject(:fsh) do
+      generator.to_fsh_files.fetch('openehr-evaluation-problem-diagnosis-v1')
+    end
+
+    let(:opt_file) do
+      File.expand_path('../../templates/problem_list.opt', __dir__)
+    end
+    let(:golden) do
+      File.read(File.expand_path('../../fixtures/fsh/openehr-evaluation-problem-diagnosis-v1.fsh', __dir__))
+    end
+
+    it 'matches the golden FSH exactly' do
+      expect(fsh).to eq(golden)
+    end
+
+    it 'never constrains component, which Condition does not have' do
+      expect(fsh).not_to include('component')
+    end
+
+    it 'anchors the archetype on category, leaving code for the diagnosis itself' do
+      expect(fsh).to include(
+        "* category.coding.code = #openEHR-EHR-EVALUATION.problem_diagnosis.v1\n",
+        "* code from http://id.who.int/icd/release/11/mms (required)\n"
+      )
+    end
+
+    it 'maps the three date leaves onto their Condition counterparts' do
+      expect(fsh).to include(
+        "* onsetDateTime only dateTime\n",
+        "* recordedDate only dateTime\n",
+        "* abatementDateTime only dateTime\n"
+      )
+    end
+
+    # at0073's local at-codes cannot be bound: Condition.verificationStatus has
+    # a required binding to condition-ver-status, so translating them is a
+    # ConceptMap concern (plan section 8.2).
+    it 'constrains verificationStatus without binding the local code list' do
+      expect(fsh).to include("* verificationStatus only CodeableConcept\n")
+      expect(fsh).not_to include('verificationStatus from')
     end
   end
 end

@@ -28,17 +28,41 @@ module OpenehrRails
         lines = alias_rules(entry[:fields])
         lines << '' unless lines.empty?
         lines.concat(metadata(entry, id, resource_type))
-        if entry[:fields].one?
+        element_map = TypeMap.element_map_for(entry[:archetype_id])
+        if element_map
+          lines.concat(mapped_rules(entry, element_map))
+        elsif entry[:fields].one?
           field = entry[:fields].first
           lines.concat(code_rules(entry[:archetype_id], 'code', field[:code_bindings]))
           lines.concat(value_rules('value[x]', field))
         else
-          # Multi-leaf non-Observation resources may not expose component;
-          # this pre-existing ProfileGenerator structural gap is tracked in #33.
           lines.concat(code_rules(entry[:archetype_id]))
           lines.concat(component_rules(entry[:fields]))
         end
         "#{lines.join("\n")}\n"
+      end
+
+      # Leaves land on real elements of the base resource, per TypeMap's mapping
+      # table -- the same table ProfileGenerator generates from, so the FSH and
+      # the JSON facade cannot disagree about where a leaf goes (#33).
+      def mapped_rules(entry, element_map)
+        anchor = element_map[:anchor]
+        rules = [
+          "* #{anchor}.coding.system = \"#{ARCHETYPE_SYSTEM}\"",
+          "* #{anchor}.coding.code = ##{entry[:archetype_id]}"
+        ]
+        entry[:fields].each do |field|
+          leaf = element_map[:leaves][field[:node_id]]
+          next unless leaf
+
+          path = leaf[:element]
+          rules << "* #{path} #{field[:required] ? 1 : 0}..1"
+          rules << "* #{path} only #{TypeMap.datatype_for(field[:rm_type])}"
+          next unless leaf[:bind_value_set] && field[:value_set_uri]
+
+          rules << "* #{path} from #{value_set_uri(field[:value_set_uri])} (required)"
+        end
+        rules
       end
 
       def alias_rules(fields)
@@ -145,10 +169,8 @@ module OpenehrRails
         rules
       end
 
-      # C_CODE_REFERENCE uses `terminology:<canonical>` in OPT; FSH binding
-      # targets use the canonical itself.
       def value_set_uri(uri)
-        uri.delete_prefix('terminology:')
+        TypeMap.value_set_canonical(uri)
       end
 
       def profile_id(archetype_id)

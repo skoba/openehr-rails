@@ -50,6 +50,9 @@ module OpenehrRails
       end
 
       def differential_elements(entry, resource_type)
+        element_map = TypeMap.element_map_for(entry[:archetype_id])
+        return mapped_elements(entry, resource_type, element_map) if element_map
+
         elements = [code_element(resource_type, entry[:archetype_id])]
         if entry[:fields].size == 1
           elements.concat(value_elements(resource_type, entry[:fields].first))
@@ -57,6 +60,37 @@ module OpenehrRails
           elements.concat(component_elements(resource_type, entry[:fields]))
         end
         elements
+      end
+
+      # Leaves land on real elements of the base resource, per TypeMap's
+      # mapping table -- no `component`, which resources other than Observation
+      # do not have (#33).
+      def mapped_elements(entry, resource_type, element_map)
+        anchor = {
+          path: "#{resource_type}.#{element_map[:anchor]}",
+          patternCodeableConcept: {
+            coding: [{ system: ARCHETYPE_SYSTEM, code: entry[:archetype_id] }]
+          }
+        }
+        [anchor, *entry[:fields].filter_map { |field| mapped_element(resource_type, element_map, field) }]
+      end
+
+      def mapped_element(resource_type, element_map, field)
+        leaf = element_map[:leaves][field[:node_id]]
+        return unless leaf
+
+        element = {
+          path: "#{resource_type}.#{leaf[:sd_path] || leaf[:element]}",
+          min: field[:required] ? 1 : 0,
+          type: [{ code: TypeMap.datatype_for(field[:rm_type]) }]
+        }
+        if leaf[:bind_value_set] && field[:value_set_uri]
+          element[:binding] = {
+            strength: 'required',
+            valueSet: TypeMap.value_set_canonical(field[:value_set_uri])
+          }
+        end
+        element
       end
 
       def code_element(resource_type, archetype_id)

@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Breaking for consumers of generated FHIR profiles.** `EVALUATION` entries no
+  longer produce `Condition.component` slices, which FHIR R5 `Condition` does not
+  have. Each leaf now maps onto the real `Condition` element that means the same
+  thing — `code` (bound to the leaf's value set), `onsetDateTime`,
+  `recordedDate`, `abatementDateTime`, `verificationStatus` — and the archetype
+  anchor moves from `Condition.code` to `Condition.category`, since `code` is now
+  the diagnosis itself. `ProfileGenerator` (JSON) and `FshGenerator` generate
+  from one table in `TypeMap`, so the two outputs cannot disagree. Generated FSH
+  for `problem_list.opt` goes from 29 Sushi errors to 0. Host apps must
+  regenerate cached `app/fhir/profiles/*.json`; anything reading the old
+  `Condition.component` slices must be updated (#33). Currently mapped:
+  `openEHR-EHR-EVALUATION.problem_diagnosis.v1`. Multi-leaf entries mapped to
+  `ServiceRequest`/`Procedure`/`Encounter` are unchanged and still have the
+  structural gap, reserved as #35.
+- Value-set canonicals on mapped leaves no longer carry OPT's `terminology:`
+  prefix, in either output.
+
+### Removed
+- `TypeMap.value_element`, dead since it was added — its ternary returned the
+  same string on both branches and nothing called it. Its intended
+  resource-type branch is now the mapping table (#33).
+
 ### Fixed
 - `release:check` now fails when a tag matching the gemspec version exists and
   `HEAD` is not that tag's commit. `gem.files` comes from `git ls-files`, so a
