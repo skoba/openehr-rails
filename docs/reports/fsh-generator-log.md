@@ -577,3 +577,97 @@ backlog line records `4080053`.
 Back to standby. `#33`
 (`docs/design/multi-leaf-non-observation-plan.md`) is unchanged and still at
 its approval gate; nothing implemented against it.
+
+## R10 -- #33 implemented: EVALUATION -> Condition proper mapping
+
+Ruling 2026-08-27 adopted **option (d), proper mapping** over this repo's own
+design doc, which had recommended option (c) (restrict + raise). All five
+`problem_diagnosis` leaves land on real `Condition` elements.
+
+### Mapping table fixed before implementation (`07767cc`)
+
+`docs/design/multi-leaf-non-observation-plan.md` gained section 8 as the
+normative spec; sections 2-6 kept for the record, marked superseded. One
+rationale line per element, and the deliberate omissions stated with reasons.
+
+Measured, not assumed, before a line was written: leaves are
+`FieldExtractor#entries` for `spec/templates/problem_list.opt`, and the exact
+rule set the implementation would have to emit was compiled against
+`hl7.fhir.r5.core#5.0.0` with `sushi` 3.16.0 -- **0 Errors** -- so the design was
+known to be valid FHIR before it was a design.
+
+| leaf | -> `Condition` |
+|---|---|
+| *(anchor)* | `category` (fixed CKM coding) |
+| `at0002` プロブレム・診断名 | `code`, bound to ICD-11 MMS (required) |
+| `at0077` 発症日時 | `onsetDateTime` |
+| `at0003` 臨床的に認識された日時 | `recordedDate` (approximation, recorded as such in 8.1) |
+| `at0030` 治癒日時 | `abatementDateTime` |
+| `at0073` 診断確度 | `verificationStatus`, **no binding emitted** |
+
+The anchor had to move off `code`: under a proper mapping `code` is the
+diagnosis (at0002), not the archetype id.
+
+### TDD
+
+**Red**: generated FSH for `problem_list.opt` compiled to **29 Errors** (all
+`No element found at path component…`) -- the pin. Specs added first: golden
+byte-match plus four behavioural examples in `fsh_generator_spec.rb`, five in
+`profile_generator_spec.rb`. Before implementation: **10 failures**
+(11 examples/5 failures and 16/5 respectively).
+
+**Green**: `39 examples, 0 failures` across `spec/openehr_rails/fhir/`.
+Generated FSH byte-matches the golden and compiles to **0 Errors** under `sushi`
+3.16.0 -- verified on the real generator output, not a hand-written sample, for
+`problem_list.opt` *and* `bmi_calculation.opt` together (the `Observation`
+`component` regression pin still compiles).
+
+### Implementation
+
+`TypeMap::ENTRY_ELEMENT_MAPS`, keyed by archetype id, next to `ENTRY_RESOURCES`
+-- the existing mechanism, per the ruling, rather than new conditionals in two
+places. Both generators ask `TypeMap` for the map and take one extra branch
+each; `TypeMap.value_set_canonical` centralises the `terminology:` strip that
+only `FshGenerator` did before, so the two outputs cannot disagree on a
+canonical. The dead `TypeMap.value_element` was removed as the design doc
+proposed (its intended resource-type branch is now the table).
+
+### Three pre-existing pins updated, and coverage genuinely lost
+
+`problem_list.opt` is this repo's **only** fixture with a local `code_list` or a
+`C_CODE_REFERENCE` value set (checked across every fixture, not assumed), so
+changing its output moved the only ground under three `#30`-era specs:
+
+1. `profile_generator_spec.rb` "emits a required value-set binding" -- intent
+   intact (at0002's empty `code_list` still does not suppress the binding); the
+   element is now `Condition.code` and the canonical no longer carries the
+   `terminology:` prefix.
+2. `fsh_generator_spec.rb` "emits a required binding" -- same, now asserting
+   `* code from … (required)`.
+3. `profile_generator_spec.rb` "keeps a local code-list binding free of a
+   valueSet" -- **this pin's premise is gone**. at0073 now maps to
+   `verificationStatus`, which emits *no* binding, not a strength-only one.
+   Replaced with a pin on the new truth.
+
+**Consequence recorded rather than papered over**: `ProfileGenerator#apply_value_constraints`'
+strength-only `DV_CODED_TEXT` branch, and its `terminology:`-prefixed `valueSet`
+on the legacy single-leaf path, now have **no fixture exercising them**. Both
+still ship for any archetype not in the mapping table. The prefixed canonical in
+particular looks like a latent bug -- a FHIR `valueSet` should be the canonical
+itself, which is why `FshGenerator` always stripped it -- but fixing it is
+outside #33's ruling and would need its own Issue and a fixture that reaches
+that path.
+
+### Scope boundary
+
+Generalisation to other `EVALUATION` archetypes was explicitly not required.
+`INSTRUCTION`→`ServiceRequest` (`request-referral`, arriving with referral v2)
+is reserved as **#35**, filed but not scheduled -- it is blocked on a real
+fixture, since `anlage` recommended against taking `mml_referral.opt` in.
+
+### Semver
+
+**Minor**, and `CHANGELOG.md` says "breaking for consumers of generated FHIR
+profiles" plainly: the JSON facade's shape changes for `EVALUATION` entries and
+host apps must regenerate `app/fhir/profiles/*.json`. Rides with #34's
+`release:check` change; 0.7.0 expected, finalised at release inventory.
