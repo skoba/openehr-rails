@@ -315,3 +315,102 @@ approval rather than decided here: the option choice itself, and whether
 skip-and-report per entry when one entry hits the restriction.
 
 Gate: reporting to the user for approval before implementation.
+
+## R7 -- v0.6.0 artifact re-verification after the machine migration
+
+The old development machine was lost; this repository was re-established on a
+new one and re-verified against `origin` + rubygems.org before any work
+resumed (that acceptance check is recorded in `openehr-ruby`'s
+`docs/reports/machine-migration-log.md` R1, commit `dd2bd88`, not here --
+this repository had nothing uncommitted of its own). R5 recorded the v0.6.0
+CI/local artifact match, but that report was lost with the machine, so it is
+re-established here from scratch.
+
+### Tag run
+
+`gh run list -R skoba/openehr-rails` identifies the tag push run as the
+**`Release` workflow, run `32915373663`**, `event=push`, `ref=v0.6.0`,
+`headSha=40800536737b85b8b0a8b1422cbea9acfb1c7929` (the same SHA the local
+`v0.6.0` tag resolves to), `conclusion=success`, 3m26s.
+
+All **12 jobs green** (`gh run view 32915373663 --json jobs`, every step's
+conclusion checked, not just the run-level rollup):
+
+- `ci / spec` x 9 -- ruby 3.3/3.4/4.0 x rails 7_2/8_0/8_1
+- `ci / demo smoke (openehr:scaffold end-to-end)`
+- `ci / application template smoke test`
+- `Build gem artifact` -- including `release:check` (clean tree, sibling-file
+  tracking, gemspec validity) and `bundle exec rake build`
+
+### Artifact sha256 -- initial mismatch, cause found, then exact match
+
+`gh run download 32915373663 -R skoba/openehr-rails -n gem`:
+
+```
+08cdd14ab1f3890b0c6b5f0ae0d5ca55615f0b4874ed5efb0cd4d7bda9e573ca  openehr-rails-0.6.0.gem   (209,408 bytes)
+```
+
+This did **not** match the value `223e3b3897f85c38eaffe7ea39bd7c2acf4c5de9cab7d50fe38f754ff9d65db6`
+(215,040 bytes) that the migration acceptance check reported for its local
+`rake build`. Diagnosed rather than reported as a reproducibility failure:
+
+- Unpacked both `.gem` tars. `data.tar.gz`, `metadata.gz` and
+  `checksums.yaml.gz` all differ.
+- Payload file lists: **175 files (CI) vs 176 (local)**. The single extra file
+  is `docs/design/multi-leaf-non-observation-plan.md`, and the `metadata.gz`
+  diff is the same one line.
+- That file was added by `536384f` ("Docs: design plan for #33"), i.e. **after**
+  the `v0.6.0` tag. `openehr-rails.gemspec:19` sets
+  ``gem.files = `git ls-files`.split("\n")``, so the payload tracks whatever
+  commit is checked out.
+
+**The migration check built `master` HEAD (`89ec115`, three docs commits ahead
+of the tag), not `v0.6.0`.** Rebuilt from the tag itself, in a detached
+worktree so the `master` checkout was never touched
+(`git -C ... worktree add --detach <scratch> v0.6.0`, HEAD `40800536`, clean
+tree, `MAKEFLAGS=-j1 bundle install` then `bundle exec rake build` -- the same
+two commands `release.yml` runs):
+
+```
+08cdd14ab1f3890b0c6b5f0ae0d5ca55615f0b4874ed5efb0cd4d7bda9e573ca  pkg/openehr-rails-0.6.0.gem   (209,408 bytes)
+```
+
+**Byte-identical to the CI artifact.** The worktree was removed afterwards
+(`git worktree remove --force`); `git worktree list` shows only the main
+checkout and the tree is clean.
+
+So `223e3b38...` is not a competing value for `v0.6.0` at all -- it is the
+sha256 of a `master`-HEAD build, and there is nothing to arbitrate. The
+reproducible-build property holds, and this run strengthens it: it now holds
+**across machines** (old machine's R5, new machine here) and across
+**ruby 4.0.6 local vs CI's `ruby/setup-ruby@v1` ruby 4.0**, on the same commit.
+The build is commit-sensitive, not machine-sensitive -- which is the property
+that actually matters for release verification.
+
+**RubyGems publish is unblocked** (human's step, per the established operating
+model). `gem list -r -a openehr-rails` confirms the published latest is still
+`0.5.0`. The value to check the published `0.6.0` gem against is
+`08cdd14ab1f3890b0c6b5f0ae0d5ca55615f0b4874ed5efb0cd4d7bda9e573ca`.
+
+### Convention: cross-repo authorization gate
+
+The line directed for this batch -- implementation target outside this
+repository means a gate report before starting, and `cd`/`-C`/`-R` discipline
+does not substitute for authorization to cross -- was already added to **this**
+repository's `CLAUDE.md` on 2026-08-26 (section "Cross-repository
+implementation work needs its own authorization gate", `CLAUDE.md:105-124`).
+Re-adding it here would only duplicate it, so it was not touched.
+
+That entry noted a matching line was still planned elsewhere. `openehr-ruby`'s
+`CLAUDE.md` was confirmed to lack it (its "Repository boundary" and
+"Repository-context-dependent commands" bullets cover the *how*, not the
+*whether*), so the rule was mirrored into `openehr-ruby`'s Contribution
+workflow section there. `anlage`'s `CLAUDE.md` still lacks it -- writing to
+`anlage` is itself a crossing this rule gates, so it was not done without a
+direction naming that repository.
+
+### Gate
+
+`#33` (`docs/design/multi-leaf-non-observation-plan.md`) remains at the
+approval gate opened in R6. No implementation started; standing by for the
+arbitration.
