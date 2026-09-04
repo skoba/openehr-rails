@@ -44,6 +44,10 @@ module OpenehrRails
       # 上流OPTParserがcomponent_terminologiesの各ArchetypeTerminologyへ
       # term_bindingsを投入するようになれば、下のnilガードで本メソッドは
       # no-opになるため、このメソッド群と#parseからの呼び出しを削除する。
+      # #31の迂回保有者は本メソッド群（このnilガード1箇所）のみ（2026-09-04現在）。
+      # もう一方の迂回だったanlage側の生XML再解析
+      # （Opt::PathcardExtractor#extract_code_bindings、skoba/anlage#19）は
+      # 撤去済みで、上流解消時はここの2メソッド削除だけで撤去が完了する。
       # それまでは、OPT文書のterm_bindings（items/valueの入れ子構造。ADL/XML
       # アーキタイプのterm_bindings ── 属性+単一テキストの平坦構造 ──とは
       # XML構造が異なる点に注意）を@optから直接読み、上流ArchetypeOntology#
