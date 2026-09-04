@@ -134,7 +134,8 @@ name explicitly a distinction that the existing repository-context rule left
 implicit: it governs *how* to target a cross-repo command correctly, not *whether*
 crossing into implementation work on another repository has actually been
 authorized for the task at hand. A matching line is planned for `anlage`'s own
-`CLAUDE.md` in a later batch - not yet added there as of this entry.)
+`CLAUDE.md` in a later batch - not yet added there as of this entry. Update
+2026-09-04: added there as 絶対規律 item 9.)
 
 ## Project Overview
 
