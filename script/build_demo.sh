@@ -73,6 +73,12 @@ fi
 if ! grep -q 'rspec-rails' "$DEMO_DIR/Gemfile"; then
   printf '\ngroup :development, :test do\n  gem "rspec-rails"\nend\n' >> "$DEMO_DIR/Gemfile"
 fi
+# 暫定（2026-09）: json 3.0 が JSON.parse の引数仕様を変え、activesupport 8.1.3.1 の
+# ActiveSupport::JSON.decode と噛み合わず json カラムの読み書きが ArgumentError に
+# なる。Rails のパッチリリースで解消したら削除（docs/backlog.md）。
+if ! grep -q 'gem "json"' "$DEMO_DIR/Gemfile"; then
+  printf '\n# temporary: json 3.0 vs activesupport 8.1.3.1 JSON.parse arity mismatch\ngem "json", "< 3"\n' >> "$DEMO_DIR/Gemfile"
+fi
 
 cd "$DEMO_DIR"
 log "bundle install"

@@ -39,6 +39,12 @@ else
   gem 'openehr-rails', '~> 0.3'
 end
 
+# Temporary (2026-09): json 3.0 changed JSON.parse's arity and
+# ActiveSupport::JSON.decode as of activesupport 8.1.3.1 still passes its
+# options positionally, so the first json-column write (db:seed below)
+# raises ArgumentError. Remove once a Rails patch release carries the fix.
+gem 'json', '< 3'
+
 if ENV['OPENEHR_SAMPLES'] == '1'
   gem_group :development, :test do
     gem 'rspec-rails'

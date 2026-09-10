@@ -31,6 +31,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   resource-type branch is now the mapping table (#33).
 
 ### Fixed
+- `templates/openehr_template.rb` pins `json < 3` in the generated app's
+  `Gemfile`. `json` 3.0 (2026-09-08) changed `JSON.parse`'s arity and
+  `ActiveSupport::JSON.decode` as of activesupport 8.1.3.1 still passes options
+  positionally, so a freshly generated host app failed at `db:seed` on its first
+  json-column write (`ArgumentError: wrong number of arguments (given 2, expected
+  1)`). Temporary: remove once a Rails patch release carries the fix. This
+  repo's own `Gemfile` and `script/build_demo.sh` carry the same dev-only pin.
 - `release:check` now fails when a tag matching the gemspec version exists and
   `HEAD` is not that tag's commit. `gem.files` comes from `git ls-files`, so a
   gem built at a later commit ships different bytes under the same version
