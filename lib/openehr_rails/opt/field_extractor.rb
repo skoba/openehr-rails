@@ -21,7 +21,7 @@ module OpenehrRails
     #   value_set_uri:   external value-set URI for DV_CODED_TEXT
     #   code_bindings:   [{system_uri:, code:}] ontology bindings for the node
     #   required:        true when the entry and element are both mandatory
-    # rubocop:disable Metrics/ClassLength
+    # rubocop:disable-next Metrics/ClassLength
     class FieldExtractor
       ENTRY_TYPES = %w[OBSERVATION EVALUATION INSTRUCTION ACTION ADMIN_ENTRY].freeze
       SECTION_TYPE = 'SECTION'.freeze
@@ -303,6 +303,5 @@ module OpenehrRails
         nil
       end
     end
-    # rubocop:enable Metrics/ClassLength
   end
 end

@@ -4,7 +4,7 @@ require 'spec_helper'
 require 'openehr_rails'
 require 'ostruct'
 
-# rubocop:disable Style/OpenStructUse
+# rubocop:disable-next Style/OpenStructUse
 describe OpenehrRails::Opt::FieldExtractor do
   def field_for(fields, archetype_id, node_id)
     fields.find { |field| field[:archetype_id] == archetype_id && field[:node_id] == node_id }
@@ -97,4 +97,3 @@ describe OpenehrRails::Opt::FieldExtractor do
     end
   end
 end
-# rubocop:enable Style/OpenStructUse
