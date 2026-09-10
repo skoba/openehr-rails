@@ -757,3 +757,101 @@ to stay at 210/210).
 Still **minor** (section 9.6): `#skipped` and `UnsupportedProfileError` are new
 public API; the facade shape for `EVALUATION` changes again. `CHANGELOG.md`
 `[Unreleased]` updated (Changed bullet reworded, `Added` section).
+
+## R12 -- 0.7.0 gate prep: CI red from json 3.0 (#40), fix PRs, merge order left to the human
+
+### PR #39's first CI run failed for a reason unrelated to #39
+
+Run `34423912397` (head `131e777`): all 9 `spec` matrix jobs red, **304 examples,
+62 failures**, every one in the RM-graph / AQL specs that write a json column.
+Diagnosed by measurement, not by the PR diff:
+
+- The run's bundler log listed five gems newer than the 2026-09-04 cache:
+  `json 3.0.2`, `parallel 2.2.0`, `openehr 2.4.3`, `net-imap 0.6.7`,
+  `simplecov 1.2.0`.
+- `openehr 2.4.3` was the first suspect (released the day before, by this
+  user). Ruled out: its `lib/` diff against 2.4.2 is the ADL grammar + one
+  helper line, nothing an ActiveRecord `create!` touches; and the eventual
+  green runs below use 2.4.3.
+- Reproduced locally on `master` `3d69fc0` with a full `bundle update`
+  (`json 2.21.2 -> 3.0.2`): `dataset_adapter_spec.rb:10` fails with
+  `ArgumentError: wrong number of arguments (given 2, expected 1)` at
+  `json-3.0.2/lib/json/common.rb:296 JSON.parse`, called from
+  `activesupport-8.1.3.1 ActiveSupport::JSON.decode` via
+  `ActiveRecord::Type::Json#deserialize`. Lockfile restored: passes.
+- `json 3.0.1` was released 2026-09-08, `3.0.2` on 2026-09-09; the latest
+  activesupport is still `8.1.3.1` (2026-07-29). This repo commits no lockfile
+  (`*.lock` is gitignored), so every CI run resolves fresh -- `master` itself
+  would be red on its next push.
+
+### Fix: #40 / PR #41 (three pins), CI fully green
+
+Filed **#40** (bug), then PR **#41** `a1e8363`: `gem 'json', '< 3'` in the three
+Gemfiles this repo controls -- `Gemfile` (dev/test), `script/build_demo.sh` (the
+demo app's Gemfile), `templates/openehr_template.rb` (the generated host app's
+Gemfile; shipped file, so a `CHANGELOG` `[Unreleased]` Fixed entry). Resolution
+shape (c) pin. Removal condition in `docs/backlog.md` "Dependencies". Verified
+locally first: pin + fresh resolve (`activesupport 8.1.3.1`, `openehr 2.4.3`,
+`json 2.21.2`) -> **295 examples, 0 failures**. CI run `34424846436`: all 9
+`spec` jobs, `demo smoke` and `application template smoke test` **success** --
+the two smoke jobs had been skipped on every earlier run today, so this is the
+first time they were exercised against json 3 (their generated apps would have
+failed at `db:seed` without the template pin).
+
+**Slip caught after the fact**: `a1e8363` also flipped `script/build_demo.sh`
+from mode 100755 to 100644 -- the file was edited from the Windows side over
+`\\wsl.localhost`, which does not preserve the executable bit. CI was unaffected
+only because `ci.yml` runs it as `bash script/build_demo.sh`. Restored in
+`2014c75` on the same branch. Lesson for this environment: after any edit made
+over `\\wsl.localhost`, check `git diff --summary` for `mode change` before
+committing.
+
+### Getting #39 green without merging anything to master
+
+`fix/json3-pin` was merged **branch-to-branch** into `fix/33-ruling-corrections`
+(`081b530`, then `9fac505` after the exec-bit fix) so #39's CI could run under
+the pin. Run `34425288943` (head `9fac505`): **success**, all 11 jobs. Because
+the commits are identical objects, merging #41 to `master` first and #39 second
+produces no conflict and no duplicate change.
+
+**Merges to `master` are deliberately not performed by this session.** The
+attempt (`gh pr merge 41 --merge`) was denied by the auto-mode permission
+classifier, and merging is the one step here that is hard to reverse, so it
+stays with the human. Any order works: #39 already contains #41's commits, and
+#42 touches only `CLAUDE.md`.
+
+### Step 3 docs: PR #42
+
+`docs/release-convention-sync` (`19ae015` + whitespace `0ad9579`): the two
+publish-confirmation rules from openehr-ruby's 2.4.3 release ported into
+`CLAUDE.md`'s Release convention -- confirm publication by comparing RubyGems'
+published sha256 against the tag's Release-run value, not by the version number
+appearing; and the `/api/v1/versions/<gem>.json` propagation lag (use
+`versions/<gem>/latest.json`, `gems/<gem>.json` or the compact index). Docs only.
+
+### 0.7.0 inventory (as of this entry; `master` = `3d69fc0` + three open PRs)
+
+Classified per the Release convention: neutral only if no shipped file is
+touched; any shipped-file touch is at least patch.
+
+| commit | what | class |
+|---|---|---|
+| `b3617d6` `536384f` `89ec115` `73c409b` `6bbdf51` `899fa4c` `9e9f628` `829275f` `ffea1c2` `07767cc` `cbcd77d` `3d69fc0` | docs (R5-R10, design doc, CHANGELOG note, CLAUDE.md, backlog) | neutral |
+| `7b68d7b` | `release:check` HEAD-at-tag guard (#34) -- `lib/openehr_rails/release_check.rb` | patch |
+| `3df9632` | `#31` detour-holder comment in `lib/openehr_rails/opt/parser.rb` (comment only, but shipped bytes change) | patch |
+| `01f31f3` | `EVALUATION` -> `Condition` proper mapping (#33): facade output shape changes | **minor** |
+| PR #41 `a1e8363` + `2014c75` | json pins: `Gemfile`/`script` neutral, `templates/openehr_template.rb` shipped | patch |
+| PR #39 `46ed421` (+ `131e777` docs, merges) | the four corrections: new public API `#skipped`, `UnsupportedProfileError`; facade shape changes again | **minor** |
+| PR #42 `19ae015` `0ad9579` | `CLAUDE.md` | neutral |
+
+Highest level in the range: **minor** -> **0.7.0**. No install-time dependency
+changed (gemspec untouched). The backlog's ">= 0.5.0" floor is long satisfied.
+
+### Gate
+
+Awaiting the human: merge #41, #39, #42; approve 0.7.0. Then, in order: release
+commit (bump `lib/openehr_rails/version.rb` to 0.7.0, retitle `[Unreleased]` as
+`[0.7.0] - <date>`, open a fresh empty `[Unreleased]`), tag `v0.7.0`,
+`release.yml` -> download the `gem` artifact, compare sha256 against the run's
+recorded value, human `gem push`, confirm by published checksum (the rule #42
+adds), delete the local artifact.
