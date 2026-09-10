@@ -855,3 +855,71 @@ commit (bump `lib/openehr_rails/version.rb` to 0.7.0, retitle `[Unreleased]` as
 `release.yml` -> download the `gem` artifact, compare sha256 against the run's
 recorded value, human `gem push`, confirm by published checksum (the rule #42
 adds), delete the local artifact.
+
+## R13 -- ruling applied: #38 deferred to 0.7.1 (PR #43 open), lint, release prep
+
+Ruling of 2026-09-10 on R11/R12, item by item:
+
+1. **01f31f3 direct-to-master**: confirmed as a recorded deviation, no corrective
+   action (content verified, unreleased). Rule unchanged.
+2. **PR #39** approved; merged by the human as `fe4a2a1`. The synthetic-entry
+   specs are accepted as a unit test of the decision mechanism; the TODO to
+   swap in a real multi-leaf `INSTRUCTION` fixture when `jp_referral` arrives
+   is cross-referenced as a comment on **#35**.
+3. **#38**: allowed to ride if same decision point, small, green -- implemented
+   as **PR #43** (`5fcc0ec`, below), which meets all three. It is nevertheless
+   **not in 0.7.0**: at release time #43 was still unmerged, this session cannot
+   merge (the auto-mode classifier denies `gh pr merge`), and the human's
+   go-ahead was "proceed to 0.7.0, #38 is the session's call". Decision: ship
+   0.7.0 from `acb1e3f` (#41 + #39 + #42), move #38 to **0.7.1**. #43 stays open
+   and needs a rebase so its CHANGELOG line lands under the new `[Unreleased]`
+   rather than inside `[0.7.0]`.
+4. **PR #41** approved; merged as `f327d36`. Removal condition stays in
+   `docs/backlog.md` "Dependencies".
+5. **rubocop** `Style/DirectiveScope` x2: trivial (`rubocop -A` rewrites the
+   `disable`/`enable` pair into `disable-next`, lint clean, 6/0 on the touched
+   spec), so it goes into release prep as its own lint commit -- not into the
+   release commit itself, which stays version + CHANGELOG as for 0.6.0.
+6. **0.7.0 approved as minor**, CHANGELOG plan adopted (Breaking-for-consumers
+   wording already in place + a one-line Upgrade note at the top of the
+   section).
+7. **PR #42** approved; merged as `acb1e3f`.
+
+Implication recorded on **#37**: until its mapping rows land, `jp_referral`'s
+FHIR output is `problem_diagnosis` plus the `OBSERVATION`-mapped entries; the
+rest appears in `#skipped`. Default December, earlier only if capacity allows.
+
+### #38 -- PR #43 (`5fcc0ec`, Fixes #38), ready but deferred
+
+`TypeMap.assert_supported!` drops its `fields.size <= 1` early return, so any
+entry whose base resource is not `Observation` and which has no
+`ENTRY_ELEMENT_MAPS` row is skipped and reported, single-leaf included (that
+path emitted `<Resource>.value[x]`, which `Condition` lacks -- the 9.5 probe's
+1 sushi Error). Message names both missing elements. Design record: plan
+section 9.7 (on the PR branch).
+
+- **Fixture check first**: every OPT under `spec/templates/`,
+  `spec/generators/templates/`, `demo_assets/templates/` listed with
+  `FieldExtractor#entries` -- all single-leaf entries are `OBSERVATION`; the
+  only non-`Observation` entry is the mapped `problem_diagnosis.v1`. No fixture
+  output changes. Side finding: `spec/templates/sample_blood_pressure.opt` does
+  not parse (`ArgumentError: invalid archetype id form`) under openehr **2.4.2
+  and 2.4.3** alike, and nothing references it -- orphan, recorded in
+  `docs/backlog.md` on the PR branch, not touched.
+- **Red**: 4 new examples (synthetic single-leaf `EVALUATION` entry) -- **40
+  examples, 4 failures** across the two generator spec files. **Green**: 40/0,
+  `spec/openehr_rails/fhir/` **52/0**, full suite **308/0**. Golden FSH
+  byte-identical; `problem_list.opt` + `bmi_calculation.opt` **0 Errors** under
+  sushi 3.16.0. CI run `34429423886`: success, all 11 jobs.
+- Resolution shape (a) bug; patch -> 0.7.1.
+
+### Final 0.7.0 inventory
+
+R12's table as merged (`acb1e3f`), plus the lint commit below (comment
+directives in `lib/`, patch by the shipped-bytes rule, behaviour unchanged).
+Highest level **minor**; gemspec untouched. Release sequence from here: lint
+commit -> this entry -> release commit (`version.rb` 0.7.0, `[Unreleased]`
+retitled `[0.7.0] - 2026-09-10` with the Upgrade note, fresh empty
+`[Unreleased]`) -> tag `v0.7.0` -> `release.yml` -> artifact sha256 (R14) ->
+human `gem push` of that artifact -> confirmation by published checksum, the
+first application of the rule PR #42 added.
