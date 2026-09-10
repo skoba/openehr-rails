@@ -16,9 +16,13 @@ module Openehr
       def generate_profiles
         source = remote_url? ? fetch_remote_opt : opt_file
         template = OpenehrRails::Opt.parse(source)
-        OpenehrRails::Fhir::ProfileGenerator.new(template).to_json_files.each do |id, json|
+        generator = OpenehrRails::Fhir::ProfileGenerator.new(template)
+        generator.to_json_files.each do |id, json|
           create_file "app/fhir/profiles/#{id}.json", json
         end
+        # Entries no valid profile can be generated for are skipped, not silently
+        # dropped (#33 skip-and-report).
+        generator.skipped.each { |error| say_status :skip, error.message, :yellow }
       end
 
       private

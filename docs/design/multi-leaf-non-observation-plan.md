@@ -1,6 +1,6 @@
 # Fix: multi-leaf non-Observation entries constrain a nonexistent `component`
 
-- Status: **ruled 2026-08-27 — option (d), proper mapping, adopted. §§2-6 below are superseded; §8 is the normative spec.**
+- Status: **ruled 2026-08-27 — option (d), proper mapping, adopted. §§2-6 below are superseded; §8 is the normative spec, as corrected by §9 (the ruling's four corrections, applied 2026-09-10).**
 - Target: `openehr-rails` (this repo). No cross-repo work.
 - Issue: [#33](https://github.com/skoba/openehr-rails/issues/33)
 - Log: `docs/reports/fsh-generator-log.md` (continuing R1-R5)
@@ -258,3 +258,110 @@ exactly this resource-type branch and never implemented it.
 is observable to any host app consuming `app/fhir/profiles/*.json`. Ships with
 `#34`'s `release:check` change; version finalised at release inventory, 0.7.0
 expected.
+
+# 9. RULING FOLLOW-UP (2026-09-10): the four corrections to §8, applied
+
+The 2026-08-27 ruling approved §8 **with four corrections**: (1) the archetype
+anchor is a *slice* of `category`, (2) `at0003`'s approximation is stated on the
+element as a `^comment`, (3) unmapped multi-leaf non-`Observation` entries are
+*skipped and reported* per entry, (4) through a named exception class. The
+implementation commit `01f31f3` (2026-08-27 12:38 JST) landed 21 minutes after §8
+itself (`07767cc`, 12:17 JST) and carries none of them; this repository held no
+record of the four points until this section. Applied under the reopened #33.
+Everything below was measured against `hl7.fhir.r5.core#5.0.0` with `sushi`
+3.16.0 before the code was written, as §8 was.
+
+## 9.1 Correction 1 — the anchor is a slice of `category`
+
+- **Before**: `* category.coding.system = "…"` / `* category.coding.code = #…`
+  (JSON: one `Condition.category` element with `patternCodeableConcept`).
+- **Why that was wrong**: `Condition.category` is `0..*`. Fixing the coding on the
+  element constrains *every* repetition, so a conforming instance could not also
+  carry e.g. `problem-list-item` beside the archetype coding.
+- **After**: pattern slicing on `$this`, `rules = #open`, `contains ckm 1..1`,
+  `category[ckm] = http://openehr.org/ckm/archetypes#<archetype id>` (FSH
+  assignment to a `CodeableConcept` is a `patternCodeableConcept`, the same shape
+  the JSON facade emits). JSON: two `Condition.category` elements — the slicing
+  root (`discriminator: [{type: pattern, path: $this}]`, `rules: open`) and the
+  `ckm` slice (`min 1`, `max "1"`, `patternCodeableConcept`). The slice name
+  reuses the name the FSH output already gives the CKM coding slice on
+  `code.coding`; it is `TypeMap::ANCHOR_SLICE` so both generators share it.
+- **Measured**: the candidate rule set compiled to **0 Errors** before
+  implementation; the generator's own output afterwards byte-matches the golden
+  and compiles to **0 Errors** together with `bmi_calculation.opt`.
+
+## 9.2 Correction 2 — `at0003` carries a `^comment`
+
+§8.1 records `at0003` → `recordedDate` as an approximation in this document only;
+the profile now says so itself. `ENTRY_ELEMENT_MAPS` gains a `:comment` key on
+the leaf, emitted as `* recordedDate ^comment = "…"` (FSH) and
+`ElementDefinition.comment` (JSON) — table-driven, so the two outputs cannot
+differ on the wording. Text: *Approximation: openEHR at0003 (Date/time clinically
+recognised) has no exact counterpart in FHIR R5 Condition; recordedDate is when
+this Condition record was created in the system. See
+docs/design/multi-leaf-non-observation-plan.md section 8.1.*
+
+## 9.3 Corrections 3 and 4 — skip-and-report, `UnsupportedProfileError`
+
+These answer §6's open questions 2 and 3.
+
+- **Condition**: an entry with **more than one leaf**, whose base resource is
+  **not `Observation`**, and which has **no row** in `ENTRY_ELEMENT_MAPS`. Before
+  this section such an entry silently took the `component` path — the original
+  #33 defect, still live for `ServiceRequest`/`Procedure`/`Encounter` (the
+  `[Unreleased]` CHANGELOG said as much).
+- **One decision point** (§3): `TypeMap.assert_supported!(entry)` raises
+  `OpenehrRails::Fhir::UnsupportedProfileError` (`archetype_id`, `resource_type`,
+  `leaf_count`, and a message naming all three plus #33/#35). Both generators
+  call it; neither carries its own conditional.
+- **Skip-and-report per entry, not raise-through** (Q2): `ProfileGenerator` and
+  `FshGenerator` partition entries at construction, generate for the supported
+  ones, and expose the errors in template order through `#skipped`. The batch
+  never aborts on one bad entry. The Rails generators (`openehr:fhir_profile`,
+  `openehr:scaffold --fhir`) print each skip as `say_status :skip, …, :yellow` —
+  the report reaches the person running the generator, and a library caller that
+  wants a hard failure re-raises from `#skipped`.
+- **Class** (Q3): `OpenehrRails::Fhir::UnsupportedProfileError < StandardError`,
+  in `lib/openehr_rails/fhir/unsupported_profile_error.rb`, required before
+  `type_map`.
+- **Not covered, deliberately**: single-leaf entries. The ruling's wording is
+  多葉 (multi-leaf); the single-leaf non-`Observation` path has its own defect,
+  recorded in 9.5 rather than folded in here.
+
+## 9.4 TDD (resolution shape (b) enhancement for all four)
+
+- **Red**: specs written first in `fsh_generator_spec.rb` and
+  `profile_generator_spec.rb` (slice, `^comment`/`comment`, skip-and-report,
+  `#skipped` empty for an all-`Observation` template) plus the regenerated
+  golden: **36 examples, 12 failures** on the pre-correction code.
+- **Green**: `spec/openehr_rails/fhir/`: **48 examples, 0 failures**; full suite
+  **304 examples, 0 failures** (295 before).
+- **Synthetic entry, spec-level, not a fixture file**: no real multi-leaf
+  `INSTRUCTION` OPT exists in this repo (#35 is blocked on exactly that), so the
+  skip-and-report specs stub `FieldExtractor` to return `problem_list.opt`'s real
+  entry plus one invented `INSTRUCTION` entry
+  (`openEHR-EHR-INSTRUCTION.synthetic_unmapped_test.v1`, two of the real leaves
+  relabelled). The id is self-evidently invented; the spec comment says so and
+  points here.
+- **Golden**: regenerated from the corrected generator, diffed against the
+  pre-verified candidate (identical), then compiled again: **0 Errors**.
+
+## 9.5 Residual found while measuring 9.1 — not fixed here
+
+A single-leaf non-`Observation` entry still takes the legacy path and emits
+`* value[x] 0..1` (FSH) / `<Resource>.value[x]` (JSON). `Condition` has no
+`value[x]` either: a hand-written probe (`Parent: Condition`, `* value[x] 0..1`)
+compiled under the same `sushi` run to **1 Error**, `No element found at path
+value[x] for CardRule`. No fixture in this repository reaches that path
+(`problem_list.opt` is 5-leaf; every single-leaf fixture entry is
+`OBSERVATION`), so nothing observable regressed. Outside the ruling's scope
+(多葉); filed as its own bug Issue rather than widened into #33 — the natural fix
+is to extend `assert_supported!` to it, but that is a second contract change and
+gets its own red spec.
+
+## 9.6 Semver
+
+Still **minor**, on top of §8.5: `#skipped` and `UnsupportedProfileError` are
+new public API; the `category` anchor and the `comment` change the JSON facade's
+shape again for `EVALUATION` entries. `CHANGELOG.md` `[Unreleased]` updated in
+the same change.

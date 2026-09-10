@@ -96,9 +96,11 @@ module Openehr
       def generate_fhir_profiles
         return unless options[:fhir]
 
-        OpenehrRails::Fhir::ProfileGenerator.new(@opt).to_json_files.each do |id, json|
-          create_file "app/fhir/profiles/#{id}.json", json
-        end
+        # Entries no valid profile can be generated for are skipped and reported,
+        # not silently dropped (#33 skip-and-report).
+        profile_generator = OpenehrRails::Fhir::ProfileGenerator.new(@opt)
+        profile_generator.to_json_files.each { |id, json| create_file "app/fhir/profiles/#{id}.json", json }
+        profile_generator.skipped.each { |error| say_status :skip, error.message, :yellow }
       end
 
       def self.next_migration_number(dirname)

@@ -145,13 +145,28 @@ describe OpenehrRails::Fhir::ProfileGenerator do
       expect(paths.grep(/component/)).to be_empty
     end
 
-    it 'anchors the archetype on Condition.category' do
-      anchor = profile[:differential][:element].find { |e| e[:path] == 'Condition.category' }
+    # #33 ruling correction 1 (plan section 9.1): the archetype coding sits in
+    # its own slice of Condition.category (0..*), so an instance keeps room for
+    # its other categories. Resolution shape (b) enhancement: red on the
+    # pre-correction output, a single category element carrying the pattern.
+    it 'anchors the archetype in its own Condition.category slice' do
+      root, slice = profile[:differential][:element].select { |e| e[:path] == 'Condition.category' }
 
-      expect(anchor[:patternCodeableConcept][:coding].first).to include(
+      expect(root[:slicing]).to eq(discriminator: [{ type: 'pattern', path: '$this' }], rules: 'open')
+      expect(root).not_to have_key(:patternCodeableConcept)
+      expect(slice).to include(sliceName: 'ckm', min: 1, max: '1')
+      expect(slice[:patternCodeableConcept][:coding].first).to include(
         system: 'http://openehr.org/ckm/archetypes',
         code: 'openEHR-EHR-EVALUATION.problem_diagnosis.v1'
       )
+    end
+
+    # #33 ruling correction 2 (plan section 9.2): the at0003 -> recordedDate
+    # approximation is stated on the element itself.
+    it 'records the at0003 -> recordedDate approximation in ElementDefinition.comment' do
+      recorded = profile[:differential][:element].find { |e| e[:path] == 'Condition.recordedDate' }
+
+      expect(recorded[:comment]).to start_with('Approximation: openEHR at0003')
     end
 
     it 'binds Condition.code to the leaf value set rather than the archetype id' do
@@ -178,6 +193,59 @@ describe OpenehrRails::Fhir::ProfileGenerator do
 
       expect(status).not_to be_nil
       expect(status).not_to have_key(:binding)
+    end
+  end
+
+  # #33 ruling corrections 3 and 4 (plan section 9.3), JSON facade half: same
+  # skip-and-report contract as FshGenerator, from the same TypeMap check.
+  # Synthetic entry via a stubbed FieldExtractor for the same reason as in
+  # fsh_generator_spec.rb -- no real multi-leaf INSTRUCTION fixture exists (#35).
+  describe 'an unmapped multi-leaf non-Observation entry' do
+    subject(:profiles) { generator.profiles }
+
+    let(:opt_file) { File.expand_path('../../templates/problem_list.opt', __dir__) }
+    let(:real_entries) { OpenehrRails::Opt::FieldExtractor.new(template).entries }
+    let(:synthetic_id) { 'openEHR-EHR-INSTRUCTION.synthetic_unmapped_test.v1' }
+    let(:synthetic_entry) do
+      real = real_entries.first
+      real.merge(
+        archetype_id: synthetic_id,
+        rm_type: 'INSTRUCTION',
+        concept: 'synthetic_unmapped_test',
+        fields: real[:fields].first(2).map { |field| field.merge(archetype_id: synthetic_id) }
+      )
+    end
+
+    before do
+      extractor = instance_double(OpenehrRails::Opt::FieldExtractor, entries: [synthetic_entry, *real_entries])
+      allow(OpenehrRails::Opt::FieldExtractor).to receive(:new).with(template).and_return(extractor)
+    end
+
+    it 'skips the entry and still emits the mapped one' do
+      expect(profiles.map { |p| p[:id] }).to eq(['openehr-evaluation-problem-diagnosis-v1'])
+    end
+
+    it 'never emits a component element for the skipped resource' do
+      expect(generator.to_json_files.values.join).not_to include('ServiceRequest.component')
+    end
+
+    it 'reports the skip as an UnsupportedProfileError naming the archetype and resource' do
+      profiles
+      error = generator.skipped.first
+
+      expect(generator.skipped.size).to eq(1)
+      expect(error).to be_a(OpenehrRails::Fhir::UnsupportedProfileError)
+      expect(error.archetype_id).to eq(synthetic_id)
+      expect(error.resource_type).to eq('ServiceRequest')
+      expect(error.message).to include(synthetic_id, 'ServiceRequest', 'component')
+    end
+  end
+
+  describe '#skipped' do
+    it 'is empty for an all-Observation template' do
+      generator.profiles
+
+      expect(generator.skipped).to be_empty
     end
   end
 end

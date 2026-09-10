@@ -8,16 +8,24 @@ module OpenehrRails
     # Generates HL7 FHIR R5 StructureDefinition profiles (as plain Hashes /
     # JSON) from an openEHR Operational Template. One profile per ENTRY:
     # the entry's RM type selects the base FHIR resource, and the leaf
-    # ELEMENTs constrain value[x] (single leaf) or component slices (many).
+    # ELEMENTs constrain value[x] (single leaf), component slices (many, on
+    # Observation) or the real elements named by TypeMap::ENTRY_ELEMENT_MAPS.
+    # Multi-leaf entries with neither are skipped and reported (#skipped).
     class ProfileGenerator
       FHIR_VERSION = '5.0.0'
       ARCHETYPE_SYSTEM = 'http://openehr.org/ckm/archetypes'
       UCUM_SYSTEM = 'http://unitsofmeasure.org'
       CANONICAL_BASE = 'urn:openehr'
 
+      # UnsupportedProfileError per entry that #profiles leaves out, in template
+      # order -- the "report" half of skip-and-report (#33). Empty when every
+      # entry produced a profile.
+      attr_reader :skipped
+
       def initialize(template)
         @template = template
-        @entries = OpenehrRails::Opt::FieldExtractor.new(template).entries
+        @skipped = []
+        @entries = OpenehrRails::Opt::FieldExtractor.new(template).entries.select { |entry| supported?(entry) }
       end
 
       def profiles
@@ -29,6 +37,14 @@ module OpenehrRails
       end
 
       private
+
+      def supported?(entry)
+        TypeMap.assert_supported!(entry)
+        true
+      rescue UnsupportedProfileError => e
+        @skipped << e
+        false
+      end
 
       def build_profile(entry)
         resource_type = TypeMap.resource_for_entry(entry[:rm_type])
@@ -66,13 +82,31 @@ module OpenehrRails
       # mapping table -- no `component`, which resources other than Observation
       # do not have (#33).
       def mapped_elements(entry, resource_type, element_map)
-        anchor = {
-          path: "#{resource_type}.#{element_map[:anchor]}",
-          patternCodeableConcept: {
-            coding: [{ system: ARCHETYPE_SYSTEM, code: entry[:archetype_id] }]
+        [
+          *anchor_slice(resource_type, element_map[:anchor], entry[:archetype_id]),
+          *entry[:fields].filter_map { |field| mapped_element(resource_type, element_map, field) }
+        ]
+      end
+
+      # The archetype coding sits in its own slice of the anchor (a 0..*
+      # CodeableConcept such as Condition.category), so an instance keeps room
+      # for its other codings; a pattern on the element itself would have
+      # constrained every repetition (#33 ruling, plan section 9.1).
+      def anchor_slice(resource_type, anchor, archetype_id)
+        path = "#{resource_type}.#{anchor}"
+        [
+          {
+            path: path,
+            slicing: { discriminator: [{ type: 'pattern', path: '$this' }], rules: 'open' }
+          },
+          {
+            path: path,
+            sliceName: TypeMap::ANCHOR_SLICE,
+            min: 1,
+            max: '1',
+            patternCodeableConcept: { coding: [{ system: ARCHETYPE_SYSTEM, code: archetype_id }] }
           }
-        }
-        [anchor, *entry[:fields].filter_map { |field| mapped_element(resource_type, element_map, field) }]
+        ]
       end
 
       def mapped_element(resource_type, element_map, field)
@@ -84,6 +118,7 @@ module OpenehrRails
           min: field[:required] ? 1 : 0,
           type: [{ code: TypeMap.datatype_for(field[:rm_type]) }]
         }
+        element[:comment] = leaf[:comment] if leaf[:comment]
         if leaf[:bind_value_set] && field[:value_set_uri]
           element[:binding] = {
             strength: 'required',

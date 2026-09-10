@@ -10,8 +10,14 @@ module OpenehrRails
         'LOINC' => ['LOINC', 'http://loinc.org']
       }.freeze
 
+      # UnsupportedProfileError per entry that #to_fsh_files leaves out, in
+      # template order -- the "report" half of skip-and-report (#33). Empty when
+      # every entry produced a profile.
+      attr_reader :skipped
+
       def initialize(template)
-        @entries = OpenehrRails::Opt::FieldExtractor.new(template).entries
+        @skipped = []
+        @entries = OpenehrRails::Opt::FieldExtractor.new(template).entries.select { |entry| supported?(entry) }
       end
 
       def to_fsh_files
@@ -22,6 +28,14 @@ module OpenehrRails
       end
 
       private
+
+      def supported?(entry)
+        TypeMap.assert_supported!(entry)
+        true
+      rescue UnsupportedProfileError => e
+        @skipped << e
+        false
+      end
 
       def build_profile(entry, id)
         resource_type = TypeMap.resource_for_entry(entry[:rm_type])
@@ -46,11 +60,7 @@ module OpenehrRails
       # table -- the same table ProfileGenerator generates from, so the FSH and
       # the JSON facade cannot disagree about where a leaf goes (#33).
       def mapped_rules(entry, element_map)
-        anchor = element_map[:anchor]
-        rules = [
-          "* #{anchor}.coding.system = \"#{ARCHETYPE_SYSTEM}\"",
-          "* #{anchor}.coding.code = ##{entry[:archetype_id]}"
-        ]
+        rules = anchor_slice_rules(element_map[:anchor], entry[:archetype_id])
         entry[:fields].each do |field|
           leaf = element_map[:leaves][field[:node_id]]
           next unless leaf
@@ -58,11 +68,28 @@ module OpenehrRails
           path = leaf[:element]
           rules << "* #{path} #{field[:required] ? 1 : 0}..1"
           rules << "* #{path} only #{TypeMap.datatype_for(field[:rm_type])}"
+          rules << "* #{path} ^comment = \"#{leaf[:comment]}\"" if leaf[:comment]
           next unless leaf[:bind_value_set] && field[:value_set_uri]
 
           rules << "* #{path} from #{value_set_uri(field[:value_set_uri])} (required)"
         end
         rules
+      end
+
+      # The archetype coding is a slice of the anchor (a 0..* CodeableConcept
+      # such as Condition.category), pattern-discriminated on $this, so an
+      # instance keeps room for its other codings (#33 ruling, plan section 9.1).
+      # `* path[slice] = system#code` is FSH for a patternCodeableConcept, the
+      # same shape ProfileGenerator emits.
+      def anchor_slice_rules(anchor, archetype_id)
+        slice = TypeMap::ANCHOR_SLICE
+        [
+          "* #{anchor} ^slicing.discriminator.type = #pattern",
+          "* #{anchor} ^slicing.discriminator.path = \"$this\"",
+          "* #{anchor} ^slicing.rules = #open",
+          "* #{anchor} contains #{slice} 1..1",
+          "* #{anchor}[#{slice}] = #{ARCHETYPE_SYSTEM}##{archetype_id}"
+        ]
       end
 
       def alias_rules(fields)

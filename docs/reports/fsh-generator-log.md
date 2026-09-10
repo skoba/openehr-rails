@@ -671,3 +671,187 @@ fixture, since `anlage` recommended against taking `mml_referral.opt` in.
 profiles" plainly: the JSON facade's shape changes for `EVALUATION` entries and
 host apps must regenerate `app/fhir/profiles/*.json`. Rides with #34's
 `release:check` change; 0.7.0 expected, finalised at release inventory.
+
+## R11 -- #33 status audit, the ruling's four corrections applied, reserves filed
+
+Triggered by a status inquiry: the 2026-08-27 ruling had approved section 8
+**with four corrections**, and no implementation report had followed. Audited
+first, measured, then acted.
+
+### What the repo actually held (measured 2026-09-10)
+
+- `#33` was **closed** 2026-08-27 03:37Z by commit `01f31f3` ("Fixes #33"),
+  pushed straight to `master` -- **no PR**, contrary to "1 issue = 1 branch = 1
+  PR". `07767cc` (section 8) 12:17 JST, `01f31f3` 12:38 JST, `cbcd77d` (R10)
+  same minute; one CI run for the three, `33036928670`, success.
+- The four corrections were **absent** from `01f31f3`, and neither the design
+  doc, the log, nor the Issue (zero comments) recorded them. Checked each
+  against the code, not the report: anchor was `* category.coding.system/code`
+  on the whole element (no slice); no `^comment` anywhere; unmapped multi-leaf
+  entries still took the `component` path (the CHANGELOG said so); no exception
+  class. Conclusion: the corrections never reached the implementing session --
+  section 8 was written and implemented inside 21 minutes.
+- What *was* in place and verified again here: `TypeMap::ENTRY_ELEMENT_MAPS`
+  keyed by archetype id (the section 8.1 table); JSON facade spec asserting no
+  `Condition.component`; golden FSH; `master` (`3d69fc0`) `bundle exec rspec`
+  **295 examples, 0 failures**; regenerated FSH for `problem_list.opt` +
+  `bmi_calculation.opt` compiled with `sushi` 3.16.0: **0 Errors** (the 29 -> 0
+  pin holds). `rubocop` on `master`: **2 offenses** (`Style/DirectiveScope`, in
+  `field_extractor.rb` and `field_extractor_binding_spec.rb`, both
+  pre-existing and unrelated) -- `01f31f3`'s "no offenses" no longer holds
+  under the current local rubocop; noted, not fixed here.
+- Reserves: only **#35** (`request-referral` -> `ServiceRequest`) existed. The
+  ConceptMap reserve and the referral-v2 `EVALUATION` reserve had not been
+  filed.
+
+### Design first: section 9 (`docs/design/multi-leaf-non-observation-plan.md`)
+
+Each correction written down with before/why/after, and the FSH shape compiled
+with `sushi` **before** any generator code changed (0 Errors on the candidate).
+While probing, one more defect was measured: `* value[x] 0..1` under
+`Parent: Condition` -> **1 Error** (`No element found at path value[x]`), i.e.
+the single-leaf non-`Observation` path is invalid too. Kept out of #33 (the
+ruling says 多葉) and filed as **#38** (bug).
+
+### TDD
+
+**Red**: specs first in `fsh_generator_spec.rb` / `profile_generator_spec.rb`
+(category slice, `^comment` / `comment`, skip-and-report with `#skipped`,
+`UnsupportedProfileError`, `#skipped` empty for `bmi_calculation.opt`) and the
+regenerated golden -- **36 examples, 12 failures**. The skip-and-report examples
+use a spec-level synthetic entry (`FieldExtractor` stubbed; invented id
+`openEHR-EHR-INSTRUCTION.synthetic_unmapped_test.v1`) because no real multi-leaf
+`INSTRUCTION` fixture exists (#35 is blocked on one); the spec comment says so.
+
+**Green**: `spec/openehr_rails/fhir/` **48 examples, 0 failures**; full suite
+**304 examples, 0 failures** (295 + 9). Regenerated FSH byte-matches the new
+golden; `problem_list.opt` + `bmi_calculation.opt` through `sushi` 3.16.0:
+**0 Errors**. `rubocop` on every changed file: no offenses (the
+`ScaffoldGenerator` `ClassLength` limit was hit once and the addition compacted
+to stay at 210/210).
+
+### Implementation
+
+- **Anchor slice** (9.1): `* category ^slicing…` / `contains ckm 1..1` /
+  `category[ckm] = <system>#<id>`; JSON slicing root + `ckm` slice with
+  `patternCodeableConcept`. `TypeMap::ANCHOR_SLICE` shared by both generators.
+- **`^comment`** (9.2): `:comment` key on the `at0003` leaf row, emitted by both
+  outputs.
+- **Skip-and-report + class** (9.3): `TypeMap.assert_supported!(entry)` raises
+  `OpenehrRails::Fhir::UnsupportedProfileError` (new file, required before
+  `type_map`); both generators partition at construction and expose `#skipped`;
+  `openehr:fhir_profile` and `openehr:scaffold --fhir` print each skip with
+  `say_status :skip`.
+
+### Issues
+
+- **#33 reopened** with the audit finding; PR carries `Fixes #33`.
+- **#36** Reserve: 診断確度 -> `verificationStatus` needs a ConceptMap.
+- **#37** Reserve: referral v2 `EVALUATION` rows -- with the note that
+  `family_history` / `adverse_reaction_risk` need a base-resource override, not
+  just leaf rows.
+- **#38** bug: single-leaf non-`Observation` `value[x]` (measured above).
+
+### Semver
+
+Still **minor** (section 9.6): `#skipped` and `UnsupportedProfileError` are new
+public API; the facade shape for `EVALUATION` changes again. `CHANGELOG.md`
+`[Unreleased]` updated (Changed bullet reworded, `Added` section).
+
+## R12 -- 0.7.0 gate prep: CI red from json 3.0 (#40), fix PRs, merge order left to the human
+
+### PR #39's first CI run failed for a reason unrelated to #39
+
+Run `34423912397` (head `131e777`): all 9 `spec` matrix jobs red, **304 examples,
+62 failures**, every one in the RM-graph / AQL specs that write a json column.
+Diagnosed by measurement, not by the PR diff:
+
+- The run's bundler log listed five gems newer than the 2026-09-04 cache:
+  `json 3.0.2`, `parallel 2.2.0`, `openehr 2.4.3`, `net-imap 0.6.7`,
+  `simplecov 1.2.0`.
+- `openehr 2.4.3` was the first suspect (released the day before, by this
+  user). Ruled out: its `lib/` diff against 2.4.2 is the ADL grammar + one
+  helper line, nothing an ActiveRecord `create!` touches; and the eventual
+  green runs below use 2.4.3.
+- Reproduced locally on `master` `3d69fc0` with a full `bundle update`
+  (`json 2.21.2 -> 3.0.2`): `dataset_adapter_spec.rb:10` fails with
+  `ArgumentError: wrong number of arguments (given 2, expected 1)` at
+  `json-3.0.2/lib/json/common.rb:296 JSON.parse`, called from
+  `activesupport-8.1.3.1 ActiveSupport::JSON.decode` via
+  `ActiveRecord::Type::Json#deserialize`. Lockfile restored: passes.
+- `json 3.0.1` was released 2026-09-08, `3.0.2` on 2026-09-09; the latest
+  activesupport is still `8.1.3.1` (2026-07-29). This repo commits no lockfile
+  (`*.lock` is gitignored), so every CI run resolves fresh -- `master` itself
+  would be red on its next push.
+
+### Fix: #40 / PR #41 (three pins), CI fully green
+
+Filed **#40** (bug), then PR **#41** `a1e8363`: `gem 'json', '< 3'` in the three
+Gemfiles this repo controls -- `Gemfile` (dev/test), `script/build_demo.sh` (the
+demo app's Gemfile), `templates/openehr_template.rb` (the generated host app's
+Gemfile; shipped file, so a `CHANGELOG` `[Unreleased]` Fixed entry). Resolution
+shape (c) pin. Removal condition in `docs/backlog.md` "Dependencies". Verified
+locally first: pin + fresh resolve (`activesupport 8.1.3.1`, `openehr 2.4.3`,
+`json 2.21.2`) -> **295 examples, 0 failures**. CI run `34424846436`: all 9
+`spec` jobs, `demo smoke` and `application template smoke test` **success** --
+the two smoke jobs had been skipped on every earlier run today, so this is the
+first time they were exercised against json 3 (their generated apps would have
+failed at `db:seed` without the template pin).
+
+**Slip caught after the fact**: `a1e8363` also flipped `script/build_demo.sh`
+from mode 100755 to 100644 -- the file was edited from the Windows side over
+`\\wsl.localhost`, which does not preserve the executable bit. CI was unaffected
+only because `ci.yml` runs it as `bash script/build_demo.sh`. Restored in
+`2014c75` on the same branch. Lesson for this environment: after any edit made
+over `\\wsl.localhost`, check `git diff --summary` for `mode change` before
+committing.
+
+### Getting #39 green without merging anything to master
+
+`fix/json3-pin` was merged **branch-to-branch** into `fix/33-ruling-corrections`
+(`081b530`, then `9fac505` after the exec-bit fix) so #39's CI could run under
+the pin. Run `34425288943` (head `9fac505`): **success**, all 11 jobs. Because
+the commits are identical objects, merging #41 to `master` first and #39 second
+produces no conflict and no duplicate change.
+
+**Merges to `master` are deliberately not performed by this session.** The
+attempt (`gh pr merge 41 --merge`) was denied by the auto-mode permission
+classifier, and merging is the one step here that is hard to reverse, so it
+stays with the human. Any order works: #39 already contains #41's commits, and
+#42 touches only `CLAUDE.md`.
+
+### Step 3 docs: PR #42
+
+`docs/release-convention-sync` (`19ae015` + whitespace `0ad9579`): the two
+publish-confirmation rules from openehr-ruby's 2.4.3 release ported into
+`CLAUDE.md`'s Release convention -- confirm publication by comparing RubyGems'
+published sha256 against the tag's Release-run value, not by the version number
+appearing; and the `/api/v1/versions/<gem>.json` propagation lag (use
+`versions/<gem>/latest.json`, `gems/<gem>.json` or the compact index). Docs only.
+
+### 0.7.0 inventory (as of this entry; `master` = `3d69fc0` + three open PRs)
+
+Classified per the Release convention: neutral only if no shipped file is
+touched; any shipped-file touch is at least patch.
+
+| commit | what | class |
+|---|---|---|
+| `b3617d6` `536384f` `89ec115` `73c409b` `6bbdf51` `899fa4c` `9e9f628` `829275f` `ffea1c2` `07767cc` `cbcd77d` `3d69fc0` | docs (R5-R10, design doc, CHANGELOG note, CLAUDE.md, backlog) | neutral |
+| `7b68d7b` | `release:check` HEAD-at-tag guard (#34) -- `lib/openehr_rails/release_check.rb` | patch |
+| `3df9632` | `#31` detour-holder comment in `lib/openehr_rails/opt/parser.rb` (comment only, but shipped bytes change) | patch |
+| `01f31f3` | `EVALUATION` -> `Condition` proper mapping (#33): facade output shape changes | **minor** |
+| PR #41 `a1e8363` + `2014c75` | json pins: `Gemfile`/`script` neutral, `templates/openehr_template.rb` shipped | patch |
+| PR #39 `46ed421` (+ `131e777` docs, merges) | the four corrections: new public API `#skipped`, `UnsupportedProfileError`; facade shape changes again | **minor** |
+| PR #42 `19ae015` `0ad9579` | `CLAUDE.md` | neutral |
+
+Highest level in the range: **minor** -> **0.7.0**. No install-time dependency
+changed (gemspec untouched). The backlog's ">= 0.5.0" floor is long satisfied.
+
+### Gate
+
+Awaiting the human: merge #41, #39, #42; approve 0.7.0. Then, in order: release
+commit (bump `lib/openehr_rails/version.rb` to 0.7.0, retitle `[Unreleased]` as
+`[0.7.0] - <date>`, open a fresh empty `[Unreleased]`), tag `v0.7.0`,
+`release.yml` -> download the `gem` artifact, compare sha256 against the run's
+recorded value, human `gem push`, confirm by published checksum (the rule #42
+adds), delete the local artifact.
