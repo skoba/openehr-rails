@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-09-10
+
+> **Upgrade note.** Regenerate `app/fhir/profiles/*.json`. `Condition.component`
+> slices are gone; anything reading them must move to the mapped elements
+> (`category` slice `ckm`, `code`, `onsetDateTime`, `recordedDate`,
+> `abatementDateTime`, `verificationStatus`), and an entry with no mapping onto
+> a non-`Observation` resource now appears in the generator's `#skipped` list
+> instead of producing a profile.
+
 ### Changed
 - **Breaking for consumers of generated FHIR profiles.** `EVALUATION` entries no
   longer produce `Condition.component` slices, which FHIR R5 `Condition` does not

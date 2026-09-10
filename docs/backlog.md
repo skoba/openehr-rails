@@ -74,6 +74,15 @@ that verification is deferred to the next real release (>= 0.5.0), not simulated
 
 ## Release automation
 
+- **`release.yml` records no sha256 of the built `.gem`** (found at the 0.7.0
+  release, 2026-09-10, `docs/reports/fsh-generator-log.md` R14). The only digest in
+  the run log is `actions/upload-artifact`'s "SHA256 digest of uploaded artifact",
+  which hashes the uploaded archive, not the gem file, so `CLAUDE.md`'s "compare
+  against the value recorded for that run" cannot be followed literally; the
+  tag-rebuild cross-check is what pins the bytes today. Add a "Record sha256" step
+  after `rake build` (`sha256sum pkg/*.gem`), as openehr-ruby's `release.yml` has.
+  CI-only change; needs a PR, no Issue.
+
 **Done (2026-08-23, PR #28)** — kept below for the original rationale; see the CI
 status entry above for verification details.
 
