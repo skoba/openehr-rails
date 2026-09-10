@@ -241,6 +241,47 @@ describe OpenehrRails::Fhir::ProfileGenerator do
     end
   end
 
+  # skoba/openehr-rails#38, resolution shape (a) bug, JSON facade half: a
+  # single-leaf non-Observation entry produced `<Resource>.value[x]`, which
+  # Condition does not have. Synthetic entry as above.
+  describe 'an unmapped single-leaf non-Observation entry' do
+    subject(:profiles) { generator.profiles }
+
+    let(:opt_file) { File.expand_path('../../templates/problem_list.opt', __dir__) }
+    let(:real_entries) { OpenehrRails::Opt::FieldExtractor.new(template).entries }
+    let(:synthetic_id) { 'openEHR-EHR-EVALUATION.synthetic_single_leaf_test.v1' }
+    let(:synthetic_entry) do
+      real = real_entries.first
+      real.merge(
+        archetype_id: synthetic_id,
+        concept: 'synthetic_single_leaf_test',
+        fields: real[:fields].first(1).map { |field| field.merge(archetype_id: synthetic_id) }
+      )
+    end
+
+    before do
+      extractor = instance_double(OpenehrRails::Opt::FieldExtractor, entries: [synthetic_entry, *real_entries])
+      allow(OpenehrRails::Opt::FieldExtractor).to receive(:new).with(template).and_return(extractor)
+    end
+
+    it 'skips the entry instead of emitting Condition.value[x]' do
+      expect(profiles.map { |p| p[:id] }).to eq(['openehr-evaluation-problem-diagnosis-v1'])
+      expect(profiles.flat_map { |p| p[:differential][:element] }.map { |e| e[:path] })
+        .not_to include('Condition.value[x]')
+    end
+
+    it 'reports it through #skipped with the resource named' do
+      profiles
+      error = generator.skipped.first
+
+      expect(generator.skipped.size).to eq(1)
+      expect(error.archetype_id).to eq(synthetic_id)
+      expect(error.resource_type).to eq('Condition')
+      expect(error.leaf_count).to eq(1)
+      expect(error.message).to include('value[x]')
+    end
+  end
+
   describe '#skipped' do
     it 'is empty for an all-Observation template' do
       generator.profiles

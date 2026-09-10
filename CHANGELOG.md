@@ -34,10 +34,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `#profiles` / `#to_fsh_files`, each as an
   `OpenehrRails::Fhir::UnsupportedProfileError` (`archetype_id`,
   `resource_type`, `leaf_count`) in template order. An entry is skipped when it
-  has more than one leaf, maps to a resource without `component`, and has no row
-  in `TypeMap::ENTRY_ELEMENT_MAPS`; the rest of the template still generates.
-  `rails g openehr:fhir_profile` and `openehr:scaffold --fhir` print each skip
-  (#33).
+  maps to a resource other than `Observation` (which has neither `value[x]` nor
+  `component`) and has no row in `TypeMap::ENTRY_ELEMENT_MAPS`, whatever its
+  leaf count; the rest of the template still generates. `rails g
+  openehr:fhir_profile` and `openehr:scaffold --fhir` print each skip (#33,
+  widened from multi-leaf to any leaf count by #38, since a single-leaf
+  `EVALUATION` entry used to produce `Condition.value[x]`, which does not
+  exist either).
 
 ### Removed
 - `TypeMap.value_element`, dead since it was added — its ternary returned the

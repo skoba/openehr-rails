@@ -225,6 +225,49 @@ describe OpenehrRails::Fhir::FshGenerator do
     end
   end
 
+  # skoba/openehr-rails#38, resolution shape (a) bug: a single-leaf entry whose
+  # base resource is not Observation took the legacy `code` + `value[x]` path,
+  # and Condition has no value[x] either (sushi: 1 Error on a probe, plan
+  # section 9.5). Same decision point as the multi-leaf case, now regardless of
+  # leaf count. Synthetic entry for the same reason as above: no real
+  # single-leaf non-Observation fixture exists in this repo.
+  describe 'an unmapped single-leaf non-Observation entry' do
+    subject(:files) { generator.to_fsh_files }
+
+    let(:opt_file) { File.expand_path('../../templates/problem_list.opt', __dir__) }
+    let(:real_entries) { OpenehrRails::Opt::FieldExtractor.new(template).entries }
+    let(:synthetic_id) { 'openEHR-EHR-EVALUATION.synthetic_single_leaf_test.v1' }
+    let(:synthetic_entry) do
+      real = real_entries.first
+      real.merge(
+        archetype_id: synthetic_id,
+        concept: 'synthetic_single_leaf_test',
+        fields: real[:fields].first(1).map { |field| field.merge(archetype_id: synthetic_id) }
+      )
+    end
+
+    before do
+      extractor = instance_double(OpenehrRails::Opt::FieldExtractor, entries: [synthetic_entry, *real_entries])
+      allow(OpenehrRails::Opt::FieldExtractor).to receive(:new).with(template).and_return(extractor)
+    end
+
+    it 'skips the entry instead of constraining value[x] on Condition' do
+      expect(files.keys).to eq(['openehr-evaluation-problem-diagnosis-v1'])
+      expect(files.values.join).not_to include('value[x]')
+    end
+
+    it 'reports it through #skipped with the resource named' do
+      files
+      error = generator.skipped.first
+
+      expect(generator.skipped.size).to eq(1)
+      expect(error.archetype_id).to eq(synthetic_id)
+      expect(error.resource_type).to eq('Condition')
+      expect(error.leaf_count).to eq(1)
+      expect(error.message).to include('value[x]')
+    end
+  end
+
   describe '#skipped' do
     it 'is empty for an all-Observation template' do
       generator.to_fsh_files

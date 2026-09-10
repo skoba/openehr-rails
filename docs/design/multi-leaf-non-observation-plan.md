@@ -365,3 +365,34 @@ Still **minor**, on top of §8.5: `#skipped` and `UnsupportedProfileError` are
 new public API; the `category` anchor and the `comment` change the JSON facade's
 shape again for `EVALUATION` entries. `CHANGELOG.md` `[Unreleased]` updated in
 the same change.
+
+## 9.7 #38 (2026-09-10 ruling): the decision point widened to any leaf count
+
+The ruling on 9.5 allowed #38 to ride in 0.7.0 if it stayed on the same
+decision point, small, and green. It does: `TypeMap.assert_supported!` drops
+its `fields.size <= 1` early return, so *any* entry whose base resource is not
+`Observation` and which has no `ENTRY_ELEMENT_MAPS` row is skipped and
+reported -- a single leaf would have produced `<Resource>.value[x]`, which
+`Condition` / `ServiceRequest` / `Procedure` / `Encounter` lack just as they
+lack `component` (measured: 1 sushi Error on the 9.5 probe). The error message
+now names both missing elements and the leaf count in the singular where it is
+one. Resolution shape (a) bug.
+
+- **Fixture check before widening**: every OPT under `spec/templates/`,
+  `spec/generators/templates/` and `demo_assets/templates/` was listed with
+  `FieldExtractor#entries` -- all single-leaf entries are `OBSERVATION`
+  (`height.v2`, `body_weight.v2`, `heart_rate-pulse.v1`); the only
+  non-`Observation` entry is `problem_diagnosis.v1` (5 leaves, mapped). So no
+  fixture's output changes. (`spec/templates/sample_blood_pressure.opt` does not
+  parse at all -- `ArgumentError: invalid archetype id form` -- under openehr
+  2.4.2 *and* 2.4.3, and no spec references it; pre-existing, noted in
+  `docs/backlog.md`, not touched here.)
+- **Red**: 4 new examples (two per generator, synthetic single-leaf
+  `EVALUATION` entry `openEHR-EHR-EVALUATION.synthetic_single_leaf_test.v1`):
+  **40 examples, 4 failures** across the two spec files.
+- **Green**: the same files 40/0; `spec/openehr_rails/fhir/` 52/0; full suite
+  308/0. Regenerated FSH for `problem_list.opt` + `bmi_calculation.opt`
+  byte-identical to before and **0 Errors** under `sushi` 3.16.0 -- the pin.
+- **Semver**: rides in 0.7.0; on its own a bug fix (patch) that changes no
+  fixture output, only what an unmapped single-leaf non-`Observation` entry
+  yields (invalid FHIR before, a `#skipped` entry now).
