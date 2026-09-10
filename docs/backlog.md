@@ -134,7 +134,7 @@ status entry above for verification details.
 - **`spec/templates/sample_blood_pressure.opt` does not parse** -- `OpenehrRails::Opt.parse`
   raises `ArgumentError: invalid archetype id form` from
   `OpenEHR::RM::Support::Identification::ArchetypeID` under openehr 2.4.2 *and* 2.4.3
-  (measured 2026-09-10 while checking fixtures for #38), and no spec, script o
+  (measured 2026-09-10 while checking fixtures for #38), and no spec, script or
   generator references the file. Orphan fixture: either find which archetype id in
   it is malformed and decide whether that is an openehr-ruby parser gap worth an
   upstream Issue, or delete the file. Not touched in 0.7.0.
