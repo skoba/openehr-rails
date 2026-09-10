@@ -961,3 +961,41 @@ first application of the rule PR #42 added.
   in R15.
 - `master` is now past the tag by the docs commits that record this entry, so
   `release:check` on `master` fails again by design until 0.7.1.
+
+## R15 -- 0.7.0 published; confirmed by checksum (first application of the PR #42 rule)
+
+Human `gem push` of the CI artifact `pkg/openehr-rails-0.7.0.gem` (R14). Confirmation
+2026-09-10, every source compared against the CI artifact's sha256
+`922ec940f15c8793ef6ee08568e4d7ea16f8a158da0d45936ff898e73cd1171a`:
+
+| source | value |
+|---|---|
+| `/api/v1/gems/openehr-rails.json` `sha` | `922ec940…171a`, version 0.7.0 |
+| compact index `https://index.rubygems.org/info/openehr-rails` | `checksum:922ec940…171a`, `created_at:2026-09-10T11:47:16Z` |
+| `/api/v1/versions/openehr-rails/latest.json` | `{"version":"0.7.0"}` |
+| `/api/v1/versions/openehr-rails.json` | 0.7.0, `sha` `922ec940…171a` (no lag observed this time) |
+| `gem list -r -e openehr-rails` | 0.7.0 |
+
+CI artifact, tag rebuild and published gem are one and the same bytes. The
+`pkg/` copy was deleted after the confirmation, leaving `pkg/` empty.
+
+### Tooling note (why two commits on the #43 branch fix single characters)
+
+The PowerShell -> `wsl` wrapper used to run this session's scripts carried a
+`sed -i "s/\r$//"`; the `\r` reached WSL as a plain `r`, so every script line
+ending in "r" lost that letter. Effects found and handled: `git checkout master`
+silently became `maste` (harmless, caught by the error), a backlog line on the
+#43 branch was committed as "script o" (restored in `566cddb`), and the
+`5fcc0ec` commit message reads "unde" for "under" (left as is). `master`'s
+tracked files were grepped for the same pattern: clean. The wrapper no longer
+runs sed.
+
+### State after 0.7.0
+
+- `master` = tag `v0.7.0` + docs (R14, R15). `release:check` fails on `master`
+  by design until the next release.
+- PR #43 (`fix/38-single-leaf-non-observation`, Fixes #38): rebased for 0.7.1,
+  CHANGELOG line under the new `[Unreleased]`, awaiting the human's merge.
+- Open follow-ups: `release.yml` "Record sha256" step (backlog, CI-only PR);
+  next tag annotated (`git tag -a`); `json < 3` pins until Rails ships the
+  `JSON.decode` fix (#40, backlog); reserves #35, #36, #37.
