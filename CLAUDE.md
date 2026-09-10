@@ -61,6 +61,22 @@ documentation files and `lib/` was byte-identical - but nothing in the release
 path caught it. Measurements in `docs/reports/fsh-generator-log.md` R8; the
 matching `release:check` guard is `skoba/openehr-rails#34`.)
 
+**Confirm publication by checksum, not by version number.** RubyGems publishes
+the sha256 it recorded at push time (`/api/v1/gems/openehr-rails.json` `sha`, and
+the `checksum:` field in `https://index.rubygems.org/info/openehr-rails`). The
+post-push confirmation compares that value against the sha256 the tag's Release
+run recorded for its artifact - the same value already compared before the push.
+Seeing the version number appear is not the check; it only shows that *a* gem
+landed under that number. (Ported 2026-09-10 from openehr-ruby's 2.4.3 release,
+where CI run, downloaded artifact and published gem all agreed on one sha256.)
+
+**RubyGems API propagation lag.** `/api/v1/versions/openehr-rails.json` can lag
+the push by minutes; do not read the new version's absence there as a failed
+publish, and do not re-push. Confirm with
+`/api/v1/versions/openehr-rails/latest.json`, `/api/v1/gems/openehr-rails.json`,
+or the compact index `https://index.rubygems.org/info/openehr-rails`, which
+updated first in that same 2.4.3 run.
+
 ## Verification
 
 - **Verify against the repo before recording a fact in it**, even when a prompt or an
