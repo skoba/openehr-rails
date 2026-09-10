@@ -393,6 +393,6 @@ one. Resolution shape (a) bug.
 - **Green**: the same files 40/0; `spec/openehr_rails/fhir/` 52/0; full suite
   308/0. Regenerated FSH for `problem_list.opt` + `bmi_calculation.opt`
   byte-identical to before and **0 Errors** under `sushi` 3.16.0 -- the pin.
-- **Semver**: rides in 0.7.0; on its own a bug fix (patch) that changes no
+- **Semver**: 0.7.1 (0.7.0 shipped before PR #43 was merged; see log R13); a bug fix (patch) that changes no
   fixture output, only what an unmapped single-leaf non-`Observation` entry
   yields (invalid FHIR before, a `#skipped` entry now).
