@@ -61,7 +61,6 @@ documentation files and `lib/` was byte-identical - but nothing in the release
 path caught it. Measurements in `docs/reports/fsh-generator-log.md` R8; the
 matching `release:check` guard is `skoba/openehr-rails#34`.)
 
-
 **Confirm publication by checksum, not by version number.** RubyGems publishes
 the sha256 it recorded at push time (`/api/v1/gems/openehr-rails.json` `sha`, and
 the `checksum:` field in `https://index.rubygems.org/info/openehr-rails`). The
