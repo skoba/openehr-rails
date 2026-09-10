@@ -923,3 +923,41 @@ retitled `[0.7.0] - 2026-09-10` with the Upgrade note, fresh empty
 `[Unreleased]`) -> tag `v0.7.0` -> `release.yml` -> artifact sha256 (R14) ->
 human `gem push` of that artifact -> confirmation by published checksum, the
 first application of the rule PR #42 added.
+
+## R14 -- v0.7.0 tagged, release.yml green, artifact sha256 recorded; gem push is the human's
+
+- Release prep on `master` after `acb1e3f`: `b1bfaa3` (lint), `2212955` (R13),
+  `aafbd2c` (Release: bump version to 0.7.0). Before the release commit: full
+  suite **304 examples, 0 failures**, `rubocop` **109 files, no offenses**,
+  `release:check OK` (no tag yet, so the tag check was silent by design).
+- Tag `v0.7.0` -> `aafbd2c`, pushed 2026-09-10. **Deviation noted**: this is a
+  lightweight tag; `v0.6.0` is an annotated tag object. Harmless for
+  `release.yml` (tag push) and `release:check` (`v0.7.0^{commit}`), but the
+  next release should use `git tag -a` to keep the series uniform.
+- `release.yml` run **34438238454**: all 12 jobs success (9 spec matrix, demo
+  smoke, application template smoke, Build gem artifact). `release:check OK`
+  inside the run, i.e. HEAD was the tag commit.
+- **Artifact**: downloaded with `gh run download 34438238454 -n gem -D pkg`:
+  `pkg/openehr-rails-0.7.0.gem`, 242176 bytes,
+  sha256 **`922ec940f15c8793ef6ee08568e4d7ea16f8a158da0d45936ff898e73cd1171a`**.
+- **Cross-check**: a fresh `gem build` in a scratch worktree at `v0.7.0`
+  (local ruby 4.0.6, not `pkg/`) produced the **same sha256** -- CI artifact and
+  tag rebuild are byte-identical, as for 0.5.0 and 0.6.0.
+- **Gap found in the comparison rule**: `CLAUDE.md` says to compare the
+  downloaded artifact "against the value recorded for that run", but
+  `release.yml` records no gem sha256 -- the only digest in the run log is
+  `actions/upload-artifact`'s `SHA256 digest of uploaded artifact`
+  (`671c8de1…238b`), which is the digest of the uploaded archive, **not of the
+  .gem**. The two are not comparable. The tag-rebuild cross-check above is what
+  actually pins the bytes today. Filed in `docs/backlog.md` "Release
+  automation": add a "Record sha256" step (as openehr-ruby's `release.yml`
+  has) so the rule can be followed literally.
+- **Handed to the human**: `gem push pkg/openehr-rails-0.7.0.gem` (the
+  downloaded CI artifact, never a local build), then confirm by checksum per
+  the rule PR #42 added: `https://rubygems.org/api/v1/gems/openehr-rails.json`
+  `sha` (or the compact index `checksum:`) must equal `922ec940…171a`; use
+  `versions/openehr-rails/latest.json` rather than `versions/openehr-rails.json`
+  while the latter lags. Then delete `pkg/openehr-rails-0.7.0.gem`. Result goes
+  in R15.
+- `master` is now past the tag by the docs commits that record this entry, so
+  `release:check` on `master` fails again by design until 0.7.1.
