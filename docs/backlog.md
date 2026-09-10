@@ -162,3 +162,18 @@ status entry above for verification details.
   duplicate-method inventory being produced first.
 - **#2** (constraint -> HTML attribute mapping extraction): gated on a generality decision
   after Anlage Slice 4; whether to even start is undecided.
+
+## Dependencies
+
+- **Remove the `json < 3` pins once Rails ships the fix.** Added 2026-09-10 in
+  three places: `Gemfile` (dev/test), `script/build_demo.sh` (the demo app's
+  Gemfile), `templates/openehr_template.rb` (the generated host app's Gemfile).
+  Cause: `json` 3.0 (3.0.1 on 2026-09-08, 3.0.2 on 2026-09-09) changed
+  `JSON.parse`'s arity and `ActiveSupport::JSON.decode` as of activesupport
+  8.1.3.1 still passes options positionally, so every json-column read raises
+  `ArgumentError: wrong number of arguments (given 2, expected 1)`. Measured on
+  PR #39's CI run `34423912397` (62 failures, all RM-graph/AQL specs) and
+  reproduced locally with `bundle update` on `master`; with the pin and a fresh
+  resolve, 295 examples / 0 failures. Removal condition: an activesupport release
+  whose `JSON.decode` accepts json 3 (check the Rails CHANGELOG), then delete the
+  three pins in one docs+tooling commit and let CI resolve fresh.
