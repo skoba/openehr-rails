@@ -13,17 +13,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   have. Each leaf now maps onto the real `Condition` element that means the same
   thing — `code` (bound to the leaf's value set), `onsetDateTime`,
   `recordedDate`, `abatementDateTime`, `verificationStatus` — and the archetype
-  anchor moves from `Condition.code` to `Condition.category`, since `code` is now
-  the diagnosis itself. `ProfileGenerator` (JSON) and `FshGenerator` generate
-  from one table in `TypeMap`, so the two outputs cannot disagree. Generated FSH
-  for `problem_list.opt` goes from 29 Sushi errors to 0. Host apps must
-  regenerate cached `app/fhir/profiles/*.json`; anything reading the old
-  `Condition.component` slices must be updated (#33). Currently mapped:
-  `openEHR-EHR-EVALUATION.problem_diagnosis.v1`. Multi-leaf entries mapped to
-  `ServiceRequest`/`Procedure`/`Encounter` are unchanged and still have the
-  structural gap, reserved as #35.
+  anchor moves from `Condition.code` to a `Condition.category` slice (`ckm`,
+  `1..1`, pattern-discriminated on `$this`, so an instance keeps room for its
+  other categories), since `code` is now the diagnosis itself. `recordedDate`
+  carries an `ElementDefinition.comment` stating that it approximates at0003
+  (date/time clinically recognised). `ProfileGenerator` (JSON) and
+  `FshGenerator` generate from one table in `TypeMap`, so the two outputs cannot
+  disagree. Generated FSH for `problem_list.opt` goes from 29 Sushi errors to 0.
+  Host apps must regenerate cached `app/fhir/profiles/*.json`; anything reading
+  the old `Condition.component` slices must be updated (#33). Currently mapped:
+  `openEHR-EHR-EVALUATION.problem_diagnosis.v1`. A multi-leaf entry mapped to
+  `ServiceRequest`/`Procedure`/`Encounter` without a mapping-table row is now
+  skipped and reported (see Added) instead of producing `component` constraints
+  those resources do not have; its mapping table remains reserved as #35.
 - Value-set canonicals on mapped leaves no longer carry OPT's `terminology:`
   prefix, in either output.
+
+### Added
+- `ProfileGenerator#skipped` and `FshGenerator#skipped`: the entries left out of
+  `#profiles` / `#to_fsh_files`, each as an
+  `OpenehrRails::Fhir::UnsupportedProfileError` (`archetype_id`,
+  `resource_type`, `leaf_count`) in template order. An entry is skipped when it
+  has more than one leaf, maps to a resource without `component`, and has no row
+  in `TypeMap::ENTRY_ELEMENT_MAPS`; the rest of the template still generates.
+  `rails g openehr:fhir_profile` and `openehr:scaffold --fhir` print each skip
+  (#33).
 
 ### Removed
 - `TypeMap.value_element`, dead since it was added — its ternary returned the

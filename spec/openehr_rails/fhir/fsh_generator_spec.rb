@@ -133,11 +133,23 @@ describe OpenehrRails::Fhir::FshGenerator do
       expect(fsh).not_to include('component')
     end
 
-    it 'anchors the archetype on category, leaving code for the diagnosis itself' do
+    # #33 ruling correction 1 (plan section 9.1): the archetype coding is a
+    # slice of category, not a fixed coding on the whole element. category is
+    # 0..* and an instance may carry other categories beside the archetype
+    # coding; fixing coding.system/code on the element itself constrained every
+    # repetition. Resolution shape (b) enhancement: red on the pre-correction
+    # output, which emitted `* category.coding.code = ...`.
+    it 'anchors the archetype in its own category slice, leaving code for the diagnosis itself' do
       expect(fsh).to include(
-        "* category.coding.code = #openEHR-EHR-EVALUATION.problem_diagnosis.v1\n",
+        "* category ^slicing.discriminator.type = #pattern\n",
+        "* category ^slicing.discriminator.path = \"$this\"\n",
+        "* category ^slicing.rules = #open\n",
+        "* category contains ckm 1..1\n",
+        '* category[ckm] = http://openehr.org/ckm/archetypes' \
+        "#openEHR-EHR-EVALUATION.problem_diagnosis.v1\n",
         "* code from http://id.who.int/icd/release/11/mms (required)\n"
       )
+      expect(fsh).not_to include('* category.coding')
     end
 
     it 'maps the three date leaves onto their Condition counterparts' do
@@ -148,12 +160,76 @@ describe OpenehrRails::Fhir::FshGenerator do
       )
     end
 
+    # #33 ruling correction 2 (plan section 9.2): at0003 -> recordedDate is an
+    # approximation (plan section 8.1), and the profile itself says so via
+    # ElementDefinition.comment rather than leaving it in a design doc only.
+    it 'records the at0003 -> recordedDate approximation as a ^comment' do
+      expect(fsh).to match(/^\* recordedDate \^comment = "Approximation: openEHR at0003 .+"$/)
+    end
+
     # at0073's local at-codes cannot be bound: Condition.verificationStatus has
     # a required binding to condition-ver-status, so translating them is a
     # ConceptMap concern (plan section 8.2).
     it 'constrains verificationStatus without binding the local code list' do
       expect(fsh).to include("* verificationStatus only CodeableConcept\n")
       expect(fsh).not_to include('verificationStatus from')
+    end
+  end
+
+  # #33 ruling corrections 3 and 4 (plan section 9.3): an entry with more than
+  # one leaf, a base resource without `component`, and no row in
+  # TypeMap::ENTRY_ELEMENT_MAPS is skipped and reported through #skipped as an
+  # UnsupportedProfileError -- neither silently emitting constraints on a path
+  # the resource does not have (the original #33 defect) nor aborting the
+  # whole batch. Resolution shape (b) enhancement: red on the pre-correction
+  # code, which took the component path for such an entry.
+  #
+  # Synthetic entry, not a fixture file: no real multi-leaf INSTRUCTION OPT
+  # exists in this repo (#35 is blocked on exactly that), so FieldExtractor is
+  # stubbed to return problem_list.opt's real entry plus one invented
+  # INSTRUCTION entry whose archetype id cannot be mistaken for a real one.
+  describe 'an unmapped multi-leaf non-Observation entry' do
+    subject(:files) { generator.to_fsh_files }
+
+    let(:opt_file) { File.expand_path('../../templates/problem_list.opt', __dir__) }
+    let(:real_entries) { OpenehrRails::Opt::FieldExtractor.new(template).entries }
+    let(:synthetic_id) { 'openEHR-EHR-INSTRUCTION.synthetic_unmapped_test.v1' }
+    let(:synthetic_entry) do
+      real = real_entries.first
+      real.merge(
+        archetype_id: synthetic_id,
+        rm_type: 'INSTRUCTION',
+        concept: 'synthetic_unmapped_test',
+        fields: real[:fields].first(2).map { |field| field.merge(archetype_id: synthetic_id) }
+      )
+    end
+
+    before do
+      extractor = instance_double(OpenehrRails::Opt::FieldExtractor, entries: [synthetic_entry, *real_entries])
+      allow(OpenehrRails::Opt::FieldExtractor).to receive(:new).with(template).and_return(extractor)
+    end
+
+    it 'skips the entry and still emits the mapped one' do
+      expect(files.keys).to eq(['openehr-evaluation-problem-diagnosis-v1'])
+    end
+
+    it 'reports the skip as an UnsupportedProfileError naming the archetype and resource' do
+      files
+      error = generator.skipped.first
+
+      expect(generator.skipped.size).to eq(1)
+      expect(error).to be_a(OpenehrRails::Fhir::UnsupportedProfileError)
+      expect(error.archetype_id).to eq(synthetic_id)
+      expect(error.resource_type).to eq('ServiceRequest')
+      expect(error.message).to include(synthetic_id, 'ServiceRequest', 'component')
+    end
+  end
+
+  describe '#skipped' do
+    it 'is empty for an all-Observation template' do
+      generator.to_fsh_files
+
+      expect(generator.skipped).to be_empty
     end
   end
 end

@@ -45,9 +45,11 @@ module OpenehrRails
       # so neither can carry a mapping decision the other lacks -- the two-copies
       # drift that produced skoba/openehr-rails#33 in the first place.
       #
-      # :anchor    - element carrying the fixed archetype coding. For Condition
-      #              this is `category`, not `code`: under a proper mapping
-      #              `code` is the diagnosis itself (at0002).
+      # :anchor    - 0..* CodeableConcept element that carries the archetype
+      #              coding in its own ANCHOR_SLICE slice (plan section 9.1),
+      #              so an instance keeps room for its other codings. For
+      #              Condition this is `category`, not `code`: under a proper
+      #              mapping `code` is the diagnosis itself (at0002).
       # :element   - FSH path for the leaf.
       # :sd_path   - StructureDefinition path when it differs from the FSH one
       #              (FHIR names choice elements `onset[x]`, FSH `onsetDateTime`).
@@ -55,23 +57,51 @@ module OpenehrRails
       #              Absent means "do not bind" -- e.g. Condition.verificationStatus
       #              already carries a required binding to condition-ver-status,
       #              so an archetype's local at-codes must not be bound to it.
+      # :comment   - ElementDefinition.comment, emitted in both outputs, for a
+      #              leaf whose FHIR element is the nearest fit rather than a
+      #              synonym (plan section 9.2). The profile then states the
+      #              approximation itself instead of leaving it in a design doc.
       ENTRY_ELEMENT_MAPS = {
         'openEHR-EHR-EVALUATION.problem_diagnosis.v1' => {
           anchor: 'category',
           leaves: {
             'at0002' => { element: 'code', bind_value_set: true },
             'at0077' => { element: 'onsetDateTime', sd_path: 'onset[x]' },
-            'at0003' => { element: 'recordedDate' },
+            'at0003' => {
+              element: 'recordedDate',
+              comment: 'Approximation: openEHR at0003 (Date/time clinically recognised) has no ' \
+                       'exact counterpart in FHIR R5 Condition; recordedDate is when this ' \
+                       'Condition record was created in the system. See ' \
+                       'docs/design/multi-leaf-non-observation-plan.md section 8.1.'
+            },
             'at0030' => { element: 'abatementDateTime', sd_path: 'abatement[x]' },
             'at0073' => { element: 'verificationStatus' }
           }.freeze
         }.freeze
       }.freeze
 
+      # Slice name of the archetype coding on an :anchor element. Same name the
+      # FSH output already uses for the CKM coding slice on `code.coding`.
+      ANCHOR_SLICE = 'ckm'
+
       module_function
 
       def element_map_for(archetype_id)
         ENTRY_ELEMENT_MAPS[archetype_id]
+      end
+
+      # The one shared decision point for both generators (#33 ruling, plan
+      # section 9.3): an entry with more than one leaf whose base resource has no
+      # `component` element and which has no row in ENTRY_ELEMENT_MAPS cannot be
+      # profiled. Raises UnsupportedProfileError so the caller can skip and
+      # report it instead of emitting constraints on a path the resource lacks.
+      def assert_supported!(entry)
+        return if entry[:fields].size <= 1
+
+        resource_type = resource_for_entry(entry[:rm_type])
+        return if resource_type == 'Observation' || element_map_for(entry[:archetype_id])
+
+        raise UnsupportedProfileError.new(entry[:archetype_id], resource_type, entry[:fields].size)
       end
 
       # OPT writes C_CODE_REFERENCE value sets as `terminology:<canonical>`;
