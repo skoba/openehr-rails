@@ -91,13 +91,13 @@ module OpenehrRails
       end
 
       # The one shared decision point for both generators (#33 ruling, plan
-      # section 9.3): an entry with more than one leaf whose base resource has no
-      # `component` element and which has no row in ENTRY_ELEMENT_MAPS cannot be
-      # profiled. Raises UnsupportedProfileError so the caller can skip and
-      # report it instead of emitting constraints on a path the resource lacks.
+      # section 9.3; widened to any leaf count by #38, section 9.7): an entry
+      # whose base resource is not Observation -- so it has neither `value[x]`
+      # for a single leaf nor `component` for several -- and which has no row in
+      # ENTRY_ELEMENT_MAPS cannot be profiled. Raises UnsupportedProfileError so
+      # the caller can skip and report it instead of emitting constraints on a
+      # path the resource lacks.
       def assert_supported!(entry)
-        return if entry[:fields].size <= 1
-
         resource_type = resource_for_entry(entry[:rm_type])
         return if resource_type == 'Observation' || element_map_for(entry[:archetype_id])
 

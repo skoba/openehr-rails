@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- A single-leaf entry mapped to a resource other than `Observation` and without a
+  `TypeMap::ENTRY_ELEMENT_MAPS` row no longer produces `<Resource>.value[x]`, which
+  `Condition`/`ServiceRequest`/`Procedure`/`Encounter` do not have; it is skipped and
+  reported through `#skipped` like the multi-leaf case since 0.7.0 (#38). The
+  `UnsupportedProfileError` message now names both missing elements.
 - AQL no longer fails for the whole store when one stored composition cannot be
   rebuilt as RM objects (a node type outside `RmObjectBuilder::TYPE_CLASSES`,
   such as `SECTION`/`INSTRUCTION`, or an RM constructor rejecting stored data).
