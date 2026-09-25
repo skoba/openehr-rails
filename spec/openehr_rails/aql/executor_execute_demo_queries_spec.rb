@@ -20,7 +20,8 @@ require_relative '../storable_spec_model'
 # local code at0076, at0003 date/time recognised) so the demo queries run
 # verbatim. Design authority: docs/design/rm-object-builder-section-instruction-plan.md
 # section 3.
-describe OpenehrRails::Aql::Executor, 'anlage demo AQL queries (regression pin)' do
+describe OpenehrRails::Aql::Executor, '.execute' do
+  # anlage demo AQL queries (regression pin) -- see the file comment above.
   let(:problem_diagnosis_hash) do
     {
       '_type' => 'COMPOSITION',
