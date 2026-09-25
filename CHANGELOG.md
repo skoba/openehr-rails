@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-09-25
+
+> **Upgrade note.** AQL now skips a stored composition that holds an RM type
+> `RmObjectBuilder` cannot rebuild, with a warning
+> (`openehr-rails AQL: skipping composition uid=...`), instead of failing every
+> query in the store. No host-app change is needed; if that line appears in
+> your log, the composition is a #45 case (SECTION / INSTRUCTION / ACTIVITY
+> read-back, next minor release).
+
 ### Fixed
 - A single-leaf entry mapped to a resource other than `Observation` and without a
   `TypeMap::ENTRY_ELEMENT_MAPS` row no longer produces `<Resource>.value[x]`, which
