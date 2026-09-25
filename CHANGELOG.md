@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- An entry with no extracted leaves (today every `INSTRUCTION`, see #47) no
+  longer gets a profile consisting of the archetype `code` rules and an empty
+  `component` slicing header; it is skipped and reported through `#skipped`
+  with a message saying the entry has no leaves, whatever its resource (#49).
+
 ## [0.7.1] - 2026-09-25
 
 > **Upgrade note.** AQL now skips a stored composition that holds an RM type
