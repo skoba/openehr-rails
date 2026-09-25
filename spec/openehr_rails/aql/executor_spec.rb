@@ -104,24 +104,64 @@ describe OpenehrRails::Aql::Executor do
   describe 'with a composition whose to_rm fails in the store' do
     before do
       BmiCalculation.create!(height: 170.0)
+      # ITEM_TABLE stays outside RmObjectBuilder::TYPE_CLASSES after #45
+      # made SECTION buildable (ruling condition (c)).
       OpenehrRails::Rm::CompositionCommitter.commit(
         {
           '_type' => 'COMPOSITION',
-          'archetype_node_id' => 'openEHR-EHR-COMPOSITION.synthetic_section_test.v1',
+          'archetype_node_id' => 'openEHR-EHR-COMPOSITION.synthetic_table_test.v1',
           'content' => [
-            { '_type' => 'SECTION', 'archetype_node_id' => 'openEHR-EHR-SECTION.synthetic_test.v1', 'items' => [] }
+            {
+              '_type' => 'EVALUATION', 'archetype_node_id' => 'openEHR-EHR-EVALUATION.synthetic_table_test.v1',
+              'archetype_details' => { 'archetype_id' => { 'value' => 'openEHR-EHR-EVALUATION.synthetic_table_test.v1' } },
+              'data' => { '_type' => 'ITEM_TABLE', 'archetype_node_id' => 'at0001', 'rows' => [] }
+            }
           ]
         },
-        uid: 'uid-section-exec'
+        uid: 'uid-table-exec'
       )
     end
 
     it 'still answers a query on another template, skipping the broken composition' do
       rows = nil
 
-      expect { rows = described_class.execute(height_query).rows }.to output(/uid-section-exec/).to_stderr
+      expect { rows = described_class.execute(height_query).rows }.to output(/uid-table-exec/).to_stderr
 
       expect(rows).to eq([[170.0]])
+    end
+  end
+
+  # skoba/openehr-rails#45 (b) enhancement, end to end: values under
+  # INSTRUCTION.protocol / activities and inside a SECTION are reachable by
+  # AQL once the builder rebuilds those nodes. Same synthetic fixture as
+  # rm_object_builder_spec.rb.
+  describe 'INSTRUCTION and SECTION paths (#45)' do
+    before do
+      OpenehrRails::Rm::CompositionCommitter.commit(SyntheticReferralCanonicalHash.composition, uid: 'uid-referral-aql')
+    end
+
+    it 'reaches an ACTIVITY description leaf through i/activities[...]/description[...]' do
+      query = 'SELECT i/activities[at0001]/description[at0009]/items[at0121]/value/value ' \
+              'FROM EHR e CONTAINS COMPOSITION c ' \
+              "CONTAINS INSTRUCTION i[#{SyntheticReferralCanonicalHash::INSTRUCTION_ID}]"
+
+      expect(described_class.execute(query).rows).to eq([['Chest pain work-up']])
+    end
+
+    it 'reaches a protocol leaf through i/protocol[...]' do
+      query = 'SELECT i/protocol[at0008]/items[at0010]/value/value ' \
+              'FROM EHR e CONTAINS COMPOSITION c ' \
+              "CONTAINS INSTRUCTION i[#{SyntheticReferralCanonicalHash::INSTRUCTION_ID}]"
+
+      expect(described_class.execute(query).rows).to eq([['Synthetic Hospital']])
+    end
+
+    it 'reaches an EVALUATION nested in a SECTION' do
+      query = 'SELECT ev/data[at0001]/items[at0002]/value/value ' \
+              'FROM EHR e CONTAINS COMPOSITION c ' \
+              "CONTAINS EVALUATION ev[#{SyntheticReferralCanonicalHash::EVALUATION_ID}]"
+
+      expect(described_class.execute(query).rows).to eq([['stable']])
     end
   end
 end

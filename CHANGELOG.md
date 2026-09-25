@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `RmObjectBuilder` rebuilds `SECTION`, `INSTRUCTION` and `ACTIVITY` nodes (and
+  every CARE_ENTRY's `protocol`), so compositions holding them -- a referral's
+  `service_request` with its requester/receiver under `protocol[...]`, entries
+  nested in a `SECTION` -- become readable through `to_rm` and queryable by AQL
+  instead of being skipped with the 0.7.1 warning (#45). Two values are
+  **approximations** because the graph does not carry them yet: an INSTRUCTION
+  without a stored narrative gets its node name as `narrative`, and every
+  ACTIVITY gets `action_archetype_id` `'/.*/'` (any ACTION archetype). Both will
+  be persisted as columns in a later release. `ACTION`, `ITEM_SINGLE` and
+  `ITEM_TABLE` are still unsupported (skipped with the warning).
+
 ## [0.7.1] - 2026-09-25
 
 > **Upgrade note.** AQL now skips a stored composition that holds an RM type
