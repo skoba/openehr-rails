@@ -32,14 +32,32 @@ module OpenehrRails
 
       def ehr_records
         linked = @ehr_scope.find_each.lazy.map do |ehr|
-          { ehr_id: ehr.ehr_id, compositions: compositions_for(ehr_id: ehr.id).map(&:to_rm) }
+          { ehr_id: ehr.ehr_id, compositions: rm_compositions_for(ehr_id: ehr.id) }
         end
-        unlinked = [{ ehr_id: nil, compositions: compositions_for(ehr_id: nil).map(&:to_rm) }]
+        unlinked = [{ ehr_id: nil, compositions: rm_compositions_for(ehr_id: nil) }]
         linked + unlinked.lazy
       end
 
-      def compositions_for(ehr_id:)
-        @composition_scope.where(ehr_id: ehr_id).find_each.lazy
+      def rm_compositions_for(ehr_id:)
+        @composition_scope.where(ehr_id: ehr_id).find_each.lazy.filter_map { |composition| materialize(composition) }
+      end
+
+      # One composition whose graph cannot be rebuilt (a node type outside
+      # RmObjectBuilder::TYPE_CLASSES, or an RM constructor rejecting stored
+      # data) must not take every query in the store down with it (#44):
+      # warn, naming the composition and the cause, and leave it out. The
+      # rest of the EHR stays queryable; the warning is the report.
+      def materialize(composition)
+        composition.to_rm
+      rescue StandardError => e
+        report_skip("openehr-rails AQL: skipping composition uid=#{composition.uid} (id=#{composition.id}): " \
+                    "#{e.class}: #{e.message}")
+        nil
+      end
+
+      def report_skip(message)
+        logger = defined?(::Rails) && ::Rails.respond_to?(:logger) ? ::Rails.logger : nil
+        logger ? logger.warn(message) : warn(message)
       end
     end
   end

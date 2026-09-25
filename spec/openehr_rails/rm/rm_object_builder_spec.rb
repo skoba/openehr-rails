@@ -73,4 +73,25 @@ describe OpenehrRails::Rm::RmObjectBuilder do
     expect(result).to be_a(OpenEHR::RM::Composition::Composition)
     expect(result.language.code_string).to eq(OpenehrRails.default_language)
   end
+
+  # skoba/openehr-rails#44 (a) bug: a node type the graph stores but
+  # TYPE_CLASSES lacks used to surface as `NoMethodError: undefined method
+  # 'new' for nil`. The typed error names what the caller needs to act on.
+  it 'raises UnsupportedRmTypeError, naming composition and node, for an rm_type outside TYPE_CLASSES' do
+    composition = OpenehrRails::Rm::CompositionCommitter.commit(
+      {
+        '_type' => 'COMPOSITION',
+        'archetype_node_id' => 'openEHR-EHR-COMPOSITION.synthetic_section_test.v1',
+        'content' => [
+          { '_type' => 'SECTION', 'archetype_node_id' => 'openEHR-EHR-SECTION.synthetic_test.v1', 'items' => [] }
+        ]
+      },
+      uid: 'uid-section-builder'
+    )
+
+    expect { composition.to_rm }.to raise_error(OpenehrRails::Rm::UnsupportedRmTypeError) { |error|
+      expect(error.message).to include('uid-section-builder', 'SECTION', 'openEHR-EHR-SECTION.synthetic_test.v1')
+      expect(error.rm_type).to eq('SECTION')
+    }
+  end
 end
