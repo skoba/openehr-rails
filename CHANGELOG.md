@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- A single-leaf entry mapped to a resource other than `Observation` and without a
+  `TypeMap::ENTRY_ELEMENT_MAPS` row no longer produces `<Resource>.value[x]`, which
+  `Condition`/`ServiceRequest`/`Procedure`/`Encounter` do not have; it is skipped and
+  reported through `#skipped` like the multi-leaf case since 0.7.0 (#38). The
+  `UnsupportedProfileError` message now names both missing elements.
+
 ## [0.7.0] - 2026-09-10
 
 > **Upgrade note.** Regenerate `app/fhir/profiles/*.json`. `Condition.component`

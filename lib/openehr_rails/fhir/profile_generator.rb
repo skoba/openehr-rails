@@ -10,7 +10,7 @@ module OpenehrRails
     # the entry's RM type selects the base FHIR resource, and the leaf
     # ELEMENTs constrain value[x] (single leaf), component slices (many, on
     # Observation) or the real elements named by TypeMap::ENTRY_ELEMENT_MAPS.
-    # Multi-leaf entries with neither are skipped and reported (#skipped).
+    # Entries with neither are skipped and reported (#skipped).
     class ProfileGenerator
       FHIR_VERSION = '5.0.0'
       ARCHETYPE_SYSTEM = 'http://openehr.org/ckm/archetypes'
