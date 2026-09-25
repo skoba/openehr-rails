@@ -54,4 +54,51 @@ describe OpenehrRails::Aql::DatasetAdapter do
   ensure
     ActiveSupport::Notifications.unsubscribe(subscriber) if subscriber
   end
+
+  # skoba/openehr-rails#44, resolution shape (a) bug: one composition whose
+  # graph cannot be rebuilt as RM objects used to fail every query in the
+  # store. Synthetic canonical hash (invented ids): a SECTION is accepted by
+  # GraphBuilder (Rm::TypeMap::NODE_TYPES) but not by RmObjectBuilder::
+  # TYPE_CLASSES, so it is the smallest graph whose to_rm fails today; #45
+  # makes SECTION buildable later, at which point this spec needs a different
+  # unsupported type (ITEM_TABLE is the next candidate).
+  describe 'a composition whose to_rm fails' do
+    let(:section_hash) do
+      {
+        '_type' => 'COMPOSITION',
+        'archetype_node_id' => 'openEHR-EHR-COMPOSITION.synthetic_section_test.v1',
+        'archetype_details' => {
+          '_type' => 'ARCHETYPED',
+          'archetype_id' => { 'value' => 'openEHR-EHR-COMPOSITION.synthetic_section_test.v1' },
+          'template_id' => { 'value' => 'synthetic_section_test' },
+          'rm_version' => '1.0.4'
+        },
+        'content' => [
+          {
+            '_type' => 'SECTION',
+            'archetype_node_id' => 'openEHR-EHR-SECTION.synthetic_test.v1',
+            'name' => { '_type' => 'DV_TEXT', 'value' => 'Synthetic section' },
+            'items' => []
+          }
+        ]
+      }
+    end
+
+    before do
+      BmiCalculation.create!(height: 170.0, ehr_id: 'ehr-mixed')
+      ehr = OpenehrRails::Rm::Ehr.find_by!(ehr_id: 'ehr-mixed')
+      OpenehrRails::Rm::CompositionCommitter.commit(section_hash, uid: 'uid-section', ehr: ehr)
+    end
+
+    it 'warns, skips that composition, and keeps the rest of the EHR queryable' do
+      records = nil
+
+      expect { records = described_class.build.each_ehr.to_a }
+        .to output(/uid-section.*UnsupportedRmTypeError.*SECTION/).to_stderr
+
+      matching = records.find { |r| r.ehr_id == 'ehr-mixed' }
+      expect(matching.compositions.size).to eq(1)
+      expect(matching.compositions.map { |c| c.uid.value }).not_to include('uid-section')
+    end
+  end
 end

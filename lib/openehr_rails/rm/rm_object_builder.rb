@@ -4,6 +4,26 @@ require 'openehr'
 
 module OpenehrRails
   module Rm
+    # Raised by RmObjectBuilder for a stored node whose rm_type the graph
+    # accepts (Rm::TypeMap::NODE_TYPES) but the read side cannot rebuild
+    # (RmObjectBuilder::TYPE_CLASSES) -- SECTION, INSTRUCTION, ACTIVITY,
+    # ACTION, ITEM_SINGLE, ITEM_TABLE today (#44; #45 narrows the gap).
+    # Names the composition and the node so a warning built from it is
+    # actionable.
+    class UnsupportedRmTypeError < StandardError
+      attr_reader :composition_uid, :rm_type, :path
+
+      def initialize(composition, node)
+        @composition_uid = composition.uid
+        @rm_type = node.rm_type
+        @path = node.path
+        super(
+          "composition uid=#{composition.uid}: node #{node.path} has rm_type #{node.rm_type}, " \
+          'which RmObjectBuilder::TYPE_CLASSES cannot rebuild as an OpenEHR::RM object'
+        )
+      end
+    end
+
     # Builds a full OpenEHR::RM::Composition object from the stored
     # graph, injecting config defaults for mandatory attributes not
     # carried in OPT/stored data. The gem's own constructor validations
@@ -66,8 +86,12 @@ module OpenehrRails
         )
       end
 
+      def node_class(node)
+        TYPE_CLASSES.fetch(node.rm_type) { raise UnsupportedRmTypeError.new(@composition, node) }
+      end
+
       def build_node(node)
-        klass = TYPE_CLASSES[node.rm_type]
+        klass = node_class(node)
         attrs = {
           archetype_node_id: node.archetype_node_id,
           name: dv_text(node.name_value || node.archetype_node_id)

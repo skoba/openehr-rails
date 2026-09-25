@@ -96,4 +96,32 @@ describe OpenehrRails::Aql::Executor do
       expect(OpenehrRails::Aql.execute(height_query).rows).to eq([[170.0]])
     end
   end
+
+  # skoba/openehr-rails#44 (a) bug, end to end: the store also holds a
+  # composition whose to_rm fails (synthetic SECTION graph, see
+  # dataset_adapter_spec.rb); a query on an unrelated template must still
+  # return its rows.
+  describe 'with a composition whose to_rm fails in the store' do
+    before do
+      BmiCalculation.create!(height: 170.0)
+      OpenehrRails::Rm::CompositionCommitter.commit(
+        {
+          '_type' => 'COMPOSITION',
+          'archetype_node_id' => 'openEHR-EHR-COMPOSITION.synthetic_section_test.v1',
+          'content' => [
+            { '_type' => 'SECTION', 'archetype_node_id' => 'openEHR-EHR-SECTION.synthetic_test.v1', 'items' => [] }
+          ]
+        },
+        uid: 'uid-section-exec'
+      )
+    end
+
+    it 'still answers a query on another template, skipping the broken composition' do
+      rows = nil
+
+      expect { rows = described_class.execute(height_query).rows }.to output(/uid-section-exec/).to_stderr
+
+      expect(rows).to eq([[170.0]])
+    end
+  end
 end

@@ -13,6 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Condition`/`ServiceRequest`/`Procedure`/`Encounter` do not have; it is skipped and
   reported through `#skipped` like the multi-leaf case since 0.7.0 (#38). The
   `UnsupportedProfileError` message now names both missing elements.
+- AQL no longer fails for the whole store when one stored composition cannot be
+  rebuilt as RM objects (a node type outside `RmObjectBuilder::TYPE_CLASSES`,
+  such as `SECTION`/`INSTRUCTION`, or an RM constructor rejecting stored data).
+  `DatasetAdapter` now warns (`Rails.logger` when present, else stderr), naming
+  the composition uid and the cause, and skips that composition; queries on the
+  rest of the store return their rows. `RmObjectBuilder` raises
+  `OpenehrRails::Rm::UnsupportedRmTypeError` (composition uid, node path,
+  rm_type) instead of an accidental `NoMethodError` (#44).
 
 ## [0.7.0] - 2026-09-10
 
