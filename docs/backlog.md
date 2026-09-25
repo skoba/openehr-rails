@@ -82,6 +82,15 @@ that verification is deferred to the next real release (>= 0.5.0), not simulated
   tag-rebuild cross-check is what pins the bytes today. Add a "Record sha256" step
   after `rake build` (`sha256sum pkg/*.gem`), as openehr-ruby's `release.yml` has.
   CI-only change; needs a PR, no Issue.
+- **The tag-rebuild cross-check compares `data.tar.gz`, not the whole `.gem`**
+  (0.7.1, 2026-09-25, `docs/reports/referral-upstream-log.md` R2). A `.gem` embeds
+  `rubygems_version` in `metadata.gz`, so a rebuild on a different ruby/rubygems
+  (local 4.0.6/4.0.16 vs CI 4.0.7/4.0.20) yields a different whole-gem sha256 with
+  byte-identical shipped files. Procedure: `tar xf` both gems, compare
+  `sha256sum data.tar.gz` (must match) and `diff` the gunzipped `metadata.gz`
+  (only `rubygems_version` may differ). 0.7.0's whole-gem match was a coincidence
+  of equal toolchains. Fold this into `CLAUDE.md`'s Release convention together
+  with the "Record sha256" step above.
 
 **Done (2026-08-23, PR #28)** — kept below for the original rationale; see the CI
 status entry above for verification details.

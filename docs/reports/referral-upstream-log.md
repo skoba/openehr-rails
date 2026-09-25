@@ -62,3 +62,62 @@ release carrying it is 0.8.0.
 
 Gate when the human has merged what should ride; version number decided from the
 merged content (0.7.1 if patch-only, 0.8.0 if #45 rides).
+
+## R2 -- 0.7.1 gate approved and tagged; artifact sha256 differs from the tag rebuild by the rubygems stamp only (2026-09-25)
+
+### Gate (approved by the 統括, 2026-09-25)
+
+`master` `df93c71` (= #43 + #50 merged): `lib/` touched by `5fcc0ec` (#38) and
+`dd157b6` (#44), both bug fixes -> **patch**; gemspec / version / dependencies
+unchanged; everything else docs. **0.7.1**, #45 deliberately excluded (minor ->
+0.8.0 later, its own inventory). CHANGELOG plan adopted with one addition asked
+for by the ruling: a one-line Upgrade note that AQL now warns and skips instead
+of failing every query, quoting the log line
+`openehr-rails AQL: skipping composition uid=...` so an operator can find it.
+
+### Release
+
+- `ceb4c5b` Release: bump version to 0.7.1 (`version.rb`, `[0.7.1] - 2026-09-25`
+  with the Upgrade note, fresh empty `[Unreleased]`). Before it: full suite
+  **311 examples, 0 failures**, rubocop **no offenses**, `release:check OK`;
+  `master` CI run 36128248178 success.
+- Tag `v0.7.1` -> `ceb4c5b`, **annotated** this time (`git tag -a`, the R14
+  correction applied).
+- `release.yml` run **36128715938**: 12 jobs success, `release:check OK` at the
+  tag. Artifact `pkg/openehr-rails-0.7.1.gem`, 251904 bytes,
+  sha256 **`29e89993894fe974a1f7eb1cbd51b1809c67aadd1cd5917f4b01af8142159784`**.
+  upload-artifact archive digest (not the gem): `216aff34…7c9a`.
+
+### The rebuild cross-check did not match, and why that is fine
+
+A `gem build` in a scratch worktree at `v0.7.1` (local ruby 4.0.6, rubygems
+4.0.16) gave sha256 `fd06e784…4f8a`, **not** the artifact's. Taken apart
+(`tar xf`; the .gem is a tar of `metadata.gz`, `data.tar.gz`, `checksums.yaml.gz`):
+
+| part | CI artifact | local rebuild |
+|---|---|---|
+| `data.tar.gz` (the shipped files) | `b54d9259…` | `b54d9259…` **identical** |
+| `metadata.gz` | differs on one line: `rubygems_version: 4.0.20` (CI ruby 4.0.7) | `rubygems_version: 4.0.16` |
+| `checksums.yaml.gz` | differs (it hashes metadata) | -- |
+
+So the bytes host apps load are identical; only rubygems' own version stamp
+moved, because `ruby/setup-ruby`'s ruby 4.0 image advanced from 4.0.6 to 4.0.7
+since 0.7.0 (when both sides happened to run rubygems 4.0.16 and the whole-gem
+sha256 matched). **Lesson, recorded in `docs/backlog.md`**: the rebuild
+cross-check must compare `data.tar.gz` (and `metadata.gz` minus
+`rubygems_version`), not the whole `.gem`; a whole-gem match is a coincidence of
+equal toolchains. The "Record sha256" CI step in the backlog stays the real pin
+for the published bytes.
+
+### Handed to the human
+
+`gem push pkg/openehr-rails-0.7.1.gem` (the downloaded CI artifact), then confirm
+`https://rubygems.org/api/v1/gems/openehr-rails.json` `sha` == `29e89993…9784`
+(compact index `checksum:` likewise), then delete the file from `pkg/`. Result
+-> R3. `master` is past the tag by these docs commits (`release:check` on
+`master` fails by design).
+
+### Pending
+
+#45: the ruling's "conditions a-c" (pre-freeze implementation approved, 0.8.0)
+have not reached this session as text; implementation starts once they do.
