@@ -140,3 +140,72 @@ stands as the cross-check for future releases.
 
 Next: #45 phase A implementation per the ruling (conditions a-c), PR `Fixes #45`,
 then the 0.8.0 inventory.
+
+## R4 -- #45 phase A implemented (PR #51), ride-alongs #52 (PR #53) and #49 (PR #54) (2026-09-25)
+
+Ruling: #45 phase A approved for pre-freeze implementation with conditions (a)
+injected defaults stated as approximations, (b) regression pin on the existing
+fixtures and the anlage demo queries, (c) #44's SECTION fixture -> ITEM_TABLE;
+ride-alongs to weigh: anlage upstream 19 (`rm_type_alternatives`) and #49.
+
+### PR #51 -- `feat/45-rm-object-builder-section-instruction` (Fixes #45)
+
+- (b) enhancement. **Red**: 8 new examples on a synthetic canonical hash
+  (`spec/support/synthetic_referral_canonical_hash.rb`: SECTION > EVALUATION;
+  INSTRUCTION with narrative, protocol ITEM_TREE, one ACTIVITY with description
+  and DV_PARSABLE timing) -> `UnsupportedRmTypeError` / empty AQL rows.
+  **Green**: 36/0 in the four touched spec files, full suite **324 examples,
+  0 failures**, rubocop clean (after one lint follow-up commit for the spec
+  file name).
+- `TYPE_CLASSES` += SECTION, INSTRUCTION, ACTIVITY; `build_node` split into
+  one helper per stored type (`entry_attributes`, `section_attributes`,
+  `instruction_attributes`, `activity_attributes`, `history_attributes`,
+  `event_attributes`, `element_attributes`); every CARE_ENTRY gets `protocol`
+  when stored. Constructor probes against openehr 2.4.3 before coding:
+  `Section.new(items: nil)` ok, `Activity.new(description:, action_archetype_id:)`
+  ok with `timing` nil, `DvParsable.new(value:, formalism:)` ok.
+- AQL measured through the new objects: `i/activities[at0001]/description[at0009]/items[at0121]/value/value`,
+  `i/protocol[at0008]/items[at0010]/value/value`, and an EVALUATION nested in a
+  SECTION via `CONTAINS EVALUATION ev[...]` -- all return the stored values.
+  (`CONTAINS SECTION s[...]` as a hop was not needed and not pinned.)
+- (a): `narrative` <- node name when no row; `action_archetype_id` <- `'/.*/'`
+  -- stated in the class comment, at the injection sites, in the specs and in
+  CHANGELOG `[Unreleased]` Added, as approximations pending phase B.
+- (b): `spec/openehr_rails/aql/executor_execute_demo_queries_spec.rb` pins the
+  four anlage demo queries (bmi_calculation graph + a synthetic
+  problem_diagnosis composition with the real at-codes). Measured on the way:
+  a naive `DV_DATE_TIME` value committed as `2026-02-01T00:00:00` comes back
+  as `2026-01-31T15:00:00Z` under JST -- the pin compares instants, not
+  strings (pre-existing behaviour, not touched). `protocol` nil pinned on an
+  OBSERVATION without one.
+- (c): the #44 fixtures in `dataset_adapter_spec` / `executor_spec` /
+  `rm_object_builder_spec` now use an ITEM_TABLE as an EVALUATION's data.
+- CI runs 36131797849 (`ca1af81`) and 36132042465 (`368da91`, lint follow-up):
+  success. Semver minor -> 0.8.0.
+
+### PR #53 -- `feat/52-rm-type-alternatives` (Fixes #52, filed for upstream 19)
+
+Small, so it rides. (b) enhancement: **red** 9/3 (key absent) -> **green** 9/0,
+full suite 314/0. `FieldExtractor` fields gain `rm_type_alternatives` (the
+value's child constraint types in OPT order), `rm_type` selection untouched.
+**Measured before the spec**: at0002 `[DV_TEXT, DV_CODED_TEXT]`, at0073
+`[DV_CODED_TEXT, DV_TEXT]` -- anlage's issue33-plan says at0073 is coded-only;
+the fixture disagrees, and the spec pins the fixture. CI 36132700126 success.
+
+### PR #54 -- `fix/49-zero-leaf-skip` (Fixes #49)
+
+Small, same decision point as #38, so it rides. (a) bug: **red** 44/4 (a
+0-leaf OBSERVATION and a 0-leaf INSTRUCTION each got a profile with an empty
+`component` slicing header) -> **green** 44/0, full suite 315/0.
+`TypeMap.assert_supported!` raises first for `fields.empty?`;
+`UnsupportedProfileError` says "the entry has no leaves" (pointing at #47).
+Built in a git worktree beside the main checkout (removed afterwards) so #52
+and #49 could proceed in parallel. CI 36132843280 success.
+
+### Merge notes for the human
+
+All three PRs are CI-green and `MERGEABLE CLEAN` against `560647a`, but each
+adds to the same `[Unreleased]` section of `CHANGELOG.md`, so after the first
+merge the other two will show as conflicting; this session resolves each by
+taking `master`'s CHANGELOG and re-adding the PR's bullet (as done for #43/#50),
+then re-runs CI. Any order works. Then the 0.8.0 inventory (R5).
