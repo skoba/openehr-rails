@@ -121,3 +121,22 @@ for the published bytes.
 
 #45: the ruling's "conditions a-c" (pre-freeze implementation approved, 0.8.0)
 have not reached this session as text; implementation starts once they do.
+
+## R3 -- 0.7.1 published; confirmed by checksum (2026-09-25)
+
+Human `gem push` of the CI artifact (R2). Confirmation against the artifact's
+sha256 `29e89993894fe974a1f7eb1cbd51b1809c67aadd1cd5917f4b01af8142159784`:
+
+| source | value |
+|---|---|
+| `/api/v1/gems/openehr-rails.json` | version 0.7.1, `sha` `29e89993…9784` |
+| compact index `info/openehr-rails` | `0.7.1 … checksum:29e89993…9784, created_at:2026-09-25T11:43:12Z` |
+| `/api/v1/versions/openehr-rails/latest.json` | `{"version":"0.7.1"}` |
+| `/api/v1/versions/openehr-rails.json` | **still 0.7.0 first** at check time -- the propagation lag CLAUDE.md warns about, observed for real this time |
+
+Published gem == CI artifact. `pkg/` emptied. The judgement rule from R2 (tag
+rebuild: `data.tar.gz` identical, metadata differs by `rubygems_version` only)
+stands as the cross-check for future releases.
+
+Next: #45 phase A implementation per the ruling (conditions a-c), PR `Fixes #45`,
+then the 0.8.0 inventory.
