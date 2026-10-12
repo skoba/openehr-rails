@@ -209,3 +209,46 @@ adds to the same `[Unreleased]` section of `CHANGELOG.md`, so after the first
 merge the other two will show as conflicting; this session resolves each by
 taking `master`'s CHANGELOG and re-adding the PR's bullet (as done for #43/#50),
 then re-runs CI. Any order works. Then the 0.8.0 inventory (R5).
+
+## R5 -- #53 and #54 merged into #51's branch; `release.yml` "Record sha256" rides along; CI green (2026-10-12)
+
+Instruction: fold the two ride-alongs into #51 the way #41 was folded into #39
+/ #42 (branch-into-branch merge, identical commit objects), so the human merges
+one PR; then the 0.8.0 inventory.
+
+### Branch `feat/45-rm-object-builder-section-instruction` (PR #51), now
+
+| commit | what |
+|---|---|
+| `ae71034` | Merge branch `feat/52-rm-type-alternatives` (#53, `d574358`) |
+| `e180eef` | Merge branch `fix/49-zero-leaf-skip` (#54, `7d4d203`) |
+| `1410274` | CI: `release.yml` gains `Record sha256` (`sha256sum pkg/*.gem \| tee pkg/SHA256SUMS`) after `rake build`, ported back from openehr-ruby's copy; `docs/backlog.md` "Release automation" item. CI-only, no Issue (the backlog's own call); rides here so one merge lands it ahead of the `v0.8.0` tag run, which is the first run that will print it. |
+
+- Code files were disjoint; the only conflict in both merges was
+  `CHANGELOG.md` `[Unreleased]` (as R4 predicted). Resolution: #45's and #52's
+  bullets kept in that order under one `### Added`; #49's bullet under a
+  `### Fixed` below. `git diff origin/master...HEAD`: 14 files, the union of
+  the three PRs' diffs plus `release.yml`.
+- Local, after the merges (bundle had to be installed first -- this checkout
+  had no gems): **331 examples, 0 failures**; rubocop **no offenses**
+  (111 files).
+- CI: run **38216664617** (`e180eef`, the two merges) success; run
+  **38216762262** (`1410274`, final head) **success, 11/11 jobs**. PR #51
+  `MERGEABLE CLEAN` against `master` `0434e06`.
+- PR #51's body now names the ride-alongs with `Fixes #52` / `Fixes #49`, so
+  the one merge closes #45, #52 and #49.
+
+### Handed to the human
+
+Merge #51 with a **merge commit** (not squash): then `d574358` and `7d4d203`
+become reachable from `master` as the same objects #53 / #54 point at, exactly
+the #41 situation. After the merge this session comments on #53 and #54
+("taken in via #51") and closes them if GitHub has not already, then runs the
+0.8.0 inventory (`v0.7.1..master`) as a gate report (R6).
+
+Inventory preview, measured on the branch (the gate itself waits for the
+merge): `lib/` touched by `rm_object_builder.rb` (#45, enhancement),
+`opt/field_extractor.rb` (#52, additive output), `fhir/type_map.rb` +
+`fhir/unsupported_profile_error.rb` (#49, bug); gemspec / version /
+dependencies untouched; `release.yml` and the docs commits neutral. Expected
+call: **minor -> 0.8.0**, as #45's plan said.

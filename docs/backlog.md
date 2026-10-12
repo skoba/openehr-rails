@@ -81,7 +81,9 @@ that verification is deferred to the next real release (>= 0.5.0), not simulated
   against the value recorded for that run" cannot be followed literally; the
   tag-rebuild cross-check is what pins the bytes today. Add a "Record sha256" step
   after `rake build` (`sha256sum pkg/*.gem`), as openehr-ruby's `release.yml` has.
-  CI-only change; needs a PR, no Issue.
+  CI-only change; needs a PR, no Issue. **In PR #51 as `1410274` (2026-10-12,
+  `docs/reports/referral-upstream-log.md` R5)**; first run that prints it will be
+  the `v0.8.0` tag's.
 - **The tag-rebuild cross-check compares `data.tar.gz`, not the whole `.gem`**
   (0.7.1, 2026-09-25, `docs/reports/referral-upstream-log.md` R2). A `.gem` embeds
   `rubygems_version` in `metadata.gz`, so a rebuild on a different ruby/rubygems
