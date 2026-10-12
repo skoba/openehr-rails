@@ -18,6 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ACTIVITY gets `action_archetype_id` `'/.*/'` (any ACTION archetype). Both will
   be persisted as columns in a later release. `ACTION`, `ITEM_SINGLE` and
   `ITEM_TABLE` are still unsupported (skipped with the warning).
+- `FieldExtractor` fields carry `rm_type_alternatives`: every value type the OPT
+  allows for the ELEMENT, in OPT order (e.g. `["DV_TEXT", "DV_CODED_TEXT"]` for
+  `problem_diagnosis` at0002). Additive; the chosen `rm_type` is unchanged. Lets a
+  host app tell an OR-constrained coded text (free text allowed) from a coded-only
+  one instead of rendering an empty select (#52, anlage #33).
 
 ## [0.7.1] - 2026-09-25
 
