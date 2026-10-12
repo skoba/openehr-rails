@@ -99,6 +99,8 @@ module OpenehrRails
       # path the resource lacks.
       def assert_supported!(entry)
         resource_type = resource_for_entry(entry[:rm_type])
+        # No leaves at all: nothing to profile, whatever the resource (#49).
+        raise UnsupportedProfileError.new(entry[:archetype_id], resource_type, 0) if entry[:fields].empty?
         return if resource_type == 'Observation' || element_map_for(entry[:archetype_id])
 
         raise UnsupportedProfileError.new(entry[:archetype_id], resource_type, entry[:fields].size)
