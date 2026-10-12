@@ -26,6 +26,8 @@ jobs:
         run: bundle exec rake release:check
       - name: Build gem
         run: bundle exec rake build
+      - name: Record sha256
+        run: sha256sum pkg/*.gem | tee pkg/SHA256SUMS
       - name: Upload gem artifact
         uses: actions/upload-artifact@v7
         with:
