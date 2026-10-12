@@ -301,3 +301,44 @@ same commit (`ceb4c5b`'s shape). Tag `v0.8.0` annotated; the Release run
 prints the gem's sha256 in `Record sha256`, which is the value the human's
 publish and the post-publish checksum are compared against; the tag-rebuild
 cross-check judges by `data.tar.gz` (R2 rule).
+
+## R7 -- v0.8.0 tagged; Release run 38258179628 green; Record sha256's first real run matches artifact and local rebuild byte for byte (2026-10-12)
+
+Gate approved by the 統括 (2026-10-12): minor -> 0.8.0, Upgrade note's two
+points accepted as written.
+
+- `425453d` Release: bump version to 0.8.0 (`version.rb`, `[0.8.0] -
+  2026-10-12` with the Upgrade note, fresh empty `[Unreleased]`). Before it:
+  **331 examples, 0 failures**, rubocop no offenses.
+- Tag `v0.8.0` -> `425453d`, annotated. `master` and the tag pushed.
+- `release.yml` run **38258179628**: 12 jobs success, `release:check OK` at
+  the tag. **`Record sha256` (first run of the step, `1410274`) printed
+  `d9068d3ed4252fd33f0cfb4e25506118787235ae7d8ade203a7063087e5c7aa6
+  pkg/openehr-rails-0.8.0.gem`.**
+- Downloaded artifact (`gh run download 38258179628 -n gem`): 263680 bytes,
+  sha256 **`d9068d3e…c7aa6`** == the value the run printed.
+
+### Cross-check against a tag rebuild (R2 rule)
+
+Scratch worktree at `v0.8.0`, local ruby 4.0.7 / rubygems 4.0.20 (the 4.0.7
+pin from `32a79e7`):
+
+| part | CI artifact | local rebuild |
+|---|---|---|
+| whole `.gem` | `d9068d3e…c7aa6` | `d9068d3e…c7aa6` **identical** |
+| `data.tar.gz` | `180145cf…6108e` | `180145cf…6108e` **identical** |
+| `metadata.gz` | `a30bd4a5…397e83`, `rubygems_version: 4.0.20` | same |
+
+The whole-gem match is back because both sides now run rubygems 4.0.20 --
+the parity the 4.0.7 pin was for. The judgement rule stays `data.tar.gz`
+(identical) plus `metadata.gz` minus `rubygems_version`; the whole-gem
+equality is confirmation, not the criterion.
+
+### Handed to the human
+
+`gem push pkg/openehr-rails-0.8.0.gem` -- the file in `pkg/` is the downloaded
+CI artifact (sha256 above; `pkg/` is git-ignored), not a local build. After
+the push this session confirms `https://rubygems.org/api/v1/gems/openehr-rails.json`
+`sha` and the compact index `checksum:` == `d9068d3e…c7aa6`, then empties
+`pkg/` -> R8. `master` is past the tag by this docs commit, so
+`release:check` on `master` fails by design again.
