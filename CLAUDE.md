@@ -61,6 +61,13 @@ documentation files and `lib/` was byte-identical - but nothing in the release
 path caught it. Measurements in `docs/reports/fsh-generator-log.md` R8; the
 matching `release:check` guard is `skoba/openehr-rails#34`.)
 
+**Local dev Ruby tracks the patch release CI builds with.** `.ruby-version`
+moved 4.0.6 -> 4.0.7 (2026-10-12) so a local rebuild at the tag stamps the same
+`rubygems_version` (4.0.20) as `ruby/setup-ruby`'s ruby 4.0 image did for 0.7.1,
+whose `metadata.gz` differed from the local rebuild by that one line
+(`docs/reports/referral-upstream-log.md` R2). The cross-check still judges by
+`data.tar.gz`, not the whole-gem sha256: the two toolchains can drift apart again.
+
 **Confirm publication by checksum, not by version number.** RubyGems publishes
 the sha256 it recorded at push time (`/api/v1/gems/openehr-rails.json` `sha`, and
 the `checksum:` field in `https://index.rubygems.org/info/openehr-rails`). The
