@@ -268,6 +268,45 @@ describe OpenehrRails::Fhir::FshGenerator do
     end
   end
 
+  # skoba/openehr-rails#49, resolution shape (a) bug: an entry with no leaves
+  # at all produced an archetype `code` rule plus an empty `component` slicing
+  # header (and, for a non-Observation resource, invalid FHIR). Any 0-leaf
+  # entry is now skipped and reported, whatever its resource. Synthetic
+  # entries (stubbed FieldExtractor, invented ids), as for #33/#38.
+  describe '0-leaf entries' do
+    let(:real_entries) { OpenehrRails::Opt::FieldExtractor.new(template).entries }
+    let(:empty_observation) do
+      real_entries.first.merge(archetype_id: 'openEHR-EHR-OBSERVATION.synthetic_empty_test.v1',
+                               concept: 'synthetic_empty_test', fields: [])
+    end
+    let(:empty_instruction) do
+      real_entries.first.merge(archetype_id: 'openEHR-EHR-INSTRUCTION.synthetic_empty_test.v1',
+                               rm_type: 'INSTRUCTION', concept: 'synthetic_empty_test', fields: [])
+    end
+
+    before do
+      extractor = instance_double(OpenehrRails::Opt::FieldExtractor,
+                                  entries: [empty_observation, empty_instruction, *real_entries])
+      allow(OpenehrRails::Opt::FieldExtractor).to receive(:new).with(template).and_return(extractor)
+    end
+
+    it 'emits nothing for them and keeps the real entries' do
+      expect(generator.to_fsh_files.keys).to eq(
+        %w[openehr-observation-height-v2 openehr-observation-body-weight-v2 openehr-observation-body-mass-index-v2]
+      )
+    end
+
+    it 'reports each as an UnsupportedProfileError that says the entry has no leaves' do
+      generator.to_fsh_files
+
+      expect(generator.skipped.map(&:archetype_id)).to eq(
+        %w[openEHR-EHR-OBSERVATION.synthetic_empty_test.v1 openEHR-EHR-INSTRUCTION.synthetic_empty_test.v1]
+      )
+      expect(generator.skipped.map(&:leaf_count)).to eq([0, 0])
+      expect(generator.skipped.map(&:message)).to all(include('no leaves'))
+    end
+  end
+
   describe '#skipped' do
     it 'is empty for an all-Observation template' do
       generator.to_fsh_files

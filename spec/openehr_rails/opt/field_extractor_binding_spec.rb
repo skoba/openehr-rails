@@ -65,6 +65,26 @@ describe OpenehrRails::Opt::FieldExtractor do
       expect(diagnostic_status[:value_set_uri]).to be_nil
       expect(diagnostic_status[:code_list]).not_to be_empty
     end
+
+    # skoba/openehr-rails#52, resolution shape (b) enhancement: the value
+    # constraint's alternative RM types travel with the field, in OPT order,
+    # so a host app can tell an OR-constrained coded text (DV_TEXT allowed)
+    # from a coded-only one. rm_type selection is unchanged. Values measured
+    # on the fixture before the spec was written.
+    describe 'rm_type_alternatives' do
+      it 'lists every alternative of an OR-constrained value in OPT order' do
+        expect(field_for(fields, archetype_id, 'at0002')[:rm_type_alternatives]).to eq(%w[DV_TEXT DV_CODED_TEXT])
+        expect(field_for(fields, archetype_id, 'at0073')[:rm_type_alternatives]).to eq(%w[DV_CODED_TEXT DV_TEXT])
+      end
+
+      it 'lists the single type of a plain value' do
+        expect(field_for(fields, archetype_id, 'at0077')[:rm_type_alternatives]).to eq(%w[DV_DATE_TIME])
+      end
+
+      it 'leaves the chosen rm_type as before' do
+        expect(field_for(fields, archetype_id, 'at0002')[:rm_type]).to eq('DV_CODED_TEXT')
+      end
+    end
   end
 
   describe 'a hand-built template without terminology objects' do
@@ -93,7 +113,7 @@ describe OpenehrRails::Opt::FieldExtractor do
 
       # enhancement: additive binding keys remain safe for lightweight template doubles.
       expect(described_class.new(template).fields.first)
-        .to include(value_set_uri: nil, code_bindings: [])
+        .to include(value_set_uri: nil, code_bindings: [], rm_type_alternatives: %w[DV_TEXT])
     end
   end
 end

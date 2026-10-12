@@ -10,6 +10,8 @@ module OpenehrRails
     #   label:           display text from the template terminology (any language)
     #   path:            RM path from the COMPOSITION content
     #   rm_type:         openEHR data value type (e.g. 'DV_QUANTITY')
+    #   rm_type_alternatives: every alternative value type the OPT allows, in OPT order
+    #                    (e.g. ['DV_TEXT', 'DV_CODED_TEXT'] for an OR constraint; rm_type is the chosen one)
     #   node_id:         at-code of the ELEMENT
     #   archetype_id:    id of the nearest enclosing archetype root (entry or embedded C_ARCHETYPE_ROOT)
     #   column_type:     ActiveRecord column type symbol
@@ -162,6 +164,7 @@ module OpenehrRails
           label: label || element.node_id,
           path: "#{path}/value",
           rm_type: rm_type,
+          rm_type_alternatives: value_children(element).map(&:rm_type_name),
           node_id: element.node_id,
           archetype_id: archetype_id,
           entry_rm_type: entry[:rm_type],
@@ -176,10 +179,15 @@ module OpenehrRails
         field
       end
 
-      def value_constraint(element)
+      # All alternative constraints on the ELEMENT's value, in OPT order.
+      def value_children(element)
         attrs = element.attributes || []
         value = attrs.find { |a| a.rm_attribute_name == 'value' }
-        children = value&.children || []
+        value&.children || []
+      end
+
+      def value_constraint(element)
+        children = value_children(element)
         return children.first if children.size <= 1
 
         code_reference_class = OpenEHR::AM::OpenEHRProfile::DataTypes::Text::CCodeReference
