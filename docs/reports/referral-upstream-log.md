@@ -252,3 +252,52 @@ merge): `lib/` touched by `rm_object_builder.rb` (#45, enhancement),
 `fhir/unsupported_profile_error.rb` (#49, bug); gemspec / version /
 dependencies untouched; `release.yml` and the docs commits neutral. Expected
 call: **minor -> 0.8.0**, as #45's plan said.
+
+## R6 -- #51 merged (with #53/#54 inside); 0.8.0 inventory and gate (2026-10-12)
+
+### Step 0: measured on `master` `1185c07` (the #51 merge commit)
+
+- `lib/openehr_rails/rm/rm_object_builder.rb:48-53` `TYPE_CLASSES` has
+  `SECTION`, `INSTRUCTION`, `ACTIVITY` (#45);
+  `lib/openehr_rails/opt/field_extractor.rb:167` emits `rm_type_alternatives`
+  (#52); `lib/openehr_rails/fhir/type_map.rb:29` raises first on
+  `fields.empty?` (#49); `.github/workflows/release.yml:29-30` has the
+  `Record sha256` step.
+- `CHANGELOG.md` `[Unreleased]`: `### Added` with the #45 and #52 bullets,
+  `### Fixed` with the #49 bullet -- the R5 resolution survived the merge.
+- #51 merged 13:37 UTC as a merge commit; GitHub marked #53 (`ae71034`) and
+  #54 (`e180eef`) merged by reachability, #45/#52/#49 closed. Both PRs got a
+  "taken in via #51" comment.
+- `master` CI run **38256998466** (`1185c07`) success. Local under ruby
+  4.0.7: **331 examples, 0 failures**, rubocop no offenses (111 files).
+  `release:check` on `master` fails by design (HEAD is past the `v0.7.1` tag).
+- #55 (FHIR profile id collision, anlage ledger 23): open issue, no PR,
+  nothing in `v0.7.1..master` references it -- stays out, December.
+
+### Step 1: inventory `v0.7.1..master`
+
+| commit | touches | class |
+|---|---|---|
+| `b403226` `560647a` `0434e06` `84244cd` | docs/reports, docs/backlog | neutral |
+| `32a79e7` `29a1444` | `.ruby-version`, CLAUDE.md | neutral (dev env / docs) |
+| `1185c07` = #51: `ca1af81` | `rm/rm_object_builder.rb` + specs (#45, enhancement) | **minor** |
+| -- `368da91` | spec file rename | neutral |
+| -- `ae71034` <- `d574358` | `opt/field_extractor.rb` (#52, additive output) | minor |
+| -- `e180eef` <- `7d4d203` | `fhir/type_map.rb`, `fhir/unsupported_profile_error.rb` (#49, bug) | patch |
+| -- `1410274` | `release.yml` Record sha256 | neutral (CI) |
+
+Gemspec, `version.rb`, `Gemfile`, `gemfiles/*` untouched. Highest class is
+minor -> **0.8.0**, matching the instructed number.
+
+### Prepared, uncommitted, for the release commit
+
+`CHANGELOG.md`: `[Unreleased]` -> `[0.8.0] - 2026-10-12` with an Upgrade note
+(two points: SECTION/INSTRUCTION compositions now read back through `to_rm`
+and AQL -- the ones 0.7.1 skipped with the warning are the ones that become
+visible; `narrative` / `action_archetype_id` injected defaults are
+approximations until phase B persists them), the three bullets unchanged, a
+fresh empty `[Unreleased]` above. `version.rb` 0.7.1 -> 0.8.0 goes in the
+same commit (`ceb4c5b`'s shape). Tag `v0.8.0` annotated; the Release run
+prints the gem's sha256 in `Record sha256`, which is the value the human's
+publish and the post-publish checksum are compared against; the tag-rebuild
+cross-check judges by `data.tar.gz` (R2 rule).
