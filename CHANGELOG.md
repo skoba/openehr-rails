@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-12
+
+> **Upgrade note.** A stored Composition holding a `SECTION` or an `INSTRUCTION`
+> (with its `ACTIVITY`s) now reads back through `to_rm` and AQL; the ones 0.7.1
+> skipped with `openehr-rails AQL: skipping composition uid=...` are exactly the
+> ones that become visible, so query row counts can grow. Two injected defaults
+> are approximations until a later release persists them as columns: an
+> INSTRUCTION without a stored narrative reads back with its node name as
+> `narrative`, and every ACTIVITY with `action_archetype_id` `'/.*/'`.
+
 ### Added
 - `RmObjectBuilder` rebuilds `SECTION`, `INSTRUCTION` and `ACTIVITY` nodes (and
   every CARE_ENTRY's `protocol`), so compositions holding them -- a referral's
