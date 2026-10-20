@@ -342,3 +342,21 @@ the push this session confirms `https://rubygems.org/api/v1/gems/openehr-rails.j
 `sha` and the compact index `checksum:` == `d9068d3e…c7aa6`, then empties
 `pkg/` -> R8. `master` is past the tag by this docs commit, so
 `release:check` on `master` fails by design again.
+
+## R8 -- 0.8.0 published; confirmed by checksum (2026-10-20)
+
+Human `gem push` of the CI artifact (R7, `pkg/` held the downloaded run
+38258179628 artifact, re-hashed before the push). Confirmation against the
+artifact's sha256 `d9068d3ed4252fd33f0cfb4e25506118787235ae7d8ade203a7063087e5c7aa6`:
+
+| source | value |
+|---|---|
+| `/api/v1/gems/openehr-rails.json` | version 0.8.0, `sha` `d9068d3e…c7aa6` |
+| compact index `info/openehr-rails` | `0.8.0 … checksum:d9068d3e…c7aa6, created_at:2026-10-20T12:23:19Z` |
+| `/api/v1/versions/openehr-rails/latest.json` | `{"version":"0.8.0"}` |
+| `/api/v1/versions/openehr-rails.json` | 0.8.0 first (a first fetch right after the push did not list 0.8.0 yet; propagation lag again, gone on re-check) |
+| `downloads/openehr-rails-0.8.0.gem` | 263680 bytes, sha256 `d9068d3e…c7aa6` |
+
+Published gem == CI artifact == tag rebuild (R7). `pkg/` emptied.
+
+Next: #55 (FHIR profile id collision) in December, not part of 0.8.0.
