@@ -43,7 +43,9 @@ diff, then commits, recording the implementer in a commit message trailer (e.g.
 ## Release convention
 
 Before tagging, make the final semver determination from the actual content of
-`[Unreleased]`, not from a pre-assigned version number. If the instructed version number
+the release (the `changelog.d/` fragments consolidated into `CHANGELOG.md` at the
+inventory, checked against `git diff <last tag>..master` - see 全開の進め方 below),
+not from a pre-assigned version number. If the instructed version number
 contradicts the actual content, stop instead of tagging and ask for re-arbitration.
 
 **Publish only the CI artifact itself.** `gem push` takes the `.gem` downloaded
@@ -227,6 +229,34 @@ anlage の `CLAUDE.md`「作業ツリー規律」と同旨。根拠と採らな�
   `codex exec resume --last` は使わない。毎回あたらしく起動し、受け渡しは
   commit 済みの計画書で行う(上の「Repository-context-dependent commands…」の
   `codex exec resume` の扱いは、この項が上書きする)
+
+## 全開の進め方(2026-11-24 導入。裁定 R-20261124-8)
+
+要点だけを書く。正典は裁定台帳の R-20261124-8。これより前の記述と食い違うときは、この節が優先する。
+
+- **止まらずに進める範囲**: 承認済みの計画書と、このリポジトリ宛ての作業列にある項目。
+  計画書が要る項目は、計画書を push してそのまま実装に進む(確認は事後)
+- **必ず止まってゲート報告を出す範囲**: 計画書に無い挙動の変更と公開 API の変更。
+  gem の追加と未リリースのコードへの依存。データの移行と削除、開発機の設定の変更。
+  臨床の判断と人間の入力を待つもの。タグと publish。ほかのリポジトリへの書き込み
+  (台帳の自分宛ての行は除く)
+- **セッションが自分でマージしてよい PR**: 自分で開いた、docs のみの PR と、
+  止まらずに進める範囲の実装の PR。条件は、head の CI がすべて green、競合なし、
+  1 Issue = 1 PR。マージのあと `master` の CI を確かめ、赤なら次に進まず例外報告。
+  `master` では force-push と履歴の書き換えをしない
+- **人間がマージする PR**: 依存を変えるもの(`Gemfile`、gemspec、lock)、版番号を
+  変えるもの、CI のワークフローを変えるもの、ファイルの削除が主な中身のもの、
+  必ず止まる範囲に当たったもの。権限でマージが止められたら、回避せずに報告する
+- **変更履歴は断片ファイル**: PR では `CHANGELOG.md` に触らない。
+  `changelog.d/<Issue 番号>-<slug>.md` を 1 PR につき 1 つ足し、変更履歴の文と
+  semver の判定・理由を書く。棚卸しで断片を `CHANGELOG.md` にまとめ、断片を消す
+  (タグの時点で `changelog.d/` に断片が残っていないこと)
+- **公開はできた順**: 公開できる中身が `master` にそろったら棚卸しに進む。
+  手順は Release convention のとおりで、変えない
+- **報告**: ゲート・バンドル・例外の報告は `docs/reports/` に push し、台帳の自分宛ての
+  行に PR 番号と SHA を書き足す。次の裁定を待たずに、作業列の次の項目に進む
+- **変えないもの**: TDD(Red の出力を報告に載せる)、合否は CI、実測と推論の区別、
+  越境は読み取りだけ、publish は CI artifact だけで `gem push` は人間
 
 ## Project Overview
 
