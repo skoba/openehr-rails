@@ -30,6 +30,8 @@ module OpenehrRails
     #   value_set_uri:   external value-set URI for DV_CODED_TEXT
     #   code_bindings:   [{system_uri:, code:}] ontology bindings for the node
     #   required:        true when the entry and element are both mandatory
+    #   min_occurrences: the ELEMENT's own occurrences lower bound (0 when unconstrained);
+    #                    1 under an optional entry means "mandatory if the entry is written"
     # rubocop:disable-next Metrics/ClassLength
     class FieldExtractor
       ENTRY_TYPES = %w[OBSERVATION EVALUATION INSTRUCTION ACTION ADMIN_ENTRY].freeze
@@ -216,7 +218,8 @@ module OpenehrRails
           column_type: COLUMN_TYPES.fetch(rm_type, :string),
           value_set_uri: nil,
           code_bindings: code_bindings_for(archetype_id, element.node_id),
-          required: entry[:required] && mandatory?(element)
+          required: entry[:required] && mandatory?(element),
+          min_occurrences: min_occurrences(element)
         }
         field.merge!(quantity_constraints(constraint)) if rm_type == 'DV_QUANTITY'
         field.merge!(coded_text_constraints(constraint, archetype_id)) if rm_type == 'DV_CODED_TEXT'
@@ -342,8 +345,12 @@ module OpenehrRails
       end
 
       def mandatory?(node)
+        min_occurrences(node) >= 1
+      end
+
+      def min_occurrences(node)
         occurrences = node.respond_to?(:occurrences) ? node.occurrences : nil
-        !occurrences.nil? && occurrences.lower.to_i >= 1
+        occurrences.nil? ? 0 : occurrences.lower.to_i
       end
 
       def term_text(archetype_id, code)
