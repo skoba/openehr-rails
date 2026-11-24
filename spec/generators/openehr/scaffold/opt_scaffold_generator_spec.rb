@@ -163,3 +163,40 @@ module Openehr
     end
   end
 end
+
+module Openehr
+  module Generators
+    # Issue #60: the generator says which fields the generated model cannot save yet.
+    describe ScaffoldGenerator, 'warning about shapes Storable cannot assemble' do
+      destination File.expand_path('../../../../../tmp', __FILE__)
+
+      def generator_output(opt_file)
+        prepare_destination
+        FileUtils.mkdir_p(File.join(destination_root, 'config'))
+        File.write(File.join(destination_root, 'config/routes.rb'), "Rails.application.routes.draw do\nend\n")
+        run_generator [opt_file]
+      end
+
+      # bug: red before #60 (no warning at all).
+      it 'lists SECTION-nested fields of jp_referral with the tracking issue' do
+        output = generator_output(File.expand_path('../../../../templates/jp_referral.opt', __FILE__))
+
+        expect(output).to match(%r{Warning: \d+ field\(s\) belong to an entry nested in a SECTION.*skoba/openehr-rails#62.*story})
+      end
+
+      # bug: red before #60.
+      it 'lists embedded-root fields of lab_result_report_reduced' do
+        output = generator_output(File.expand_path('../../../../templates/lab_result_report_reduced.opt', __FILE__))
+
+        expect(output).to match(%r{Warning: 2 field\(s\) belong to an embedded archetype root.*skoba/openehr-rails#61})
+      end
+
+      # regression pin
+      it 'prints no such warning for bmi_calculation' do
+        output = generator_output(File.expand_path('../../../templates/bmi_calculation.opt', __FILE__))
+
+        expect(output).not_to include('cannot save a value')
+      end
+    end
+  end
+end

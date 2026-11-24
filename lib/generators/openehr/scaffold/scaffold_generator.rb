@@ -36,6 +36,8 @@ module Openehr
         say "Generating scaffold for template: #{@template_id}"
         say "Model name: #{class_name}"
         warn_on_repeating_entries
+        # Storable refuses to save a value for these fields (skoba/openehr-rails#60).
+        OpenehrRails::Storable.shape_warnings(fields).each { |warning| say warning, :yellow }
       end
 
       def copy_opt_into_app
