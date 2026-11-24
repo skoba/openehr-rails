@@ -125,3 +125,78 @@ module Openehr
     end
   end
 end
+
+module Openehr
+  module Generators
+    # Issue #47: an INSTRUCTION entry's leaves (activities/description, protocol and
+    # the embedded CLUSTERs there) become columns. Fixture: jp_referral.opt (real).
+    describe ScaffoldGenerator, 'with an OPT holding an INSTRUCTION' do
+      destination File.expand_path('../../../../../tmp', __FILE__)
+
+      let(:opt_file) { File.expand_path('../../../../templates/jp_referral.opt', __FILE__) }
+
+      before(:each) do
+        prepare_destination
+        FileUtils.mkdir_p(File.join(destination_root, 'config'))
+        File.write(File.join(destination_root, 'config/routes.rb'),
+                   "Rails.application.routes.draw do\nend\n")
+        run_generator [opt_file]
+      end
+
+      context 'migration' do
+        subject { migration_file('db/migrate/create_jp_referrals.rb') }
+
+        # enhancement: red before #47 (no service_request column at all).
+        it { is_expected.to contain 't.string :service_request_at0121' }
+        it { is_expected.to contain 't.string :service_request_at0010' }
+        it { is_expected.to contain 't.string :problem_diagnosis_at0002' }
+      end
+
+      context 'model' do
+        subject { file('app/models/jp_referral.rb') }
+
+        # enhancement: red before #47.
+        it { is_expected.to contain "'service_request_at0062' =>" }
+        it { is_expected.to contain '/activities[at0001]/description[at0009]/items[at0062]/value' }
+        it { is_expected.to contain '/protocol[at0008]/items[at0011]/value' }
+      end
+    end
+  end
+end
+
+module Openehr
+  module Generators
+    # Issue #60: the generator says which fields the generated model cannot save yet.
+    describe ScaffoldGenerator, 'warning about shapes Storable cannot assemble' do
+      destination File.expand_path('../../../../../tmp', __FILE__)
+
+      def generator_output(opt_file)
+        prepare_destination
+        FileUtils.mkdir_p(File.join(destination_root, 'config'))
+        File.write(File.join(destination_root, 'config/routes.rb'), "Rails.application.routes.draw do\nend\n")
+        run_generator [opt_file]
+      end
+
+      # bug: red before #60 (no warning at all).
+      it 'lists SECTION-nested fields of jp_referral with the tracking issue' do
+        output = generator_output(File.expand_path('../../../../templates/jp_referral.opt', __FILE__))
+
+        expect(output).to match(%r{Warning: \d+ field\(s\) belong to an entry nested in a SECTION.*skoba/openehr-rails#62.*story})
+      end
+
+      # bug: red before #60.
+      it 'lists embedded-root fields of lab_result_report_reduced' do
+        output = generator_output(File.expand_path('../../../../templates/lab_result_report_reduced.opt', __FILE__))
+
+        expect(output).to match(%r{Warning: 2 field\(s\) belong to an embedded archetype root.*skoba/openehr-rails#61})
+      end
+
+      # regression pin
+      it 'prints no such warning for bmi_calculation' do
+        output = generator_output(File.expand_path('../../../templates/bmi_calculation.opt', __FILE__))
+
+        expect(output).not_to include('cannot save a value')
+      end
+    end
+  end
+end

@@ -8,14 +8,21 @@ module OpenehrRails
     # Each field is a Hash:
     #   name:            Ruby attribute / DB column name (ASCII, unique)
     #   label:           display text from the template terminology (any language)
-    #   path:            RM path from the COMPOSITION content
+    #   path:            RM path from the COMPOSITION content; an archetype root on the way
+    #                    (SECTION, entry, embedded CLUSTER) is written [archetype_id],
+    #                    every other node [at-code]
+    #   root_path:       path of the nearest embedded archetype root, else of the entry
+    #   instance_index:  0-based document-order ordinal among the template's fields that
+    #                    share this path (same-archetype roots side by side share paths),
+    #                    so [path, instance_index] identifies a field
     #   rm_type:         openEHR data value type (e.g. 'DV_QUANTITY')
     #   rm_type_alternatives: every alternative value type the OPT allows, in OPT order
     #                    (e.g. ['DV_TEXT', 'DV_CODED_TEXT'] for an OR constraint; rm_type is the chosen one)
     #   node_id:         at-code of the ELEMENT
     #   archetype_id:    id of the nearest enclosing archetype root (entry or embedded C_ARCHETYPE_ROOT)
     #   column_type:     ActiveRecord column type symbol
-    #   units:           unit string for DV_QUANTITY
+    #   units:           unit string for DV_QUANTITY (the first one the OPT lists)
+    #   units_list:      every unit the OPT lists for DV_QUANTITY, in OPT order
     #   magnitude_range: [lower, upper] for DV_QUANTITY
     #   code_list:       allowed codes for DV_CODED_TEXT
     #   code_labels:     {code => text} resolved from the terminology
@@ -23,6 +30,8 @@ module OpenehrRails
     #   value_set_uri:   external value-set URI for DV_CODED_TEXT
     #   code_bindings:   [{system_uri:, code:}] ontology bindings for the node
     #   required:        true when the entry and element are both mandatory
+    #   min_occurrences: the ELEMENT's own occurrences lower bound (0 when unconstrained);
+    #                    1 under an optional entry means "mandatory if the entry is written"
     # rubocop:disable-next Metrics/ClassLength
     class FieldExtractor
       ENTRY_TYPES = %w[OBSERVATION EVALUATION INSTRUCTION ACTION ADMIN_ENTRY].freeze
@@ -45,15 +54,19 @@ module OpenehrRails
         'DV_DURATION' => :string
       }.freeze
 
-      # ELEMENT containers we descend into; protocol/state are skipped for now.
-      DESCENDABLE_ATTRIBUTES = %w[data events items value].freeze
+      # RM attributes that lead to ELEMENTs: the ITEM_STRUCTURE holders of
+      # every ENTRY type (data, protocol), of INSTRUCTION (activities, then the
+      # ACTIVITY's description) and of ACTION (description). OBSERVATION.state
+      # is still skipped. Attributes that are not ELEMENT containers
+      # (narrative, timing, action_archetype_id, ...) never yield fields.
+      DESCENDABLE_ATTRIBUTES = %w[data events items value activities description protocol].freeze
 
       def initialize(template)
         @template = template
       end
 
       def entries
-        @entries ||= content_roots.map { |root, path| build_entry(root, path) }
+        @entries ||= number_instances(content_roots.map { |root, path| build_entry(root, path) })
       end
 
       def fields
@@ -109,7 +122,7 @@ module OpenehrRails
       def build_entry(root, path_prefix)
         archetype_id = root.archetype_id.value
         concept = concept_of(archetype_id)
-        elements = collect_elements(root, path_prefix, archetype_id)
+        elements = collect_elements(root, path_prefix, archetype_id, path_prefix)
         entry = {
           archetype_id: archetype_id,
           rm_type: root.rm_type_name,
@@ -118,14 +131,29 @@ module OpenehrRails
           occurrences: root.occurrences,
           required: mandatory?(root)
         }
-        entry[:fields] = elements.map do |element, path, element_archetype_id|
-          build_field(element, path, element_archetype_id, entry, elements.size)
+        entry[:fields] = elements.map do |element, path, element_archetype_id, root_path|
+          name = element_name(entry, element, element_archetype_id, elements.size, root_path != path_prefix)
+          build_field(element, path, element_archetype_id, entry, name).merge(root_path: root_path)
         end
         entry
       end
 
-      # Depth-first walk collecting [ELEMENT, rm_path, archetype_id] tuples under an entry.
-      def collect_elements(node, path, archetype_id)
+      # Sets :instance_index on every field: the document-order ordinal among
+      # the template's fields with the same path.
+      def number_instances(entries)
+        seen = Hash.new(0)
+        entries.each do |entry|
+          entry[:fields].each do |field|
+            field[:instance_index] = seen[field[:path]]
+            seen[field[:path]] += 1
+          end
+        end
+      end
+
+      # Depth-first walk collecting [ELEMENT, rm_path, archetype_id, root_path]
+      # tuples under an entry. root_path is the path of the nearest embedded
+      # archetype root (the entry's own path when there is none).
+      def collect_elements(node, path, archetype_id, root_path)
         return [] unless node.respond_to?(:attributes) && node.attributes
 
         node.attributes.flat_map do |attribute|
@@ -136,31 +164,50 @@ module OpenehrRails
           attribute.children.flat_map do |child|
             next [] unless child.respond_to?(:rm_type_name)
 
-            node_path = child_path
-            node_path += "[#{child.node_id}]" if child.respond_to?(:node_id) && child.node_id
+            # rm_type_name is the constrained RM type, not "C_ARCHETYPE_ROOT":
+            # an embedded root is a child that carries its own archetype_id.
+            embedded_root = child.respond_to?(:archetype_id) && child.archetype_id
+            node_path = "#{child_path}#{node_predicate(child, embedded_root)}"
 
             if child.rm_type_name == 'ELEMENT'
-              [[child, node_path, archetype_id]]
+              [[child, node_path, archetype_id, root_path]]
+            elsif embedded_root
+              collect_elements(child, node_path, child.archetype_id.value, node_path)
             else
-              # rm_type_name is the constrained RM type, not "C_ARCHETYPE_ROOT".
-              child_archetype_id = if child.respond_to?(:archetype_id) && child.archetype_id
-                                     child.archetype_id.value
-                                   else
-                                     archetype_id
-                                   end
-              collect_elements(child, node_path, child_archetype_id)
+              collect_elements(child, node_path, archetype_id, root_path)
             end
           end
         end
       end
 
-      def build_field(element, path, archetype_id, entry, sibling_count)
+      # An embedded root is addressed by its archetype id (as in RM data paths
+      # and AQL); any other node by its at-code.
+      def node_predicate(child, embedded_root)
+        return "[#{child.archetype_id.value}]" if embedded_root
+        return "[#{child.node_id}]" if child.respond_to?(:node_id) && child.node_id
+
+        ''
+      end
+
+      # Fields owned by the entry keep the entry rule (#field_name). Fields
+      # under an embedded root are always "<own concept>_<label slug or
+      # at-code>": never the bare concept, so adding an element to the template
+      # does not rename an existing column.
+      def element_name(entry, element, archetype_id, sibling_count, embedded)
+        label = term_text(archetype_id, element.node_id)
+        return field_name(entry[:concept], label, element.node_id, sibling_count) unless embedded
+
+        slug = ascii_slug(label)
+        "#{concept_of(archetype_id)}_#{slug.empty? ? element.node_id : slug}"
+      end
+
+      def build_field(element, path, archetype_id, entry, name)
         constraint = value_constraint(element)
         rm_type = constraint&.rm_type_name || 'DV_TEXT'
         label = term_text(archetype_id, element.node_id)
 
         field = {
-          name: field_name(entry[:concept], label, element.node_id, sibling_count),
+          name: name,
           label: label || element.node_id,
           path: "#{path}/value",
           rm_type: rm_type,
@@ -171,7 +218,8 @@ module OpenehrRails
           column_type: COLUMN_TYPES.fetch(rm_type, :string),
           value_set_uri: nil,
           code_bindings: code_bindings_for(archetype_id, element.node_id),
-          required: entry[:required] && mandatory?(element)
+          required: entry[:required] && mandatory?(element),
+          min_occurrences: min_occurrences(element)
         }
         field.merge!(quantity_constraints(constraint)) if rm_type == 'DV_QUANTITY'
         field.merge!(coded_text_constraints(constraint, archetype_id)) if rm_type == 'DV_CODED_TEXT'
@@ -201,6 +249,7 @@ module OpenehrRails
         range = item.magnitude
         {
           units: item.units,
+          units_list: constraint.list.filter_map(&:units),
           magnitude_range: range && [range.lower, range.upper]
         }
       end
@@ -296,8 +345,12 @@ module OpenehrRails
       end
 
       def mandatory?(node)
+        min_occurrences(node) >= 1
+      end
+
+      def min_occurrences(node)
         occurrences = node.respond_to?(:occurrences) ? node.occurrences : nil
-        !occurrences.nil? && occurrences.lower.to_i >= 1
+        occurrences.nil? ? 0 : occurrences.lower.to_i
       end
 
       def term_text(archetype_id, code)
