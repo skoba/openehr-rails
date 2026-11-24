@@ -177,6 +177,57 @@ authorized for the task at hand. A matching line is planned for `anlage`'s own
 - anlage-ops の内容(裁定の本文、ロードマップ)を、このリポジトリのコード、
   Issue、PR、文書に写さない。参照は裁定 ID で行う
 
+## 依存の方針(2026-11-24 導入。裁定 R-20261124-2)
+
+要点だけを書く。正典は裁定台帳の R-20261124-2。
+
+- 依存は最新のリリース版に追従する。`openehr-rails.gemspec` の下限と、手元・CI が
+  解決する版を、理由なく古いままにしない
+- 版を固定する、または上限を付けるときは、理由と解除の条件を、その行のコメントと
+  Issue の両方に残す
+- 依存の不具合は上流で直す。このリポジトリに置く迂回はつなぎで、撤去の条件を
+  コードのコメントに書く(実例: `lib/openehr_rails/opt/parser.rb` の
+  `populate_term_bindings!` と openehr-ruby#31)
+- 未リリースのコードには、上流に修正があり、リリースを待てないときだけ依存する。
+  SHA で固定し、リリースが出たら RubyGems の版に戻す
+- 上流の Issue・PR への投稿は人間が行う。セッションは再現手順と文面の案を用意する
+- 依存の更新は 1 件ずつ、CI の合否で決める。マージは人間
+
+## 作業ツリー規律(2026-11-24 導入。裁定 R-20261124-6)
+
+anlage の `CLAUDE.md`「作業ツリー規律」と同旨。根拠と採らなかった案は、anlage の
+`docs/design/session-isolation-plan.md`(承認済み、R-20261123-1)。
+
+- 1 セッション = 1 リポジトリ。起動ディレクトリがこのリポジトリでなければ、
+  また宛先が別リポジトリの依頼なら、着手せずに止まる
+- セッションの冒頭で `git fetch` と `git status --short` を実行する。
+  未コミット物があれば、作業の前に一覧を報告の先頭に書く
+- 実装は必ず git worktree で行う。置き場所は
+  `/home/skoba/src/openehr-rails-worktrees/<slug>`(1 ブランチ = 1 worktree)。
+  `/tmp` には作らない。本体の作業ツリーは `master` のまま動かさず、
+  docs のみの直接 push と fetch にだけ使う
+- 着手時に同じ slug の worktree が既にあれば、止まって例外報告する
+  (worktree のパス、ブランチ、未コミット物の一覧を書く)。ログの記載だけを根拠に
+  再開しない。例外は、裁定または人間の指示がその slug の再開を名指ししているときだけ
+- セッションの終わりに作業ツリーを空にする。途中の作業は `wip/<slug>` ブランチに
+  コミットして push する(draft PR でよい)
+- 未コミット物を捨てるのは削除にあたり、ゲート対象
+- コミットはパスを明示して add する(`-A` と `.` を使わない)
+- 合否はクリーンな checkout(CI)で決める。並行負荷のある手元の結果を合否に使わない
+- `master` への直接 push が non-fast-forward で拒否されたら、fetch して rebase する。
+  force はしない
+- 越境(読み取り)は、絶対パスと `git -C` で相手リポジトリの本体ツリーを読む
+  (`log`・`show`・`grep`・ファイルの閲覧)。報告に対象リポジトリと SHA を書く。
+  相手のツリーでは `checkout`・`pull`・`bundle`・`rspec` を実行しない。
+  依存する gem の挙動は、自分の worktree で解決された版に対して確かめる。
+  未リリースのコミットの挙動は、gem 側に Issue を立てて頼む。`Gemfile` を
+  相手のツリーへの path 指定に書き換えたものをコミットしない
+- Codex の納品先は、当該 Issue の worktree。本体ツリーには納品させない。
+  起動の直前に `pwd` を出力して worktree であることを確かめる。
+  `codex exec resume --last` は使わない。毎回あたらしく起動し、受け渡しは
+  commit 済みの計画書で行う(上の「Repository-context-dependent commands…」の
+  `codex exec resume` の扱いは、この項が上書きする)
+
 ## Project Overview
 
 This is `openehr-rails`, a Rails engine gem that turns an openEHR Operational Template (`.opt`, ADL2/XML) into a working Rails resource in one command: `rails generate openehr:scaffold path/to/template.opt --fhir` emits a model, migration, controller, views, i18n locale, and (with `--fhir`) HL7 FHIR R5 `StructureDefinition` profiles. Generated models persist both as typed columns (for forms/search) and as full openEHR RM data (canonical JSON + a typed node graph with immutable-append versioning), and are queryable via a growing AQL surface. A mountable admin engine (`/openehr`) provides template upload/management, runtime scaffolding, and a FHIR R5 facade. Legacy ADL-archetype-only generators (model/controller/migration/helper/assets/i18n/template/template_model, based on `Openehr::Generators::ArchetypedBase`) have been removed — OPT is the only supported input format for scaffolding.
