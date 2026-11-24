@@ -112,8 +112,9 @@ describe OpenehrRails::Opt::FieldExtractor do
       '../../generators/templates/bmi_calculation.opt' =>
         %w[height body_weight body_mass_index body_mass_index_at0013],
       '../../templates/lab_result_report_reduced.opt' =>
-        %w[laboratory_test_result_at0001 laboratory_test_result_at0001_2 laboratory_test_result_at0024]
+        %w[laboratory_test_result_at0001 laboratory_test_analyte_at0001 laboratory_test_analyte_at0024]
     }.each do |fixture, names|
+      # The embedded-root names of lab_result_report_reduced follow #57.
       it "keeps the field set of #{File.basename(fixture)}" do
         expect(extractor_for(fixture).fields.pluck(:name)).to eq(names)
       end
