@@ -130,6 +130,7 @@ module OpenehrRails
     end
 
     def rm_content
+      assert_supported_shapes!
       entries = {}
       self.class::FIELD_MAP.each do |name, field|
         field = field.merge(name: name.to_s)
@@ -236,3 +237,5 @@ module OpenehrRails
     end
   end
 end
+
+require 'openehr_rails/storable/shape_guard'
