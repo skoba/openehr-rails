@@ -67,7 +67,11 @@ matching `release:check` guard is `skoba/openehr-rails#34`.)
 moved 4.0.6 -> 4.0.7 (2026-10-12) so a local rebuild at the tag stamps the same
 `rubygems_version` (4.0.20) as `ruby/setup-ruby`'s ruby 4.0 image did for 0.7.1,
 whose `metadata.gz` differed from the local rebuild by that one line
-(`docs/reports/referral-upstream-log.md` R2). The cross-check still judges by
+(`docs/reports/referral-upstream-log.md` R2), and 4.0.7 -> 4.0.10 (2026-11-19,
+PR #56) once CI's `'4.0'` resolved to 4.0.10. Confirm the CI side from a run log
+before moving the pin. For 0.9.0 (ruby 4.0.10 / rubygems 4.0.20 on both sides)
+the local rebuild matched the CI artifact down to the whole-gem sha256
+(`docs/reports/0.9.0-log.md` R9). The cross-check still judges by
 `data.tar.gz`, not the whole-gem sha256: the two toolchains can drift apart again.
 
 **Confirm publication by checksum, not by version number.** RubyGems publishes
@@ -331,7 +335,7 @@ This is `openehr-rails`, a Rails engine gem that turns an openEHR Operational Te
 
 ## Development Notes
 
-- Ruby 3.3+ required (raised from 3.0 in 2026-08 to track the `openehr` gem dependency dropping Ruby 3.2 support at EOL); CI matrix covers 3.3/3.4/4.0, local dev pinned via `.ruby-version` (currently 4.0.7)
+- Ruby 3.3+ required (raised from 3.0 in 2026-08 to track the `openehr` gem dependency dropping Ruby 3.2 support at EOL); CI matrix covers 3.3/3.4/4.0, local dev pinned via `.ruby-version` (currently 4.0.10)
 - Rails 7.0+ and Rails 8.x supported (CI matrix: `gemfiles/rails_{7_2,8_0,8_1}.gemfile`; demo app runs on Rails 8.1)
 - URI compatibility workaround implemented for Ruby 3.4
 - `ostruct` is an explicit development dependency — it left Ruby's default gems as of 4.0, and a couple of specs use `OpenStruct` as a lightweight test double
