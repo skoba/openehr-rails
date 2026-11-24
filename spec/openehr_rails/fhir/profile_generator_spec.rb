@@ -15,14 +15,14 @@ describe OpenehrRails::Fhir::ProfileGenerator do
 
     it 'builds one StructureDefinition per OBSERVATION entry' do
       expect(profiles.map { |p| p[:id] }).to contain_exactly(
-        'openehr-observation-height-v2',
-        'openehr-observation-body-weight-v2',
-        'openehr-observation-body-mass-index-v2'
+        'openehr-bmi-calculation-observation-height-v2',
+        'openehr-bmi-calculation-observation-body-weight-v2',
+        'openehr-bmi-calculation-observation-body-mass-index-v2'
       )
     end
 
     describe 'the height profile' do
-      subject(:profile) { profiles.find { |p| p[:id] == 'openehr-observation-height-v2' } }
+      subject(:profile) { profiles.find { |p| p[:id] == 'openehr-bmi-calculation-observation-height-v2' } }
 
       it 'is a FHIR R5 StructureDefinition' do
         expect(profile[:resourceType]).to eq('StructureDefinition')
@@ -39,7 +39,7 @@ describe OpenehrRails::Fhir::ProfileGenerator do
       end
 
       it 'carries a stable canonical url' do
-        expect(profile[:url]).to eq('urn:openehr:openEHR-EHR-OBSERVATION.height.v2')
+        expect(profile[:url]).to eq('urn:openehr:bmi_calculation:openEHR-EHR-OBSERVATION.height.v2')
       end
 
       it 'fixes Observation.code to the archetype id' do
@@ -63,7 +63,7 @@ describe OpenehrRails::Fhir::ProfileGenerator do
     end
 
     describe 'a multi-element entry (body_mass_index)' do
-      subject(:profile) { profiles.find { |p| p[:id] == 'openehr-observation-body-mass-index-v2' } }
+      subject(:profile) { profiles.find { |p| p[:id] == 'openehr-bmi-calculation-observation-body-mass-index-v2' } }
 
       it 'slices Observation.component per element' do
         component_slices = profile.dig(:differential, :element)
@@ -77,8 +77,8 @@ describe OpenehrRails::Fhir::ProfileGenerator do
   describe '#to_json_files' do
     it 'returns id => pretty JSON string' do
       files = generator.to_json_files
-      expect(files.keys).to include('openehr-observation-height-v2')
-      parsed = JSON.parse(files['openehr-observation-height-v2'])
+      expect(files.keys).to include('openehr-bmi-calculation-observation-height-v2')
+      parsed = JSON.parse(files['openehr-bmi-calculation-observation-height-v2'])
       expect(parsed['resourceType']).to eq('StructureDefinition')
     end
   end
@@ -127,7 +127,7 @@ describe OpenehrRails::Fhir::ProfileGenerator do
   # from the generated StructureDefinition, which was the issue's own complaint.
   describe 'a multi-leaf EVALUATION entry (problem_list.opt)' do
     subject(:profile) do
-      generator.profiles.find { |p| p[:id] == 'openehr-evaluation-problem-diagnosis-v1' }
+      generator.profiles.find { |p| p[:id] == 'openehr-problemlist-evaluation-problem-diagnosis-v1' }
     end
 
     let(:opt_file) do
@@ -222,7 +222,7 @@ describe OpenehrRails::Fhir::ProfileGenerator do
     end
 
     it 'skips the entry and still emits the mapped one' do
-      expect(profiles.map { |p| p[:id] }).to eq(['openehr-evaluation-problem-diagnosis-v1'])
+      expect(profiles.map { |p| p[:id] }).to eq(['openehr-problemlist-evaluation-problem-diagnosis-v1'])
     end
 
     it 'never emits a component element for the skipped resource' do
@@ -265,7 +265,7 @@ describe OpenehrRails::Fhir::ProfileGenerator do
     end
 
     it 'skips the entry instead of emitting Condition.value[x]' do
-      expect(profiles.map { |p| p[:id] }).to eq(['openehr-evaluation-problem-diagnosis-v1'])
+      expect(profiles.map { |p| p[:id] }).to eq(['openehr-problemlist-evaluation-problem-diagnosis-v1'])
       expect(profiles.flat_map { |p| p[:differential][:element] }.map { |e| e[:path] })
         .not_to include('Condition.value[x]')
     end
@@ -306,7 +306,7 @@ describe OpenehrRails::Fhir::ProfileGenerator do
 
     it 'emits nothing for them and keeps the real entries' do
       expect(generator.profiles.map { |p| p[:id] }).to eq(
-        %w[openehr-observation-height-v2 openehr-observation-body-weight-v2 openehr-observation-body-mass-index-v2]
+        %w[openehr-bmi-calculation-observation-height-v2 openehr-bmi-calculation-observation-body-weight-v2 openehr-bmi-calculation-observation-body-mass-index-v2]
       )
     end
 

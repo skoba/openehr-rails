@@ -21,7 +21,7 @@ module Openehr
       end
 
       it 'fetches the OPT and writes profiles as usual' do
-        expect(file('app/fhir/profiles/openehr-observation-height-v2.json'))
+        expect(file('app/fhir/profiles/openehr-bmi-calculation-observation-height-v2.json'))
           .to contain('"resourceType": "StructureDefinition"')
       end
     end
