@@ -7,6 +7,107 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-24
+
+> **Upgrade note.** Four things change for an existing host app.
+> (1) Requires `openehr` `~> 2.5` (was `~> 2.3, >= 2.3.1`): a host app locked to
+> openehr 2.4.x must update it together with this gem.
+> (2) `FieldExtractor` output: a field under an embedded archetype root now has the
+> root written `[archetype_id]` in its `path` and is named after its own archetype
+> (`laboratory_test_analyte_at0001`, was `laboratory_test_result_at0001_2`); entries
+> with `protocol` leaves and every `INSTRUCTION` extract more fields than before. A
+> generated model keeps the `FIELD_MAP` it was generated with, so nothing moves until
+> you re-scaffold; re-scaffolding such a template adds and renames columns. Code that
+> reads `FieldExtractor#fields` at runtime sees the new paths and names immediately.
+> (3) `Storable` now raises `OpenehrRails::Storable::UnsupportedTemplateShape` on save,
+> and saves nothing, when a record holds a value for a field it cannot assemble into a
+> valid composition (an entry nested in a `SECTION`, a field under an embedded root, an
+> `INSTRUCTION`). Such saves used to succeed and store a malformed `rm_composition`.
+> (4) FHIR `component` slice names follow the renamed fields.
+> Also: a composition committed from canonical JSON **with** a `context` now answers
+> `c/context/...` AQL paths with `unsupported path attribute` (as every
+> `Storable`-saved composition already did) instead of a row holding `nil`; see Known
+> limitations.
+
+### Added
+- `FieldExtractor` descends `activities`, `description` and `protocol`, so an
+  `INSTRUCTION` entry has fields for the ELEMENTs under
+  `activities[...]/description[...]` and `protocol[...]`, including the embedded
+  CLUSTER roots there at any depth (a referral's `service_request`: 0 fields before,
+  20 now). `ACTION.description` and every entry type's `protocol` come with the same
+  change. `narrative`, `timing` and `action_archetype_id` are not ELEMENTs and yield
+  no field (#47, anlage upstream 17).
+- Fields carry `root_path` (path of the nearest embedded root, else of the entry) and
+  `instance_index` (0-based document-order ordinal among the template's fields sharing
+  the same `path`), so `[path, instance_index]` identifies a field even when the same
+  archetype is embedded twice side by side (a referral's requester / receiver
+  organisation) or an entry archetype repeats. Root names and name-predicate paths
+  wait for per-root terms upstream (openehr-ruby#58) (#57).
+- DV_QUANTITY fields carry `units_list`, every unit the OPT allows in OPT order;
+  `units` stays the first one (#57).
+- Fields carry `min_occurrences`, the ELEMENT's own occurrences lower bound (0 when
+  unconstrained). `required` keeps its meaning ("entry mandatory and element
+  mandatory"), so under an optional entry a 1..1 element is
+  `required: false, min_occurrences: 1`: mandatory if the entry is written at all.
+  Generated validations are unchanged; validating that conditional requirement is
+  #65 (#58, anlage upstream 20).
+
+### Changed
+- `FieldExtractor` writes an embedded archetype root in a field's `path` by its
+  archetype id instead of its at-code, and names fields under such a root after their
+  own archetype: `<own concept>_<label slug, else at-code>` (never the bare concept).
+  For `lab_result_report_reduced.opt`: `.../items[at0010]/items[at0001]/value` becomes
+  `.../items[openEHR-EHR-CLUSTER.laboratory_test_analyte.v1]/items[at0001]/value`.
+  Paths now match RM data paths and AQL. Fields owned by the entry itself, and
+  templates without embedded roots, are unchanged (#57, anlage upstream 22).
+- A template whose entries carry `protocol` leaves extracts more fields: e.g.
+  `problem_list.opt` gains `problem_diagnosis_at0070` (最終更新日, under
+  `protocol[at0032]`). The FHIR profile for `problem_diagnosis` is unchanged: at0070
+  has no row in `TypeMap::ENTRY_ELEMENT_MAPS` and is left out (#47).
+- The FHIR generators report an `INSTRUCTION` that has leaves through `#skipped` as
+  "N leaves ... no row in `TypeMap::ENTRY_ELEMENT_MAPS`" instead of "no leaves";
+  still no `ServiceRequest` profile is emitted (mapping rows: #35) (#47).
+- `openehr:scaffold` prints a warning listing the fields the generated model cannot
+  save yet (#60).
+- Requires `openehr` `~> 2.5`. `OpenehrRails::Opt::Parser` no longer reads OPT
+  `term_bindings` itself: openehr 2.5.0 does (openehr-ruby#31), and the interim bypass
+  is removed (#59).
+
+### Fixed
+- `OpenehrRails::Storable` no longer writes a malformed composition for the template
+  shapes it cannot assemble: saving a value for a field of an entry nested in a
+  `SECTION`, of an embedded archetype root or of an `INSTRUCTION` raises
+  `UnsupportedTemplateShape`, naming the shape, the fields and the tracking issue
+  (#62, #61, #69), and saves nothing. Records that leave those fields empty, and
+  models of templates without these shapes, save exactly as before. Models generated
+  before 0.9.0 are covered too (#60).
+- An OPT embedding the same archetype more than once no longer yields each term
+  binding once per occurrence: `code_bindings` holds one entry per binding, so the
+  FHIR `code.coding` slices are not duplicated. Two behaviours follow upstream and
+  differ from the removed bypass: a binding item without a `terminology_id` is no
+  longer completed from the `term_bindings` element's `terminology` attribute, and
+  when roots of the same archetype carry *different* bindings the last root wins
+  instead of their union (#59).
+- `CompositionCommitter` / `GraphBuilder` persist a canonical composition's
+  `context.start_time` (into `context_start_time`) and `context.setting` (into the
+  already-existing `setting_code` / `setting_value` columns); they were dropped unless
+  the caller passed `context_start_time:`. An explicit `context_start_time:` still
+  wins. `RmObjectBuilder` rebuilds the stored setting instead of always `other`
+  (#46, proposals 1-2; anlage upstream 16).
+
+### Known limitations
+- `Storable` cannot yet write entries nested in a `SECTION` (#62), fields under an
+  embedded archetype root (#61) or `INSTRUCTION` entries (#69); it refuses them as
+  described above. Committing a canonical composition through
+  `Rm::CompositionCommitter` is unaffected.
+- `SELECT c/context/start_time/value` (and `c/context/setting/...`) is not answerable
+  yet: the openehr AQL path evaluator (2.5.0 included) cannot navigate `EVENT_CONTEXT`
+  and raises `unsupported path attribute "start_time"` as soon as a composition has a
+  context. The values are stored and rebuilt by `to_rm`; querying them waits for an
+  openehr release.
+- `context.other_context` is not persisted, and `CanonicalSerializer` does not emit
+  `context` yet (#46 stays open for both).
+
 ## [0.8.0] - 2026-10-12
 
 > **Upgrade note.** A stored Composition holding a `SECTION` or an `INSTRUCTION`
