@@ -11,7 +11,7 @@ describe OpenehrRails::Opt::FieldExtractor do
 
     it 'resolves the CLUSTER-side term instead of colliding with the outer entry (at0001)' do
       field = fields.find do |candidate|
-        candidate[:path].include?('/items[at0010]/items[at0001]/value')
+        candidate[:path].include?('/items[openEHR-EHR-CLUSTER.laboratory_test_analyte.v1]/items[at0001]/value')
       end
 
       expect(field[:label]).to eq('分析結果')
