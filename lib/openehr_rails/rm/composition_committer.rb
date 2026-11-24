@@ -34,11 +34,11 @@ module OpenehrRails
 
       def create_composition
         builder = GraphBuilder.new(@canonical_hash)
-        composition = Composition.create!(
-          builder.composition_attributes.merge(
-            uid: @uid, owner: @owner, ehr: @ehr, context_start_time: @context_start_time
-          )
-        )
+        # An explicit context_start_time (Storable passes the record's
+        # composed_at) wins; otherwise the hash's own context.start_time stays.
+        attributes = builder.composition_attributes.merge(uid: @uid, owner: @owner, ehr: @ehr)
+        attributes[:context_start_time] = @context_start_time if @context_start_time
+        composition = Composition.create!(attributes)
         builder.build!(composition)
         composition
       end

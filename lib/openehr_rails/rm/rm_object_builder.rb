@@ -99,7 +99,9 @@ module OpenehrRails
 
         OpenEHR::RM::Composition::EventContext.new(
           start_time: dv_date_time(@composition.context_start_time),
-          setting: dv_coded_text('other', 'other', 'openehr')
+          setting: dv_coded_text(
+            @composition.setting_value || 'other', @composition.setting_code || 'other', 'openehr'
+          )
         )
       end
 

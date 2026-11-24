@@ -30,8 +30,20 @@ module OpenehrRails
           template_id: details.dig('template_id', 'value'),
           name_value: @hash.dig('name', 'value'),
           uid: @hash.dig('uid', 'value'),
-          rm_version: details['rm_version'] || '1.0.4'
+          rm_version: details['rm_version'] || '1.0.4',
+          **context_attributes
         }.compact
+      end
+
+      # EVENT_CONTEXT's start_time and setting, stored on the composition row.
+      # other_context (an ITEM_STRUCTURE) is not persisted yet (#46, proposal 3).
+      def context_attributes
+        context = @hash['context'] || {}
+        {
+          context_start_time: parse_time(context.dig('start_time', 'value')),
+          setting_code: context.dig('setting', 'defining_code', 'code_string'),
+          setting_value: context.dig('setting', 'value')
+        }
       end
 
       def build!(composition)
