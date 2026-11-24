@@ -32,7 +32,7 @@ describe OpenehrRails::Fhir do
         # regression pin: no ServiceRequest profile is emitted without a mapping row.
         it 'emits no profile for it' do
           expect(emitted_ids.call(generator)).to eq(
-            %w[openehr-evaluation-problem-diagnosis-v1 openehr-observation-story-v1]
+            %w[openehr-jp-referral-evaluation-problem-diagnosis-v1 openehr-jp-referral-observation-story-v1]
           )
         end
       end

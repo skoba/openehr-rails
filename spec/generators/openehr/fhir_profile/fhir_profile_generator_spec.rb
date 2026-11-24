@@ -18,12 +18,12 @@ module Openehr
       end
 
       it 'writes a StructureDefinition JSON per entry' do
-        expect(file('app/fhir/profiles/openehr-observation-height-v2.json'))
+        expect(file('app/fhir/profiles/openehr-bmi-calculation-observation-height-v2.json'))
           .to contain('"resourceType": "StructureDefinition"')
-        expect(file('app/fhir/profiles/openehr-observation-height-v2.json'))
+        expect(file('app/fhir/profiles/openehr-bmi-calculation-observation-height-v2.json'))
           .to contain('"fhirVersion": "5.0.0"')
-        expect(file('app/fhir/profiles/openehr-observation-body-weight-v2.json')).to exist
-        expect(file('app/fhir/profiles/openehr-observation-body-mass-index-v2.json')).to exist
+        expect(file('app/fhir/profiles/openehr-bmi-calculation-observation-body-weight-v2.json')).to exist
+        expect(file('app/fhir/profiles/openehr-bmi-calculation-observation-body-mass-index-v2.json')).to exist
       end
     end
   end

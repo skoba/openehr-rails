@@ -1,7 +1,7 @@
-Profile: OpenehrEvaluationProblemDiagnosisV1
+Profile: OpenehrProblemlistEvaluationProblemDiagnosisV1
 Parent: Condition
-Id: openehr-evaluation-problem-diagnosis-v1
-Title: "openEHR Problem diagnosis (openEHR-EHR-EVALUATION.problem_diagnosis.v1)"
+Id: openehr-problemlist-evaluation-problem-diagnosis-v1
+Title: "openEHR Problem diagnosis (ProblemList: openEHR-EHR-EVALUATION.problem_diagnosis.v1)"
 
 * category ^slicing.discriminator.type = #pattern
 * category ^slicing.discriminator.path = "$this"

@@ -15,7 +15,8 @@ module OpenehrRails
       FHIR_VERSION = '5.0.0'
       ARCHETYPE_SYSTEM = 'http://openehr.org/ckm/archetypes'
       UCUM_SYSTEM = 'http://unitsofmeasure.org'
-      CANONICAL_BASE = 'urn:openehr'
+      # Kept for callers; the canonical url itself comes from ProfileIdentity (#55).
+      CANONICAL_BASE = ProfileIdentity::CANONICAL_SCHEME
 
       # UnsupportedProfileError per entry that #profiles leaves out, in template
       # order -- the "report" half of skip-and-report (#33). Empty when every
@@ -48,12 +49,13 @@ module OpenehrRails
 
       def build_profile(entry)
         resource_type = TypeMap.resource_for_entry(entry[:rm_type])
+        identity = ProfileIdentity.for(@template.template_id, entry[:archetype_id])
         {
           resourceType: 'StructureDefinition',
-          id: profile_id(entry[:archetype_id]),
-          url: "#{CANONICAL_BASE}:#{entry[:archetype_id]}",
-          name: entry[:concept].camelize,
-          title: "openEHR #{entry[:concept].humanize} (#{entry[:archetype_id]})",
+          id: identity[:id],
+          url: identity[:url],
+          name: identity[:name],
+          title: identity[:title],
           status: 'draft',
           fhirVersion: FHIR_VERSION,
           kind: 'resource',
@@ -198,10 +200,6 @@ module OpenehrRails
           element[:binding] = { strength: 'required' }
           element[:binding][:valueSet] = field[:value_set_uri] if field[:value_set_uri]
         end
-      end
-
-      def profile_id(archetype_id)
-        "openehr-#{archetype_id.delete_prefix('openEHR-EHR-').parameterize.dasherize}"
       end
     end
   end

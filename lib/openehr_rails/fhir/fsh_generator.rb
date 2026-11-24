@@ -17,13 +17,14 @@ module OpenehrRails
 
       def initialize(template)
         @skipped = []
+        @template_id = template.template_id
         @entries = OpenehrRails::Opt::FieldExtractor.new(template).entries.select { |entry| supported?(entry) }
       end
 
       def to_fsh_files
         @entries.to_h do |entry|
-          id = profile_id(entry[:archetype_id])
-          [id, build_profile(entry, id)]
+          identity = ProfileIdentity.for(@template_id, entry[:archetype_id])
+          [identity[:id], build_profile(entry, identity)]
         end
       end
 
@@ -37,11 +38,11 @@ module OpenehrRails
         false
       end
 
-      def build_profile(entry, id)
+      def build_profile(entry, identity)
         resource_type = TypeMap.resource_for_entry(entry[:rm_type])
         lines = alias_rules(entry[:fields])
         lines << '' unless lines.empty?
-        lines.concat(metadata(entry, id, resource_type))
+        lines.concat(metadata(identity, resource_type))
         element_map = TypeMap.element_map_for(entry[:archetype_id])
         if element_map
           lines.concat(mapped_rules(entry, element_map))
@@ -101,27 +102,14 @@ module OpenehrRails
         aliases.uniq.map { |name, uri| "Alias: #{name} = #{uri}" }
       end
 
-      def metadata(entry, id, resource_type)
+      def metadata(identity, resource_type)
         [
-          "Profile: #{camelize(id.tr('-', '_'))}",
+          "Profile: #{identity[:name]}",
           "Parent: #{resource_type}",
-          "Id: #{id}",
-          "Title: \"openEHR #{humanize(entry[:concept])} (#{entry[:archetype_id]})\"",
+          "Id: #{identity[:id]}",
+          "Title: \"#{identity[:title]}\"",
           ''
         ]
-      end
-
-      # Plain-Ruby equivalent of ActiveSupport's String#camelize on an
-      # underscore-separated input: "foo_bar" -> "FooBar".
-      def camelize(str)
-        str.split('_').map { |word| word[0].upcase + word[1..].to_s }.join
-      end
-
-      # Plain-Ruby equivalent of ActiveSupport's String#humanize on an
-      # already-lowercase, underscore-separated input: "foo_bar" -> "Foo bar".
-      def humanize(str)
-        spaced = str.tr('_', ' ')
-        spaced[0] ? spaced[0].upcase + spaced[1..].to_s.downcase : spaced
       end
 
       def code_rules(archetype_id, path = 'code', bindings = [])
@@ -198,17 +186,6 @@ module OpenehrRails
 
       def value_set_uri(uri)
         TypeMap.value_set_canonical(uri)
-      end
-
-      def profile_id(archetype_id)
-        "openehr-#{parameterize(archetype_id.delete_prefix('openEHR-EHR-'))}"
-      end
-
-      # Plain-Ruby equivalent of ActiveSupport's String#parameterize.dasherize:
-      # downcase, collapse every run of non-alphanumeric characters to a
-      # single "-", and strip any leading/trailing "-".
-      def parameterize(str)
-        str.downcase.gsub(/[^a-z0-9]+/, '-').gsub(/\A-+|-+\z/, '')
       end
     end
   end

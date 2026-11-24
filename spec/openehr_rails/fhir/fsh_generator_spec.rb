@@ -15,23 +15,23 @@ describe OpenehrRails::Fhir::FshGenerator do
 
     it 'builds one FSH profile per OBSERVATION entry' do
       expect(files.keys).to contain_exactly(
-        'openehr-observation-height-v2',
-        'openehr-observation-body-weight-v2',
-        'openehr-observation-body-mass-index-v2'
+        'openehr-bmi-calculation-observation-height-v2',
+        'openehr-bmi-calculation-observation-body-weight-v2',
+        'openehr-bmi-calculation-observation-body-mass-index-v2'
       )
     end
 
     describe 'the height profile' do
-      subject(:fsh) { files.fetch('openehr-observation-height-v2') }
+      subject(:fsh) { files.fetch('openehr-bmi-calculation-observation-height-v2') }
 
       it 'emits metadata and slices codings by system' do
         expect(fsh).to include(
           "Alias: CKM = http://openehr.org/ckm/archetypes\n",
           "Alias: LOINC = http://loinc.org\n",
-          "Profile: OpenehrObservationHeightV2\n",
+          "Profile: OpenehrBmiCalculationObservationHeightV2\n",
           "Parent: Observation\n",
-          "Id: openehr-observation-height-v2\n",
-          "Title: \"openEHR Height (openEHR-EHR-OBSERVATION.height.v2)\"\n",
+          "Id: openehr-bmi-calculation-observation-height-v2\n",
+          "Title: \"openEHR Height (bmi_calculation: openEHR-EHR-OBSERVATION.height.v2)\"\n",
           "* code.coding ^slicing.discriminator.type = #value\n",
           "* code.coding ^slicing.discriminator.path = \"system\"\n",
           "* code.coding ^slicing.rules = #open\n",
@@ -51,7 +51,7 @@ describe OpenehrRails::Fhir::FshGenerator do
     end
 
     describe 'a multi-element entry (body_mass_index)' do
-      subject(:fsh) { files.fetch('openehr-observation-body-mass-index-v2') }
+      subject(:fsh) { files.fetch('openehr-bmi-calculation-observation-body-mass-index-v2') }
 
       it 'slices component by code and constrains each slice value' do
         expect(fsh).to include(
@@ -91,7 +91,7 @@ describe OpenehrRails::Fhir::FshGenerator do
     let(:opt_file) { File.expand_path('../../templates/problem_list.opt', __dir__) }
 
     it 'emits a required binding for a C_CODE_REFERENCE constraint' do
-      fsh = generator.to_fsh_files.fetch('openehr-evaluation-problem-diagnosis-v1')
+      fsh = generator.to_fsh_files.fetch('openehr-problemlist-evaluation-problem-diagnosis-v1')
 
       # Since #33 this leaf lands on Condition.code rather than a component
       # slice; the #30 property under test -- an empty local code_list no
@@ -107,7 +107,7 @@ describe OpenehrRails::Fhir::FshGenerator do
   # mapping and its per-element rationale are
   # docs/design/multi-leaf-non-observation-plan.md section 8.
   #
-  # Golden provenance: spec/fixtures/fsh/openehr-evaluation-problem-diagnosis-v1.fsh
+  # Golden provenance: spec/fixtures/fsh/openehr-problemlist-evaluation-problem-diagnosis-v1.fsh
   # is generated output, not a hand-authored artifact -- it is this generator's
   # expected emission for spec/templates/problem_list.opt, and every rule in it
   # was compiled against hl7.fhir.r5.core#5.0.0 with sushi 3.16.0 (0 Errors)
@@ -115,14 +115,14 @@ describe OpenehrRails::Fhir::FshGenerator do
   # the file must byte-match what the generator produces.
   describe 'a multi-leaf EVALUATION entry (problem_list.opt)' do
     subject(:fsh) do
-      generator.to_fsh_files.fetch('openehr-evaluation-problem-diagnosis-v1')
+      generator.to_fsh_files.fetch('openehr-problemlist-evaluation-problem-diagnosis-v1')
     end
 
     let(:opt_file) do
       File.expand_path('../../templates/problem_list.opt', __dir__)
     end
     let(:golden) do
-      File.read(File.expand_path('../../fixtures/fsh/openehr-evaluation-problem-diagnosis-v1.fsh', __dir__))
+      File.read(File.expand_path('../../fixtures/fsh/openehr-problemlist-evaluation-problem-diagnosis-v1.fsh', __dir__))
     end
 
     it 'matches the golden FSH exactly' do
@@ -210,7 +210,7 @@ describe OpenehrRails::Fhir::FshGenerator do
     end
 
     it 'skips the entry and still emits the mapped one' do
-      expect(files.keys).to eq(['openehr-evaluation-problem-diagnosis-v1'])
+      expect(files.keys).to eq(['openehr-problemlist-evaluation-problem-diagnosis-v1'])
     end
 
     it 'reports the skip as an UnsupportedProfileError naming the archetype and resource' do
@@ -252,7 +252,7 @@ describe OpenehrRails::Fhir::FshGenerator do
     end
 
     it 'skips the entry instead of constraining value[x] on Condition' do
-      expect(files.keys).to eq(['openehr-evaluation-problem-diagnosis-v1'])
+      expect(files.keys).to eq(['openehr-problemlist-evaluation-problem-diagnosis-v1'])
       expect(files.values.join).not_to include('value[x]')
     end
 
@@ -292,7 +292,7 @@ describe OpenehrRails::Fhir::FshGenerator do
 
     it 'emits nothing for them and keeps the real entries' do
       expect(generator.to_fsh_files.keys).to eq(
-        %w[openehr-observation-height-v2 openehr-observation-body-weight-v2 openehr-observation-body-mass-index-v2]
+        %w[openehr-bmi-calculation-observation-height-v2 openehr-bmi-calculation-observation-body-weight-v2 openehr-bmi-calculation-observation-body-mass-index-v2]
       )
     end
 
