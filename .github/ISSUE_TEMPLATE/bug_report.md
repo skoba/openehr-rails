@@ -13,7 +13,7 @@ assignees: ''
 ## Environment
 
 - `openehr-rails` version: <!-- e.g. 0.4.1 -->
-- `openehr` version: <!-- e.g. ~> 2.3 -->
+- `openehr` version: <!-- e.g. 2.5.0 -->
 - Rails version: <!-- e.g. 8.1 -->
 - Ruby version: <!-- e.g. 3.3, 3.4, 4.0 -->
 - If the report involves an OPT/ADL file: the generating tool and its

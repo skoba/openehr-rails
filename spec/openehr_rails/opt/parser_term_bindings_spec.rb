@@ -20,7 +20,8 @@ describe OpenehrRails::Opt::Parser do
   end
 
   it 'populates OPT term bindings in the ArchetypeOntology canonical shape' do
-    # enhancement: pins the contract required before the openehr-ruby#31 bypass can be removed.
+    # regression pin: the contract the removed openehr-ruby#31 bypass had to hand over to
+    # upstream (openehr >= 2.5.0 fills term_bindings itself; bypass removed in #59).
     bindings = term_bindings(OpenehrRails::Opt.parse(opt_file))
 
     snomed = bindings.fetch('SNOMED-CT').fetch('at0004').first

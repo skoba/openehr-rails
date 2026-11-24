@@ -188,8 +188,9 @@ authorized for the task at hand. A matching line is planned for `anlage`'s own
 - 版を固定する、または上限を付けるときは、理由と解除の条件を、その行のコメントと
   Issue の両方に残す
 - 依存の不具合は上流で直す。このリポジトリに置く迂回はつなぎで、撤去の条件を
-  コードのコメントに書く(実例: `lib/openehr_rails/opt/parser.rb` の
-  `populate_term_bindings!` と openehr-ruby#31)
+  コードのコメントに書く(実例: `lib/openehr_rails/opt/parser.rb` にあった
+  `populate_term_bindings!`。openehr-ruby#31 が openehr 2.5.0 に入ったので、
+  下限の引き上げと同じ PR で撤去した〔#59〕)
 - 未リリースのコードには、上流に修正があり、リリースを待てないときだけ依存する。
   SHA で固定し、リリースが出たら RubyGems の版に戻す
 - 上流の Issue・PR への投稿は人間が行う。セッションは再現手順と文面の案を用意する
