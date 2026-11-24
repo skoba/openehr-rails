@@ -7,6 +7,78 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-24
+
+> **Upgrade note.** Three things change for an existing host app.
+> (1) `FieldExtractor` output: a field under an embedded archetype root now has the
+> root written `[archetype_id]` in its `path` and is named after its own archetype
+> (`laboratory_test_analyte_at0001`, was `laboratory_test_result_at0001_2`); entries
+> with `protocol` leaves and every `INSTRUCTION` extract more fields than before. A
+> generated model keeps the `FIELD_MAP` it was generated with, so nothing moves until
+> you re-scaffold; re-scaffolding such a template adds and renames columns. Code that
+> reads `FieldExtractor#fields` at runtime sees the new paths and names immediately.
+> (2) `Storable` now raises `OpenehrRails::Storable::UnsupportedTemplateShape` on save,
+> and saves nothing, when a record holds a value for a field it cannot assemble into a
+> valid composition (an entry nested in a `SECTION`, a field under an embedded root, an
+> `INSTRUCTION`). Such saves used to succeed and store a malformed `rm_composition`.
+> (3) FHIR `component` slice names follow the renamed fields.
+
+### Added
+- `FieldExtractor` descends `activities`, `description` and `protocol`, so an
+  `INSTRUCTION` entry has fields for the ELEMENTs under
+  `activities[...]/description[...]` and `protocol[...]`, including the embedded
+  CLUSTER roots there at any depth (a referral's `service_request`: 0 fields before,
+  20 now). `ACTION.description` and every entry type's `protocol` come with the same
+  change. `narrative`, `timing` and `action_archetype_id` are not ELEMENTs and yield
+  no field (#47, anlage upstream 17).
+- Fields carry `root_path` (path of the nearest embedded root, else of the entry) and
+  `instance_index` (0-based document-order ordinal among the template's fields sharing
+  the same `path`), so `[path, instance_index]` identifies a field even when the same
+  archetype is embedded twice side by side (a referral's requester / receiver
+  organisation) or an entry archetype repeats. Root names and name-predicate paths
+  wait for per-root terms upstream (openehr-ruby#58) (#57).
+- DV_QUANTITY fields carry `units_list`, every unit the OPT allows in OPT order;
+  `units` stays the first one (#57).
+- Fields carry `min_occurrences`, the ELEMENT's own occurrences lower bound (0 when
+  unconstrained). `required` keeps its meaning ("entry mandatory and element
+  mandatory"), so under an optional entry a 1..1 element is
+  `required: false, min_occurrences: 1`: mandatory if the entry is written at all.
+  Generated validations are unchanged; validating that conditional requirement is
+  #65 (#58, anlage upstream 20).
+
+### Changed
+- `FieldExtractor` writes an embedded archetype root in a field's `path` by its
+  archetype id instead of its at-code, and names fields under such a root after their
+  own archetype: `<own concept>_<label slug, else at-code>` (never the bare concept).
+  For `lab_result_report_reduced.opt`: `.../items[at0010]/items[at0001]/value` becomes
+  `.../items[openEHR-EHR-CLUSTER.laboratory_test_analyte.v1]/items[at0001]/value`.
+  Paths now match RM data paths and AQL. Fields owned by the entry itself, and
+  templates without embedded roots, are unchanged (#57, anlage upstream 22).
+- A template whose entries carry `protocol` leaves extracts more fields: e.g.
+  `problem_list.opt` gains `problem_diagnosis_at0070` (最終更新日, under
+  `protocol[at0032]`). The FHIR profile for `problem_diagnosis` is unchanged: at0070
+  has no row in `TypeMap::ENTRY_ELEMENT_MAPS` and is left out (#47).
+- The FHIR generators report an `INSTRUCTION` that has leaves through `#skipped` as
+  "N leaves ... no row in `TypeMap::ENTRY_ELEMENT_MAPS`" instead of "no leaves";
+  still no `ServiceRequest` profile is emitted (mapping rows: #35) (#47).
+- `openehr:scaffold` prints a warning listing the fields the generated model cannot
+  save yet (#60).
+
+### Fixed
+- `OpenehrRails::Storable` no longer writes a malformed composition for the template
+  shapes it cannot assemble: saving a value for a field of an entry nested in a
+  `SECTION`, of an embedded archetype root or of an `INSTRUCTION` raises
+  `UnsupportedTemplateShape`, naming the shape, the fields and the tracking issue
+  (#62, #61, #69), and saves nothing. Records that leave those fields empty, and
+  models of templates without these shapes, save exactly as before. Models generated
+  before 0.9.0 are covered too (#60).
+
+### Known limitations
+- `Storable` cannot yet write entries nested in a `SECTION` (#62), fields under an
+  embedded archetype root (#61) or `INSTRUCTION` entries (#69); it refuses them as
+  described above. Committing a canonical composition through
+  `Rm::CompositionCommitter` is unaffected.
+
 ## [0.8.0] - 2026-10-12
 
 > **Upgrade note.** A stored Composition holding a `SECTION` or an `INSTRUCTION`
