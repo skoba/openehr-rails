@@ -228,6 +228,14 @@ deliberately *not* emitted is in 8.2.
   current behaviour.** The ruling scopes this fix to `problem_diagnosis`; the
   `INSTRUCTION`→`ServiceRequest` case (`request-referral`, arriving with
   referral v2) is reserved as its own Issue rather than generalised here.
+- **`at0070` 最終更新日 (`protocol[at0032]`, `DV_DATE_TIME`) has no row and is left
+  out of the profile.** Added 2026-11-24 with #47: `FieldExtractor` now descends
+  `protocol`, so this leaf reaches the generators for the first time (8.1's "all
+  five leaves land" was written when only `data` was descended). Both generators
+  skip a leaf that has no row, so the emitted profile is unchanged. Whether it
+  should map anywhere (the nearest candidate, `Condition.meta.lastUpdated`, is
+  resource metadata rather than a clinical element) is undecided; it is recorded
+  here as an omission, not as a judgment that it is unmappable.
 
 ## 8.3 Where the table lives
 

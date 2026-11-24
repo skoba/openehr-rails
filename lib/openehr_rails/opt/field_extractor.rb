@@ -45,8 +45,12 @@ module OpenehrRails
         'DV_DURATION' => :string
       }.freeze
 
-      # ELEMENT containers we descend into; protocol/state are skipped for now.
-      DESCENDABLE_ATTRIBUTES = %w[data events items value].freeze
+      # RM attributes that lead to ELEMENTs: the ITEM_STRUCTURE holders of
+      # every ENTRY type (data, protocol), of INSTRUCTION (activities, then the
+      # ACTIVITY's description) and of ACTION (description). OBSERVATION.state
+      # is still skipped. Attributes that are not ELEMENT containers
+      # (narrative, timing, action_archetype_id, ...) never yield fields.
+      DESCENDABLE_ATTRIBUTES = %w[data events items value activities description protocol].freeze
 
       def initialize(template)
         @template = template
