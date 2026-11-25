@@ -90,6 +90,16 @@ publish, and do not re-push. Confirm with
 or the compact index `https://index.rubygems.org/info/openehr-rails`, which
 updated first in that same 2.4.3 run.
 
+**Check for new dependency releases right before tagging.** The Release run
+re-resolves dependencies (no lock file is committed), so a gem released after
+`master`'s last CI run can change what the tag is tested against. Immediately
+before tagging, compare the latest RubyGems release time of each runtime
+dependency (at least `openehr`) with the start time of the `master` CI run you
+are relying on. If any was released after that run, re-run `master` CI and tag
+only once it is green. (Added 2026-11-25, R-20261125-3: openehr 2.6.0 landed
+two minutes after #78's `master` CI and turned a pending spec into a FIXED
+failure in the `v0.10.0` Release run; `docs/reports/0.9.x-log.md` R5-R6.)
+
 ## Verification
 
 - **Verify against the repo before recording a fact in it**, even when a prompt or an
