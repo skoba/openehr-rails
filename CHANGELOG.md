@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.10.0] - 2026-11-24
+## [0.10.0] - 2026-11-25
 
 ### Changed
 - **Upgrade note.** FHIR StructureDefinitions are qualified by their template, so two
@@ -30,6 +30,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Known limitations
 - FHIR Observation *instance* ids still use the archetype-only slug, so two models
   sharing an archetype can produce the same instance id (#76).
+- With openehr 2.6.0 or later (allowed by the unchanged `~> 2.5`), AQL reaches the
+  composition context: `SELECT c/context/start_time/value` and a `WHERE` on it are
+  answered, lifting the 0.9.0 limitation below. With openehr 2.5.x it still applies.
+  `SELECT c/uid/value` is not answered yet under 2.6.0 (`unsupported path attribute
+  "uid"`) (#46).
 
 ## [0.9.0] - 2026-11-24
 
@@ -128,7 +133,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   yet: the openehr AQL path evaluator (2.5.0 included) cannot navigate `EVENT_CONTEXT`
   and raises `unsupported path attribute "start_time"` as soon as a composition has a
   context. The values are stored and rebuilt by `to_rm`; querying them waits for an
-  openehr release.
+  openehr release. (openehr 2.6.0 lifts this for `start_time`; see 0.10.0.)
 - `context.other_context` is not persisted, and `CanonicalSerializer` does not emit
   `context` yet (#46 stays open for both).
 
