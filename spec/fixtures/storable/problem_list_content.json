@@ -1,0 +1,87 @@
+[
+  {
+    "_type": "EVALUATION",
+    "archetype_node_id": "openEHR-EHR-EVALUATION.problem_diagnosis.v1",
+    "archetype_details": {
+      "_type": "ARCHETYPED",
+      "archetype_id": {
+        "value": "openEHR-EHR-EVALUATION.problem_diagnosis.v1"
+      },
+      "rm_version": "1.0.4"
+    },
+    "data": {
+      "_type": "ITEM_TREE",
+      "archetype_node_id": "at0001",
+      "items": [
+        {
+          "archetype_node_id": "at0002",
+          "_type": "ELEMENT",
+          "value": {
+            "_type": "DV_CODED_TEXT",
+            "value": "code",
+            "defining_code": {
+              "_type": "CODE_PHRASE",
+              "terminology_id": {
+                "value": "local"
+              },
+              "code_string": "code"
+            }
+          }
+        },
+        {
+          "archetype_node_id": "at0077",
+          "_type": "ELEMENT",
+          "value": {
+            "_type": "DV_DATE_TIME",
+            "value": "2026-11-26T10:00:00+09:00"
+          }
+        },
+        {
+          "archetype_node_id": "at0003",
+          "_type": "ELEMENT",
+          "value": {
+            "_type": "DV_DATE_TIME",
+            "value": "2026-11-26T10:00:00+09:00"
+          }
+        },
+        {
+          "archetype_node_id": "at0030",
+          "_type": "ELEMENT",
+          "value": {
+            "_type": "DV_DATE_TIME",
+            "value": "2026-11-26T10:00:00+09:00"
+          }
+        },
+        {
+          "archetype_node_id": "at0073",
+          "_type": "ELEMENT",
+          "value": {
+            "_type": "DV_CODED_TEXT",
+            "value": "疑い",
+            "defining_code": {
+              "_type": "CODE_PHRASE",
+              "terminology_id": {
+                "value": "local"
+              },
+              "code_string": "at0074"
+            }
+          }
+        }
+      ]
+    },
+    "protocol": {
+      "_type": "ITEM_TREE",
+      "archetype_node_id": "at0032",
+      "items": [
+        {
+          "archetype_node_id": "at0070",
+          "_type": "ELEMENT",
+          "value": {
+            "_type": "DV_DATE_TIME",
+            "value": "2026-11-26T10:00:00+09:00"
+          }
+        }
+      ]
+    }
+  }
+]

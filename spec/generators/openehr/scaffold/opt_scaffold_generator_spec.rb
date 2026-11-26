@@ -184,11 +184,12 @@ module Openehr
         expect(output).to match(%r{Warning: \d+ field\(s\) belong to an entry nested in a SECTION.*skoba/openehr-rails#62.*story})
       end
 
-      # bug: red before #60.
-      it 'lists embedded-root fields of lab_result_report_reduced' do
+      # enhancement (#61): embedded roots are assembled now, so no warning
+      # (before #61: "2 field(s) belong to an embedded archetype root").
+      it 'prints no warning for the embedded-root fields of lab_result_report_reduced' do
         output = generator_output(File.expand_path('../../../../templates/lab_result_report_reduced.opt', __FILE__))
 
-        expect(output).to match(%r{Warning: 2 field\(s\) belong to an embedded archetype root.*skoba/openehr-rails#61})
+        expect(output).not_to include('cannot save a value')
       end
 
       # regression pin

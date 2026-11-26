@@ -10,7 +10,9 @@ module OpenehrRails
       section: ['an entry nested in a SECTION', 'skoba/openehr-rails#62'],
       instruction: ['an INSTRUCTION entry (its narrative and ACTIVITY attributes have no source)',
                     'skoba/openehr-rails#69'],
-      embedded_root: ['an embedded archetype root', 'skoba/openehr-rails#61']
+      embedded_root: ['an embedded archetype root described by a FIELD_MAP that cannot place it ' \
+                      '(generated before 0.9.0, or a repeated root generated before root_chain); ' \
+                      're-scaffold the model to save it', 'skoba/openehr-rails#61']
     }.freeze
 
     # Raised on save when a record holds a value for a field whose template
@@ -32,15 +34,33 @@ module OpenehrRails
     end
 
     # The UNSUPPORTED_SHAPES key a field description falls under, or nil.
-    # Works on FIELD_MAPs generated before 0.9.0 too: an embedded root is
-    # recognised by the field's archetype differing from its entry's, not by
-    # how the root segment is written in the path.
-    def self.unsupported_shape(field)
+    # +field_map+ (the whole FIELD_MAP, when known) lets a field without
+    # :root_chain be checked for a repeated root it cannot be placed in.
+    def self.unsupported_shape(field, field_map = nil)
       _attribute, entry_id = path_segments(field[:path]).first
       return :section if entry_id.to_s.include?('-SECTION.')
       return :instruction if field[:entry_rm_type] == 'INSTRUCTION'
 
-      :embedded_root if field[:archetype_id] && field[:archetype_id] != entry_id
+      :embedded_root if unplaceable_root?(field, field_map)
+    end
+
+    # An embedded-root field Storable cannot place: its root segment is not
+    # written [archetype_id] (FIELD_MAPs before 0.9.0), or it has no
+    # :root_chain and a root on its path repeats (instance_index alone cannot
+    # tell the instances apart, see #root_chain).
+    def self.unplaceable_root?(field, field_map)
+      return false unless field[:archetype_id] && field[:archetype_id] != path_segments(field[:path]).first.last
+      return true unless path_segments(field[:path]).any? { |_attr, node_id| node_id == field[:archetype_id] }
+      return false if field[:root_chain] || field_map.nil?
+
+      repeated_root_on_path?(field, field_map)
+    end
+
+    def self.repeated_root_on_path?(field, field_map)
+      root_paths = root_chain(field).drop(1).map(&:first)
+      field_map.each_value.any? do |other|
+        other[:instance_index].to_i.positive? && root_paths.any? { |root_path| other[:path].start_with?("#{root_path}/") }
+      end
     end
 
     # One generation-time warning per unsupported shape among +fields+
@@ -58,7 +78,7 @@ module OpenehrRails
     # Called by #rm_content before anything is assembled.
     def assert_supported_shapes!
       unsupported = self.class::FIELD_MAP.filter_map do |name, field|
-        shape = OpenehrRails::Storable.unsupported_shape(field)
+        shape = OpenehrRails::Storable.unsupported_shape(field, self.class::FIELD_MAP)
         [shape, name.to_s] if shape && !public_send(name).nil?
       end
       return if unsupported.empty?

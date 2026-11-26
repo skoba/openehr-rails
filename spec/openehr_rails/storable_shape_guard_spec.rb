@@ -32,40 +32,9 @@ describe OpenehrRails::Storable do
     end
   end
 
-  describe 'a model whose template embeds an archetype root (lab_result_report_reduced)' do
-    let(:field_map) { field_map_for('../templates/lab_result_report_reduced.opt') }
-    let(:model) { storable_model(:guard_lab_results, field_map) }
-    let(:embedded_name) { field_map.find { |_name, field| field[:node_id] == 'at0024' }.first }
-    let(:own_name) { field_map.find { |_name, field| field[:archetype_id].include?('OBSERVATION') }.first }
-
-    # bug: red before #60 (saved a second, bogus OBSERVATION entry).
-    it 'refuses to save a value under the embedded root, naming the shape and the field' do
-      record = model.new(embedded_name => 'Na')
-
-      expect { record.save! }.to raise_error(
-        OpenehrRails::Storable::UnsupportedTemplateShape,
-        %r{embedded archetype root.*#{embedded_name}.*skoba/openehr-rails#61}m
-      )
-    end
-
-    # bug: red before #60.
-    it 'persists nothing when it refuses' do
-      record = model.new(embedded_name => 'Na')
-
-      compositions_before = OpenehrRails::Rm::Composition.count
-
-      expect { record.save }.to raise_error(OpenehrRails::Storable::UnsupportedTemplateShape)
-      expect(model.count).to eq(0)
-      expect(OpenehrRails::Rm::Composition.count).to eq(compositions_before)
-    end
-
-    # regression pin: values owned by the entry itself still save.
-    it 'still saves a record that only fills entry-owned fields' do
-      record = model.create!(own_name => 'final')
-
-      expect(record.rm_composition['content'].size).to eq(1)
-    end
-  end
+  # The embedded-root guard of #60 is lifted by #61: those records now save
+  # (spec/openehr_rails/storable_embedded_root_spec.rb). Only FIELD_MAPs that
+  # cannot place the root are still refused (:embedded_root).
 
   describe 'a model whose entries are nested in a SECTION (jp_referral)' do
     let(:model) { storable_model(:guard_jp_referrals, field_map_for('../templates/jp_referral.opt')) }
@@ -105,13 +74,26 @@ describe OpenehrRails::Storable do
       expect(described_class.unsupported_shape(field(path: path))).to eq(:section)
     end
 
-    it 'reports a field whose archetype is not the entry, whatever form the root segment has' do
+    # enhancement (#61): only the pre-0.9.0 [at-code] root segment is still refused.
+    it 'reports an embedded-root field only when its root segment is not [archetype_id]' do
       observation = { entry_rm_type: 'OBSERVATION', archetype_id: 'openEHR-EHR-CLUSTER.synthetic_guard_test.v1' }
       old_form = '/content[openEHR-EHR-OBSERVATION.synthetic_guard_test.v1]/data[at0001]/items[at0000]/items[at0002]/value'
       new_form = old_form.sub('[at0000]', '[openEHR-EHR-CLUSTER.synthetic_guard_test.v1]')
 
       expect(described_class.unsupported_shape(field(observation.merge(path: old_form)))).to eq(:embedded_root)
-      expect(described_class.unsupported_shape(field(observation.merge(path: new_form)))).to eq(:embedded_root)
+      expect(described_class.unsupported_shape(field(observation.merge(path: new_form)))).to be_nil
+    end
+
+    # enhancement (#61): without root_chain, a root that repeats cannot be placed.
+    it 'reports an embedded-root field without root_chain when a root on its path repeats' do
+      root = '/content[openEHR-EHR-OBSERVATION.synthetic_guard_test.v1]/data[at0001]/items[openEHR-EHR-CLUSTER.synthetic_guard_test.v1]'
+      first = field(entry_rm_type: 'OBSERVATION', archetype_id: 'openEHR-EHR-CLUSTER.synthetic_guard_test.v1',
+                    path: "#{root}/items[at0002]/value", instance_index: 0)
+      second = first.merge(instance_index: 1)
+      field_map = { 'first' => first, 'second' => second }
+
+      expect(described_class.unsupported_shape(first, field_map)).to eq(:embedded_root)
+      expect(described_class.unsupported_shape(first.merge(root_chain: [[root, 0]]), field_map)).to be_nil
     end
 
     # regression pin
