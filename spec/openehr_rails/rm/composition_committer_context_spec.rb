@@ -35,7 +35,6 @@ describe OpenehrRails::Rm::CompositionCommitter do
     }
   end
   let(:from_clause) { 'FROM EHR e CONTAINS COMPOSITION c' }
-  let(:upstream_composition_uid) { 'openehr cannot navigate COMPOSITION.uid in an AQL path yet' }
 
   def select(path)
     OpenehrRails::Aql::Executor.execute("SELECT #{path} #{from_clause}").rows
@@ -64,12 +63,9 @@ describe OpenehrRails::Rm::CompositionCommitter do
       expect(select('c/context/start_time/value')).to eq([['2026-03-15T00:30:00Z']])
     end
 
-    # bug: red before #46 (0 rows). Still pending: with openehr 2.6.0 the WHERE
-    # clause itself works (measured), but SELECT c/uid/value raises
-    # `unsupported path attribute "uid" on a ...Composition` (an openehr-ruby
-    # question, not filed from here).
+    # bug: red before #46 (0 rows), then pending until openehr 2.6.1 could
+    # navigate COMPOSITION.uid (SELECT c/uid/value); green since the 2.6.1 floor (#83).
     it 'filters on c/context/start_time/value in WHERE' do
-      pending upstream_composition_uid
       described_class.commit(canonical_hash, uid: 'ctx-4')
       query = "SELECT c/uid/value #{from_clause} WHERE c/context/start_time/value > '2026-01-01'"
 

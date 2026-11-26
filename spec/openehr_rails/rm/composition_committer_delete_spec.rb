@@ -23,8 +23,7 @@ describe OpenehrRails::Rm::CompositionCommitter do
       'content' => []
     }
   end
-  # c/uid/value is not navigable in openehr 2.6.0, so these count rows instead.
-  let(:query) { 'SELECT c/name/value FROM EHR e CONTAINS COMPOSITION c' }
+  let(:query) { 'SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c' }
   let(:composition_model) { OpenehrRails::Rm::Composition }
 
   def default_rows
@@ -46,7 +45,7 @@ describe OpenehrRails::Rm::CompositionCommitter do
     it 'leaves the deleted composition out of the default AQL scope' do
       described_class.delete(uid: 'del-1')
 
-      expect(default_rows.size).to eq(1)
+      expect(default_rows).to eq([['keep-1']])
     end
 
     # bug: red before #81 (change_type was amendment / 250).
@@ -61,7 +60,7 @@ describe OpenehrRails::Rm::CompositionCommitter do
     it 'still returns the deleted composition with composition_scope: Composition.latest' do
       described_class.delete(uid: 'del-1')
 
-      expect(rows_in(composition_model.latest).size).to eq(2)
+      expect(rows_in(composition_model.latest).flatten).to contain_exactly('keep-1', 'del-1')
     end
 
     # enhancement: the EHR screen's scope.
