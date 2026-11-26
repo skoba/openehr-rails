@@ -35,11 +35,6 @@ describe OpenehrRails::Rm::CompositionCommitter do
     }
   end
   let(:from_clause) { 'FROM EHR e CONTAINS COMPOSITION c' }
-  # openehr 2.6.0 can navigate EVENT_CONTEXT in an AQL path; the gemspec still
-  # allows ~> 2.5, so the expectations below depend on the resolved version.
-  let(:navigates_event_context) { Gem.loaded_specs['openehr'].version >= Gem::Version.new('2.6.0') }
-  let(:upstream_event_context) { 'openehr < 2.6.0 cannot navigate EVENT_CONTEXT attributes in an AQL path' }
-  let(:upstream_composition_uid) { 'openehr cannot navigate COMPOSITION.uid in an AQL path yet' }
 
   def select(path)
     OpenehrRails::Aql::Executor.execute("SELECT #{path} #{from_clause}").rows
@@ -60,24 +55,17 @@ describe OpenehrRails::Rm::CompositionCommitter do
       expect(composition.reload).to have_attributes(setting_code: '232', setting_value: 'secondary medical care')
     end
 
-    # bug: red before #46 (one row holding nil). With openehr < 2.6.0 the path
-    # evaluator still raises `unsupported path attribute "start_time" on a
-    # ...EventContext`, so it stays pending there; openehr 2.6.0 navigates
-    # EVENT_CONTEXT and the example runs green (v0.10.0 Release run 45600566175
-    # resolved 2.6.0 and reported it "FIXED").
+    # bug: red before #46 (one row holding nil), then pending until openehr
+    # 2.6.0 could navigate EVENT_CONTEXT; green since the ~> 2.6 floor (#83).
     it 'answers SELECT c/context/start_time/value' do
-      pending upstream_event_context unless navigates_event_context
       described_class.commit(canonical_hash, uid: 'ctx-3')
 
       expect(select('c/context/start_time/value')).to eq([['2026-03-15T00:30:00Z']])
     end
 
-    # bug: red before #46 (0 rows). Still pending: with openehr < 2.6.0 for the
-    # EVENT_CONTEXT reason above; with 2.6.0 the WHERE clause itself works
-    # (measured), but SELECT c/uid/value raises `unsupported path attribute
-    # "uid" on a ...Composition` (an openehr-ruby question, not filed from here).
+    # bug: red before #46 (0 rows), then pending until openehr 2.6.1 could
+    # navigate COMPOSITION.uid (SELECT c/uid/value); green since the 2.6.1 floor (#83).
     it 'filters on c/context/start_time/value in WHERE' do
-      pending(navigates_event_context ? upstream_composition_uid : upstream_event_context)
       described_class.commit(canonical_hash, uid: 'ctx-4')
       query = "SELECT c/uid/value #{from_clause} WHERE c/context/start_time/value > '2026-01-01'"
 
