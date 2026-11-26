@@ -16,7 +16,9 @@ Gem::Specification.new do |gem|
   gem.extra_rdoc_files = [
     "README.md"
   ]
-  gem.files         = `git ls-files`.split("\n")
+  # What a host application runs, plus its docs; not the repo's specs, docs or
+  # tooling (#74). Generator templates live under lib/generators/**/templates/.
+  gem.files         = `git ls-files -z -- lib app config README.md CHANGELOG.md LICENSE openehr-rails.gemspec`.split("\x0")
 
   gem.metadata = {
     "source_code_uri" => "https://github.com/skoba/openehr-rails",
