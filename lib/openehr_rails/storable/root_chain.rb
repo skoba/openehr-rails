@@ -25,6 +25,25 @@ module OpenehrRails
 
     private
 
+    # Appends a new entry for +entry_path+ to +content+, inside the SECTION
+    # nodes its path names (one per section path, created on first use, #62).
+    def place_entry(content, section_nodes, field, entry_path)
+      container = content
+      prefix = ''
+      OpenehrRails::Storable.path_segments(entry_path)[0...-1].each do |attribute, section_id|
+        prefix += "/#{attribute}[#{section_id}]"
+        section = section_nodes[prefix] ||= (container << new_section(section_id)).last
+        container = section['items'] ||= []
+      end
+      (container << new_entry(field, entry_path)).last
+    end
+
+    def new_section(section_id)
+      section = { '_type' => 'SECTION', 'archetype_node_id' => section_id }
+      section['archetype_details'] = archetype_details(section_id) if section_id.match?(ARCHETYPE_ID_SEGMENT)
+      section
+    end
+
     def new_entry(field, entry_path)
       archetype_id = OpenehrRails::Storable.path_segments(entry_path).last.last
       {
@@ -36,6 +55,24 @@ module OpenehrRails
 
     def new_root_node(attribute, parent_type, archetype_id)
       new_rm_node(attribute, parent_type, archetype_id).merge('archetype_details' => archetype_details(archetype_id))
+    end
+
+    # Infers the RM type of an intermediate node from the attribute it
+    # fills and the parent's type. 'items' children stay untyped here: the
+    # 'value' branch marks ELEMENTs and the 'items' descent marks CLUSTERs.
+    def new_rm_node(attribute, parent_type, node_id)
+      rm_type =
+        case attribute
+        when 'data'
+          parent_type == 'OBSERVATION' ? 'HISTORY' : 'ITEM_TREE'
+        when 'events' then 'POINT_EVENT'
+        when 'state', 'protocol', 'description' then 'ITEM_TREE'
+        when 'activities' then 'ACTIVITY'
+        end
+      node = {}
+      node['_type'] = rm_type if rm_type
+      node['archetype_node_id'] = node_id
+      node
     end
 
     def archetype_details(archetype_id)

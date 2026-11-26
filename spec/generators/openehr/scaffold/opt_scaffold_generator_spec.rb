@@ -177,11 +177,13 @@ module Openehr
         run_generator [opt_file]
       end
 
-      # bug: red before #60 (no warning at all).
-      it 'lists SECTION-nested fields of jp_referral with the tracking issue' do
+      # enhancement (#62): only the INSTRUCTION fields of jp_referral are still
+      # unsupported (before #62: "belong to an entry nested in a SECTION").
+      it 'lists the INSTRUCTION fields of jp_referral with the tracking issue, and nothing for the SECTION' do
         output = generator_output(File.expand_path('../../../../templates/jp_referral.opt', __FILE__))
 
-        expect(output).to match(%r{Warning: \d+ field\(s\) belong to an entry nested in a SECTION.*skoba/openehr-rails#62.*story})
+        expect(output).to match(%r{Warning: 20 field\(s\) belong to an INSTRUCTION entry.*skoba/openehr-rails#69})
+        expect(output).not_to include('SECTION')
       end
 
       # enhancement (#61): embedded roots are assembled now, so no warning

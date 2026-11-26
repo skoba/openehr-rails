@@ -7,12 +7,13 @@ module OpenehrRails
     # Template shapes #rm_content cannot assemble into a valid composition yet.
     # Each maps to what the error says and the issue that tracks the real fix.
     UNSUPPORTED_SHAPES = {
-      section: ['an entry nested in a SECTION', 'skoba/openehr-rails#62'],
       instruction: ['an INSTRUCTION entry (its narrative and ACTIVITY attributes have no source)',
                     'skoba/openehr-rails#69'],
       embedded_root: ['an embedded archetype root described by a FIELD_MAP that cannot place it ' \
                       '(generated before 0.9.0, or a repeated root generated before root_chain); ' \
-                      're-scaffold the model to save it', 'skoba/openehr-rails#61']
+                      're-scaffold the model to save it', 'skoba/openehr-rails#61'],
+      repeated_entry: ['a repeated entry described by a FIELD_MAP generated before root_chain, which ' \
+                       'cannot tell its instances apart; re-scaffold the model to save it', 'skoba/openehr-rails#62']
     }.freeze
 
     # Raised on save when a record holds a value for a field whose template
@@ -37,11 +38,10 @@ module OpenehrRails
     # +field_map+ (the whole FIELD_MAP, when known) lets a field without
     # :root_chain be checked for a repeated root it cannot be placed in.
     def self.unsupported_shape(field, field_map = nil)
-      _attribute, entry_id = path_segments(field[:path]).first
-      return :section if entry_id.to_s.include?('-SECTION.')
       return :instruction if field[:entry_rm_type] == 'INSTRUCTION'
+      return :embedded_root if unplaceable_root?(field, field_map)
 
-      :embedded_root if unplaceable_root?(field, field_map)
+      :repeated_entry if unplaceable_entry?(field, field_map)
     end
 
     # An embedded-root field Storable cannot place: its root segment is not
@@ -49,18 +49,28 @@ module OpenehrRails
     # :root_chain and a root on its path repeats (instance_index alone cannot
     # tell the instances apart, see #root_chain).
     def self.unplaceable_root?(field, field_map)
-      return false unless field[:archetype_id] && field[:archetype_id] != path_segments(field[:path]).first.last
+      return false unless field[:archetype_id] && field[:archetype_id] != entry_archetype_id(field)
       return true unless path_segments(field[:path]).any? { |_attr, node_id| node_id == field[:archetype_id] }
       return false if field[:root_chain] || field_map.nil?
 
-      repeated_root_on_path?(field, field_map)
+      root_chain(field).drop(1).any? { |root_path, _ordinal| repeated_under?(root_path, field_map) }
     end
 
-    def self.repeated_root_on_path?(field, field_map)
-      root_paths = root_chain(field).drop(1).map(&:first)
+    # A field without :root_chain in an entry that repeats in the template.
+    def self.unplaceable_entry?(field, field_map)
+      return false if field[:root_chain] || field_map.nil?
+
+      repeated_under?(root_chain(field).first.first, field_map)
+    end
+
+    def self.repeated_under?(root_path, field_map)
       field_map.each_value.any? do |other|
-        other[:instance_index].to_i.positive? && root_paths.any? { |root_path| other[:path].start_with?("#{root_path}/") }
+        other[:instance_index].to_i.positive? && other[:path].start_with?("#{root_path}/")
       end
+    end
+
+    def self.entry_archetype_id(field)
+      path_segments(root_chain(field).first.first).last.last
     end
 
     # One generation-time warning per unsupported shape among +fields+

@@ -39,12 +39,14 @@ describe OpenehrRails::Storable do
   describe 'a model whose entries are nested in a SECTION (jp_referral)' do
     let(:model) { storable_model(:guard_jp_referrals, field_map_for('../templates/jp_referral.opt')) }
 
-    # bug: red before #60 (saved an entry with an untyped items level, no SECTION).
-    it 'refuses to save, naming the SECTION shape and the field' do
-      record = model.new('story' => '現病歴')
+    # enhancement (#62): the SECTION guard of #60 is lifted; a SECTION-nested
+    # entry now saves (spec/openehr_rails/storable_section_spec.rb). The
+    # INSTRUCTION in the same SECTION is still refused, naming #69.
+    it 'refuses a value for the INSTRUCTION, naming the INSTRUCTION shape and the field' do
+      record = model.new('service_request_at0121' => '紹介')
 
       expect { record.save! }.to raise_error(
-        OpenehrRails::Storable::UnsupportedTemplateShape, %r{nested in a SECTION.*story.*skoba/openehr-rails#62}m
+        OpenehrRails::Storable::UnsupportedTemplateShape, %r{INSTRUCTION.*service_request_at0121.*skoba/openehr-rails#69}m
       )
     end
 
@@ -68,10 +70,14 @@ describe OpenehrRails::Storable do
       expect(described_class.unsupported_shape(field({}))).to eq(:instruction)
     end
 
-    it 'reports a field nested in a SECTION before anything else' do
+    # enhancement (#62): a SECTION is no longer a shape of its own.
+    it 'reports a SECTION-nested field by its entry alone' do
       path = "/content[openEHR-EHR-SECTION.synthetic_guard_test.v1]/items#{entry_path.delete_prefix('/content')}/x[at1]/value"
+      observation = { entry_rm_type: 'OBSERVATION', archetype_id: 'openEHR-EHR-OBSERVATION.synthetic_guard_test.v1',
+                      path: path.sub('INSTRUCTION', 'OBSERVATION') }
 
-      expect(described_class.unsupported_shape(field(path: path))).to eq(:section)
+      expect(described_class.unsupported_shape(field(path: path))).to eq(:instruction)
+      expect(described_class.unsupported_shape(field(observation))).to be_nil
     end
 
     # enhancement (#61): only the pre-0.9.0 [at-code] root segment is still refused.
