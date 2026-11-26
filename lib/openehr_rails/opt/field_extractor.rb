@@ -19,6 +19,11 @@ module OpenehrRails
     #                    down to the nearest embedded root; ordinal is the document-order
     #                    ordinal among the template's roots with that root_path, so the
     #                    chain tells which instance of a repeated root holds the field (#61)
+    #   root_label:      template name (at0000 text) of the nearest embedded root instance;
+    #                    only on fields under an embedded root (#69)
+    #   action_archetype_id: for fields under an INSTRUCTION's ACTIVITY, the ACTIVITY's
+    #                    action_archetype_id: the OPT's C_STRING pattern as /pattern/, else
+    #                    the any-ACTION pattern /.*/ (#69)
     #   rm_type:         openEHR data value type (e.g. 'DV_QUANTITY')
     #   rm_type_alternatives: every alternative value type the OPT allows, in OPT order
     #                    (e.g. ['DV_TEXT', 'DV_CODED_TEXT'] for an OR constraint; rm_type is the chosen one)
@@ -40,6 +45,8 @@ module OpenehrRails
     class FieldExtractor
       ENTRY_TYPES = %w[OBSERVATION EVALUATION INSTRUCTION ACTION ADMIN_ENTRY].freeze
       SECTION_TYPE = 'SECTION'.freeze
+      # The RM's "any ACTION archetype" pattern (#69).
+      ANY_ACTION_ARCHETYPE = '/.*/'.freeze
 
       COLUMN_TYPES = {
         'DV_QUANTITY' => :float,
@@ -126,7 +133,7 @@ module OpenehrRails
       def build_entry(root, path_prefix)
         archetype_id = root.archetype_id.value
         concept = concept_of(archetype_id)
-        elements = collect_elements(root, path_prefix, archetype_id, [[path_prefix, new_root_token]])
+        elements = collect_elements(root, path_prefix, archetype_id, { chain: [[path_prefix, new_root_token]] })
         entry = {
           archetype_id: archetype_id,
           rm_type: root.rm_type_name,
@@ -135,10 +142,12 @@ module OpenehrRails
           occurrences: root.occurrences,
           required: mandatory?(root)
         }
-        entry[:fields] = elements.map do |element, path, element_archetype_id, chain|
-          root_path = chain.last.first
+        entry[:fields] = elements.map do |element, path, element_archetype_id, context|
+          root_path = context[:chain].last.first
           name = element_name(entry, element, element_archetype_id, elements.size, root_path != path_prefix)
-          build_field(element, path, element_archetype_id, entry, name).merge(root_path: root_path, root_chain: chain)
+          build_field(element, path, element_archetype_id, entry, name)
+            .merge(root_path: root_path, root_chain: context[:chain])
+            .merge(context.slice(:root_label, :action_archetype_id))
         end
         entry
       end
@@ -167,10 +176,12 @@ module OpenehrRails
         @root_token = (@root_token || 0) + 1
       end
 
-      # Depth-first walk collecting [ELEMENT, rm_path, archetype_id, chain]
-      # tuples under an entry. chain is [[root_path, token], ...] from the entry
-      # down to the nearest embedded archetype root.
-      def collect_elements(node, path, archetype_id, chain)
+      # Depth-first walk collecting [ELEMENT, rm_path, archetype_id, context]
+      # tuples under an entry. context[:chain] is [[root_path, token], ...] from
+      # the entry down to the nearest embedded archetype root; context also
+      # carries that root's :root_label and the enclosing ACTIVITY's
+      # :action_archetype_id, when there are such.
+      def collect_elements(node, path, archetype_id, context)
         return [] unless node.respond_to?(:attributes) && node.attributes
 
         node.attributes.flat_map do |attribute|
@@ -187,14 +198,45 @@ module OpenehrRails
             node_path = "#{child_path}#{node_predicate(child, embedded_root)}"
 
             if child.rm_type_name == 'ELEMENT'
-              [[child, node_path, archetype_id, chain]]
+              [[child, node_path, archetype_id, context]]
             elsif embedded_root
-              collect_elements(child, node_path, child.archetype_id.value, chain + [[node_path, new_root_token]])
+              collect_elements(child, node_path, child.archetype_id.value, root_context(context, child, node_path))
             else
-              collect_elements(child, node_path, archetype_id, chain)
+              collect_elements(child, node_path, archetype_id, activity_context(context, child))
             end
           end
         end
+      end
+
+      def root_context(context, root, root_path)
+        label = root_name(root)
+        context.merge(chain: context[:chain] + [[root_path, new_root_token]], root_label: label).compact
+      end
+
+      def activity_context(context, node)
+        return context unless node.rm_type_name == 'ACTIVITY'
+
+        context.merge(action_archetype_id: action_archetype_pattern(node))
+      end
+
+      # The template name of an embedded root instance: the at0000 text of its
+      # own terminology (openehr >= 2.5, CArchetypeRoot#term_definitions).
+      def root_name(root)
+        definitions = root.respond_to?(:term_definitions) ? root.term_definitions : nil
+        (definitions || {}).each_value do |terms|
+          term = terms.is_a?(Hash) ? terms['at0000'] : Array(terms).find { |candidate| candidate.code == 'at0000' }
+          return term.items['text'] if term
+        end
+        nil
+      end
+
+      def action_archetype_pattern(activity)
+        attribute = (activity.attributes || []).find { |candidate| candidate.rm_attribute_name == 'action_archetype_id' }
+        item = attribute&.children&.first
+        pattern = item.respond_to?(:item) && item.item.respond_to?(:pattern) ? item.item.pattern : nil
+        return ANY_ACTION_ARCHETYPE if pattern.nil? || pattern.empty?
+
+        pattern.start_with?('/') ? pattern : "/#{pattern}/"
       end
 
       # An embedded root is addressed by its archetype id (as in RM data paths

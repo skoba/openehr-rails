@@ -136,6 +136,7 @@ module OpenehrRails
       assert_supported_shapes!
       content = []
       entries = {}
+      filled = Hash.new { |hash, key| hash[key] = [] }.compare_by_identity
       sections = {}
       root_nodes = {}
       self.class::FIELD_MAP.each do |name, field|
@@ -146,7 +147,9 @@ module OpenehrRails
         chain = OpenehrRails::Storable.root_chain(field)
         entry = entries[chain.first] ||= place_entry(content, sections, field, chain.first.first)
         insert_rm_value(entry, field, value, chain, root_nodes)
+        filled[entry] << [field, value]
       end
+      write_narratives(filled)
       content
     end
 
@@ -177,6 +180,7 @@ module OpenehrRails
                    siblings.find { |s| s['archetype_node_id'] == node_id } ||
                      (siblings << new_rm_node(attribute, parent_type, node_id)).last
                  end
+          node['action_archetype_id'] ||= field[:action_archetype_id] || ANY_ACTION_ARCHETYPE if node['_type'] == 'ACTIVITY'
         else
           node = node[attribute] ||= new_rm_node(attribute, node['_type'] || entry['_type'], node_id)
         end
@@ -233,3 +237,4 @@ end
 
 require 'openehr_rails/storable/shape_guard'
 require 'openehr_rails/storable/root_chain'
+require 'openehr_rails/storable/narrative'

@@ -7,8 +7,6 @@ module OpenehrRails
     # Template shapes #rm_content cannot assemble into a valid composition yet.
     # Each maps to what the error says and the issue that tracks the real fix.
     UNSUPPORTED_SHAPES = {
-      instruction: ['an INSTRUCTION entry (its narrative and ACTIVITY attributes have no source)',
-                    'skoba/openehr-rails#69'],
       embedded_root: ['an embedded archetype root described by a FIELD_MAP that cannot place it ' \
                       '(generated before 0.9.0, or a repeated root generated before root_chain); ' \
                       're-scaffold the model to save it', 'skoba/openehr-rails#61'],
@@ -38,7 +36,6 @@ module OpenehrRails
     # +field_map+ (the whole FIELD_MAP, when known) lets a field without
     # :root_chain be checked for a repeated root it cannot be placed in.
     def self.unsupported_shape(field, field_map = nil)
-      return :instruction if field[:entry_rm_type] == 'INSTRUCTION'
       return :embedded_root if unplaceable_root?(field, field_map)
 
       :repeated_entry if unplaceable_entry?(field, field_map)

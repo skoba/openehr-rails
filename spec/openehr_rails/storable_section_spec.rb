@@ -48,11 +48,12 @@ describe OpenehrRails::Storable do
     expect(rm_section.items.map(&:archetype_node_id).tally).to include(synopsis_id => 2)
   end
 
-  # red before #62 (reported as the SECTION shape, #62); stays refused until #69.
-  it 'still refuses a value for the INSTRUCTION' do
-    expect { model.create!('service_request_at0121' => '紹介') }.to raise_error(
-      OpenehrRails::Storable::UnsupportedTemplateShape, %r{skoba/openehr-rails#69}
-    )
+  # enhancement (#69): the INSTRUCTION in the same SECTION saves too (refused
+  # until #69; spec/openehr_rails/storable_instruction_spec.rb has the details).
+  it 'puts the INSTRUCTION in the same SECTION' do
+    saved = model.create!('service_request_at0121' => '紹介', 'story' => '胸痛')
+
+    expect(saved.rm_composition['content'].sole['items'].pluck('_type')).to eq(%w[INSTRUCTION OBSERVATION])
   end
 
   describe 'a repeated entry directly under content (bmi_calculation_repeated_root)' do
