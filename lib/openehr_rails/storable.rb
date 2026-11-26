@@ -134,7 +134,9 @@ module OpenehrRails
     # one per root instance (#61).
     def rm_content
       assert_supported_shapes!
+      content = []
       entries = {}
+      sections = {}
       root_nodes = {}
       self.class::FIELD_MAP.each do |name, field|
         field = field.merge(name: name.to_s)
@@ -142,20 +144,23 @@ module OpenehrRails
         next if value.nil?
 
         chain = OpenehrRails::Storable.root_chain(field)
-        entry = entries[chain.first] ||= new_entry(field, chain.first.first)
-        insert_rm_value(entry, field, value, chain.drop(1).index_by(&:first), root_nodes)
+        entry = entries[chain.first] ||= place_entry(content, sections, field, chain.first.first)
+        insert_rm_value(entry, field, value, chain, root_nodes)
       end
-      entries.values
+      content
     end
 
-    # +roots+ maps the root path of each embedded root on the field's path to
-    # its [root_path, ordinal] instance key; +root_nodes+ holds the node built
-    # for each instance key, so two instances of one root stay apart.
-    def insert_rm_value(entry, field, value, roots, root_nodes)
-      segments = OpenehrRails::Storable.path_segments(field[:path])
-      prefix = "/#{segments.first.first}[#{segments.first.last}]"
+    # Walks the field's path below its entry (+chain+ is the field's root
+    # chain: the entry, then each embedded root). +root_nodes+ holds the node
+    # built for each [root_path, ordinal] key, so two instances of one root
+    # stay apart.
+    def insert_rm_value(entry, field, value, chain, root_nodes)
+      prefix = entry_path = chain.first.first
+      roots = chain.drop(1).index_by(&:first)
       node = entry
-      segments.drop(1).each do |attribute, node_id| # the leading /content[...] is the entry itself
+      # the segments up to the entry (content, any SECTIONs, the entry) are already placed
+      OpenehrRails::Storable.path_segments(field[:path]).drop(OpenehrRails::Storable.path_segments(entry_path).size)
+                            .each do |attribute, node_id|
         prefix += "/#{attribute}#{"[#{node_id}]" if node_id}"
         if attribute == 'value'
           node['_type'] ||= 'ELEMENT'
@@ -176,24 +181,6 @@ module OpenehrRails
           node = node[attribute] ||= new_rm_node(attribute, node['_type'] || entry['_type'], node_id)
         end
       end
-    end
-
-    # Infers the RM type of an intermediate node from the attribute it
-    # fills and the parent's type. 'items' children stay untyped here: the
-    # 'value' branch marks ELEMENTs and the 'items' descent marks CLUSTERs.
-    def new_rm_node(attribute, parent_type, node_id)
-      rm_type =
-        case attribute
-        when 'data'
-          parent_type == 'OBSERVATION' ? 'HISTORY' : 'ITEM_TREE'
-        when 'events' then 'POINT_EVENT'
-        when 'state', 'protocol', 'description' then 'ITEM_TREE'
-        when 'activities' then 'ACTIVITY'
-        end
-      node = {}
-      node['_type'] = rm_type if rm_type
-      node['archetype_node_id'] = node_id
-      node
     end
 
     def rm_value(field, value)
