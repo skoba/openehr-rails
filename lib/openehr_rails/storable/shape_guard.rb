@@ -10,9 +10,9 @@ module OpenehrRails
       section: ['an entry nested in a SECTION', 'skoba/openehr-rails#62'],
       instruction: ['an INSTRUCTION entry (its narrative and ACTIVITY attributes have no source)',
                     'skoba/openehr-rails#69'],
-      legacy_root: ['an embedded archetype root described by a FIELD_MAP that cannot place it ' \
-                    '(generated before 0.9.0, or a repeated root generated before root_chain); ' \
-                    're-scaffold the model to save it', 'skoba/openehr-rails#61']
+      embedded_root: ['an embedded archetype root described by a FIELD_MAP that cannot place it ' \
+                      '(generated before 0.9.0, or a repeated root generated before root_chain); ' \
+                      're-scaffold the model to save it', 'skoba/openehr-rails#61']
     }.freeze
 
     # Raised on save when a record holds a value for a field whose template
@@ -41,14 +41,14 @@ module OpenehrRails
       return :section if entry_id.to_s.include?('-SECTION.')
       return :instruction if field[:entry_rm_type] == 'INSTRUCTION'
 
-      :legacy_root if legacy_root?(field, field_map)
+      :embedded_root if unplaceable_root?(field, field_map)
     end
 
     # An embedded-root field Storable cannot place: its root segment is not
     # written [archetype_id] (FIELD_MAPs before 0.9.0), or it has no
     # :root_chain and a root on its path repeats (instance_index alone cannot
     # tell the instances apart, see #root_chain).
-    def self.legacy_root?(field, field_map)
+    def self.unplaceable_root?(field, field_map)
       return false unless field[:archetype_id] && field[:archetype_id] != path_segments(field[:path]).first.last
       return true unless path_segments(field[:path]).any? { |_attr, node_id| node_id == field[:archetype_id] }
       return false if field[:root_chain] || field_map.nil?

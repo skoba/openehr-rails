@@ -34,7 +34,7 @@ describe OpenehrRails::Storable do
 
   # The embedded-root guard of #60 is lifted by #61: those records now save
   # (spec/openehr_rails/storable_embedded_root_spec.rb). Only FIELD_MAPs that
-  # cannot place the root are still refused (:legacy_root).
+  # cannot place the root are still refused (:embedded_root).
 
   describe 'a model whose entries are nested in a SECTION (jp_referral)' do
     let(:model) { storable_model(:guard_jp_referrals, field_map_for('../templates/jp_referral.opt')) }
@@ -80,7 +80,7 @@ describe OpenehrRails::Storable do
       old_form = '/content[openEHR-EHR-OBSERVATION.synthetic_guard_test.v1]/data[at0001]/items[at0000]/items[at0002]/value'
       new_form = old_form.sub('[at0000]', '[openEHR-EHR-CLUSTER.synthetic_guard_test.v1]')
 
-      expect(described_class.unsupported_shape(field(observation.merge(path: old_form)))).to eq(:legacy_root)
+      expect(described_class.unsupported_shape(field(observation.merge(path: old_form)))).to eq(:embedded_root)
       expect(described_class.unsupported_shape(field(observation.merge(path: new_form)))).to be_nil
     end
 
@@ -92,7 +92,7 @@ describe OpenehrRails::Storable do
       second = first.merge(instance_index: 1)
       field_map = { 'first' => first, 'second' => second }
 
-      expect(described_class.unsupported_shape(first, field_map)).to eq(:legacy_root)
+      expect(described_class.unsupported_shape(first, field_map)).to eq(:embedded_root)
       expect(described_class.unsupported_shape(first.merge(root_chain: [[root, 0]]), field_map)).to be_nil
     end
 

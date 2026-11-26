@@ -17,7 +17,7 @@
 - Models scaffolded with 0.9.0 to 0.11.0 save embedded-root values without
   regeneration, unless a root on the field's path repeats in the template; those,
   and models scaffolded before 0.9.0, still raise `UnsupportedTemplateShape`
-  (shape `:legacy_root`, previously `:embedded_root`) and need a re-scaffold.
+  (same shape, `:embedded_root`; the message now asks for a re-scaffold).
 
-<!-- semver: minor. A save that raised now succeeds, FIELD_MAP gains a key, and
-     the guard's shape symbol is renamed (:embedded_root -> :legacy_root). -->
+<!-- semver: minor. A save that raised now succeeds and FIELD_MAP gains a key
+     (additive; nothing that saved before writes differently). -->
