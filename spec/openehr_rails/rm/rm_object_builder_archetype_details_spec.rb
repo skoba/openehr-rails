@@ -27,9 +27,6 @@ describe OpenehrRails::Rm::RmObjectBuilder do
       'content' => []
     }.compact
   end
-  # openehr 2.6.0 added the archetype_details / template_id AQL hops; the
-  # gemspec still allows ~> 2.5, so the AQL example depends on the resolved version.
-  let(:navigates_archetype_details) { Gem.loaded_specs['openehr'].version >= Gem::Version.new('2.6.0') }
 
   def commit(uid)
     OpenehrRails::Rm::CompositionCommitter.commit(canonical_hash, uid: uid)
@@ -48,7 +45,6 @@ describe OpenehrRails::Rm::RmObjectBuilder do
 
     # bug: red before #64 (the hop found no archetype_details).
     it 'answers SELECT c/archetype_details/template_id/value' do
-      pending 'openehr < 2.6.0 cannot navigate archetype_details in an AQL path' unless navigates_archetype_details
       commit('ad-2')
 
       rows = OpenehrRails::Aql::Executor.execute(
