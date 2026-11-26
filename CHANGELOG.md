@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-11-26
+
+> **Upgrade note.** Two things change for an existing host app.
+> (1) Requires `openehr` `~> 2.6, >= 2.6.1` (was `~> 2.5`): a host app locked to
+> openehr 2.5.x or 2.6.0 must update it together with this gem.
+> (2) AQL no longer returns logically deleted compositions by default; pass
+> `composition_scope: OpenehrRails::Rm::Composition.latest` to include them again.
+
+### Changed
+- Requires `openehr` `~> 2.6, >= 2.6.1`. With it, AQL reaches
+  `c/context/start_time` (#46), `c/archetype_details/template_id` (#64) and
+  `c/uid/value`, lifting the 0.9.0 and 0.10.0 known limitations on those paths (#83).
+- The default `composition_scope` of `OpenehrRails::Aql::Executor.execute` (and
+  `Aql::DatasetAdapter.build`) is now `Rm::Composition.latest.not_deleted`, so a
+  composition deleted through the REST `DELETE /v1/ehr/:ehr_id/composition/:uid`
+  is no longer returned. The engine's EHR screen (`/openehr/ehrs`) leaves such
+  compositions out of its counts and timeline as well. A scaffolded record's
+  `destroy` still purges its graph (#81, anlage upstream 28).
+
+### Added
+- `Rm::Composition.not_deleted` scope, and `Rm::CompositionCommitter.delete(uid:, ehr:)`,
+  which the REST DELETE now uses (#81).
+
+### Fixed
+- `Composition#to_rm` rebuilds `archetype_details` (`archetype_id` from the root's
+  `archetype_node_id`, `template_id`, `rm_version`) from the stored row; it used to
+  be nil, so the template a record came from was unreachable. A root node id that
+  is not a valid archetype id rebuilds with `archetype_details` nil, as before
+  (#64, anlage upstream 25).
+- A logical delete's Contribution is recorded as `deleted` (523), not `amendment`
+  (250), and its version is created with lifecycle 523 in one step (#81).
+
+### Known limitations
+- A REST `GET` of a logically deleted composition still returns its body (#85).
+- FHIR Observation *instance* ids still use the archetype-only slug (#76).
+
 ## [0.10.0] - 2026-11-25
 
 ### Changed
