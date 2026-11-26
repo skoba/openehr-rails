@@ -15,6 +15,10 @@ module OpenehrRails
     #   instance_index:  0-based document-order ordinal among the template's fields that
     #                    share this path (same-archetype roots side by side share paths),
     #                    so [path, instance_index] identifies a field
+    #   root_chain:      [[root_path, ordinal], ...] for every archetype root from the entry
+    #                    down to the nearest embedded root; ordinal is the document-order
+    #                    ordinal among the template's roots with that root_path, so the
+    #                    chain tells which instance of a repeated root holds the field (#61)
     #   rm_type:         openEHR data value type (e.g. 'DV_QUANTITY')
     #   rm_type_alternatives: every alternative value type the OPT allows, in OPT order
     #                    (e.g. ['DV_TEXT', 'DV_CODED_TEXT'] for an OR constraint; rm_type is the chosen one)
@@ -122,7 +126,7 @@ module OpenehrRails
       def build_entry(root, path_prefix)
         archetype_id = root.archetype_id.value
         concept = concept_of(archetype_id)
-        elements = collect_elements(root, path_prefix, archetype_id, path_prefix)
+        elements = collect_elements(root, path_prefix, archetype_id, [[path_prefix, new_root_token]])
         entry = {
           archetype_id: archetype_id,
           rm_type: root.rm_type_name,
@@ -131,29 +135,42 @@ module OpenehrRails
           occurrences: root.occurrences,
           required: mandatory?(root)
         }
-        entry[:fields] = elements.map do |element, path, element_archetype_id, root_path|
+        entry[:fields] = elements.map do |element, path, element_archetype_id, chain|
+          root_path = chain.last.first
           name = element_name(entry, element, element_archetype_id, elements.size, root_path != path_prefix)
-          build_field(element, path, element_archetype_id, entry, name).merge(root_path: root_path)
+          build_field(element, path, element_archetype_id, entry, name).merge(root_path: root_path, root_chain: chain)
         end
         entry
       end
 
-      # Sets :instance_index on every field: the document-order ordinal among
-      # the template's fields with the same path.
+      # Sets :instance_index on every field (the document-order ordinal among
+      # the template's fields with the same path) and turns the root tokens of
+      # :root_chain into ordinals among the roots with the same root path.
       def number_instances(entries)
         seen = Hash.new(0)
+        root_ordinals = {}
+        roots_seen = Hash.new(0)
         entries.each do |entry|
           entry[:fields].each do |field|
             field[:instance_index] = seen[field[:path]]
             seen[field[:path]] += 1
+            field[:root_chain] = field[:root_chain].map do |root_path, token|
+              root_ordinals[token] ||= (roots_seen[root_path] += 1) - 1
+              [root_path, root_ordinals[token]]
+            end
           end
         end
       end
 
-      # Depth-first walk collecting [ELEMENT, rm_path, archetype_id, root_path]
-      # tuples under an entry. root_path is the path of the nearest embedded
-      # archetype root (the entry's own path when there is none).
-      def collect_elements(node, path, archetype_id, root_path)
+      # A unique token per archetype root instance met during the walk.
+      def new_root_token
+        @root_token = (@root_token || 0) + 1
+      end
+
+      # Depth-first walk collecting [ELEMENT, rm_path, archetype_id, chain]
+      # tuples under an entry. chain is [[root_path, token], ...] from the entry
+      # down to the nearest embedded archetype root.
+      def collect_elements(node, path, archetype_id, chain)
         return [] unless node.respond_to?(:attributes) && node.attributes
 
         node.attributes.flat_map do |attribute|
@@ -170,11 +187,11 @@ module OpenehrRails
             node_path = "#{child_path}#{node_predicate(child, embedded_root)}"
 
             if child.rm_type_name == 'ELEMENT'
-              [[child, node_path, archetype_id, root_path]]
+              [[child, node_path, archetype_id, chain]]
             elsif embedded_root
-              collect_elements(child, node_path, child.archetype_id.value, node_path)
+              collect_elements(child, node_path, child.archetype_id.value, chain + [[node_path, new_root_token]])
             else
-              collect_elements(child, node_path, archetype_id, root_path)
+              collect_elements(child, node_path, archetype_id, chain)
             end
           end
         end

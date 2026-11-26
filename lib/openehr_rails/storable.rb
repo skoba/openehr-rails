@@ -129,33 +129,34 @@ module OpenehrRails
       self.rm_composition = to_rm_composition if respond_to?(:rm_composition=)
     end
 
+    # Entries are grouped by the first root instance of each field's
+    # root_chain; embedded roots become archetyped nodes inside their entry,
+    # one per root instance (#61).
     def rm_content
       assert_supported_shapes!
       entries = {}
+      root_nodes = {}
       self.class::FIELD_MAP.each do |name, field|
         field = field.merge(name: name.to_s)
         value = public_send(name)
         next if value.nil?
 
-        entry = entries[field[:archetype_id]] ||= {
-          '_type' => field[:entry_rm_type],
-          'archetype_node_id' => field[:archetype_id],
-          'archetype_details' => {
-            '_type' => 'ARCHETYPED',
-            'archetype_id' => { 'value' => field[:archetype_id] },
-            'rm_version' => '1.0.4'
-          }
-        }
-        insert_rm_value(entry, field, value)
+        chain = OpenehrRails::Storable.root_chain(field)
+        entry = entries[chain.first] ||= new_entry(field, chain.first.first)
+        insert_rm_value(entry, field, value, chain.drop(1).index_by(&:first), root_nodes)
       end
       entries.values
     end
 
-    def insert_rm_value(entry, field, value)
+    # +roots+ maps the root path of each embedded root on the field's path to
+    # its [root_path, ordinal] instance key; +root_nodes+ holds the node built
+    # for each instance key, so two instances of one root stay apart.
+    def insert_rm_value(entry, field, value, roots, root_nodes)
       segments = OpenehrRails::Storable.path_segments(field[:path])
-      segments = segments[1..] # the leading /content[...] is the entry itself
+      prefix = "/#{segments.first.first}[#{segments.first.last}]"
       node = entry
-      segments.each do |attribute, node_id|
+      segments.drop(1).each do |attribute, node_id| # the leading /content[...] is the entry itself
+        prefix += "/#{attribute}#{"[#{node_id}]" if node_id}"
         if attribute == 'value'
           node['_type'] ||= 'ELEMENT'
           node['value'] = rm_value(field, value)
@@ -164,8 +165,13 @@ module OpenehrRails
           # nested CLUSTER (ELEMENTs are typed by the 'value' branch).
           node['_type'] ||= 'CLUSTER' if attribute == 'items'
           siblings = node[attribute] ||= []
-          node = siblings.find { |s| s['archetype_node_id'] == node_id } ||
-                 (siblings << new_rm_node(attribute, node['_type'] || entry['_type'], node_id)).last
+          parent_type = node['_type'] || entry['_type']
+          node = if (root = roots[prefix])
+                   root_nodes[root] ||= (siblings << new_root_node(attribute, parent_type, node_id)).last
+                 else
+                   siblings.find { |s| s['archetype_node_id'] == node_id } ||
+                     (siblings << new_rm_node(attribute, parent_type, node_id)).last
+                 end
         else
           node = node[attribute] ||= new_rm_node(attribute, node['_type'] || entry['_type'], node_id)
         end
@@ -239,3 +245,4 @@ module OpenehrRails
 end
 
 require 'openehr_rails/storable/shape_guard'
+require 'openehr_rails/storable/root_chain'
