@@ -90,8 +90,23 @@ module OpenehrRails
           ),
           composer: party_identified(@composition.composer_name || OpenehrRails.default_composer_name),
           content: @composition.content_nodes.map { |node| build_node(node) },
-          context: build_event_context
+          context: build_event_context,
+          archetype_details: build_archetype_details
         )
+      end
+
+      # The graph stores template_id and rm_version on the composition row; the
+      # archetype_id is the root's archetype_node_id (#64). A root node id that is
+      # not a valid archetype id yields nil rather than failing the whole rebuild.
+      def build_archetype_details
+        ids = OpenEHR::RM::Support::Identification
+        OpenEHR::RM::Common::Archetyped::Archetyped.new(
+          archetype_id: ids::ArchetypeID.new(value: @composition.archetype_node_id),
+          template_id: @composition.template_id && ids::TemplateID.new(value: @composition.template_id),
+          rm_version: @composition.rm_version.presence || '1.0.4'
+        )
+      rescue ArgumentError
+        nil
       end
 
       def build_event_context
