@@ -16,7 +16,8 @@ module OpenehrRails
         'HISTORY' => %w[origin],
         'POINT_EVENT' => %w[time],
         'INTERVAL_EVENT' => %w[time width math_function],
-        'ELEMENT' => %w[null_flavour]
+        'ELEMENT' => %w[null_flavour],
+        'ACTIVITY' => %w[action_archetype_id]
       }.freeze
 
       def initialize(canonical_hash)
@@ -147,6 +148,9 @@ module OpenehrRails
           }.compact
         when 'ELEMENT'
           { null_flavor_code: hash.dig('null_flavour', 'defining_code', 'code_string') }.compact
+        when 'ACTIVITY'
+          # A String attribute has no typed column; the node's JSON `extra` keeps it (#69).
+          hash['action_archetype_id'] ? { extra: { 'action_archetype_id' => hash['action_archetype_id'] } } : {}
         else
           {}
         end

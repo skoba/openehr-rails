@@ -54,6 +54,8 @@ module OpenehrRails
         end
         hash['time'] = { '_type' => 'DV_DATE_TIME', 'value' => node.event_time.iso8601 } if node.event_time
         hash['width'] = { '_type' => 'DV_DURATION', 'value' => node.width } if node.width
+        action_archetype_id = node.extra.is_a?(Hash) ? node.extra['action_archetype_id'] : nil
+        hash['action_archetype_id'] = action_archetype_id if action_archetype_id
         if node.math_function_code
           hash['math_function'] = {
             '_type' => 'DV_CODED_TEXT',

@@ -35,11 +35,12 @@ module OpenehrRails
     #   - ENTRY language / encoding / subject: OpenehrRails config defaults
     #   - HISTORY.origin, EVENT.time: composition context time or now
     #   - INSTRUCTION.narrative: the node's name when no narrative row exists
-    #   - ACTIVITY.action_archetype_id: '/.*/' (any ACTION archetype)
+    #   - ACTIVITY.action_archetype_id: '/.*/' (any ACTION archetype) for a graph
+    #     written before #69, which did not store it
     # rubocop:disable-next Metrics/ClassLength
     class RmObjectBuilder
-      # The RM's "any ACTION archetype" pattern, injected because the graph
-      # cannot carry ACTIVITY.action_archetype_id yet (see class comment).
+      # The RM's "any ACTION archetype" pattern, injected for a graph written
+      # before #69, which did not store ACTIVITY.action_archetype_id.
       DEFAULT_ACTION_ARCHETYPE_ID = '/.*/'
 
       # Map rm_type to the corresponding OpenEHR::RM class. ACTION,
@@ -183,12 +184,12 @@ module OpenehrRails
 
       # ACTIVITY.description is mandatory and never defaulted: a graph without
       # one fails RM conformance (the gem raises, #44 reports and skips).
-      # action_archetype_id is mandatory too but the graph cannot carry it
-      # (GraphBuilder drops String-valued attributes), so the RM's "any ACTION
-      # archetype" pattern is injected -- an approximation (#45 ruling
-      # condition (a)); phase B persists the real value.
+      # action_archetype_id is mandatory too; GraphBuilder keeps it in the
+      # node's `extra` since #69. Older graphs get the RM's "any ACTION
+      # archetype" pattern -- an approximation (#45 ruling condition (a)).
       def activity_attributes(node)
-        attrs = { action_archetype_id: DEFAULT_ACTION_ARCHETYPE_ID }
+        stored = node.extra.is_a?(Hash) ? node.extra['action_archetype_id'] : nil
+        attrs = { action_archetype_id: stored || DEFAULT_ACTION_ARCHETYPE_ID }
         description = child_node(node, 'description')
         attrs[:description] = build_node(description) if description
         timing = data_value_row(node, 'timing')
