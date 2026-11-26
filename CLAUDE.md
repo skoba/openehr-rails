@@ -90,6 +90,19 @@ publish, and do not re-push. Confirm with
 or the compact index `https://index.rubygems.org/info/openehr-rails`, which
 updated first in that same 2.4.3 run.
 
+**`pkg/` is a staging directory, empty except during a release.** The release
+sequence is: download the tag's Release-run artifact into `pkg/` → compare its
+sha256 with the run's recorded value → the human runs `gem push` → confirm the
+published checksum (above) → **the session deletes `pkg/openehr-rails-<ver>.gem`**.
+It does not delete before the published checksum matches; on a mismatch it
+reports instead. Anything found in `pkg/` outside a release is suspect by
+construction and is never used for a publish: re-download instead. File deletion
+is normally a stop-and-report action; this one deletion is pre-authorized by
+R-20261126-6. With this, the human's turns in a publish are two: merging the
+release PR (which also approves the tag, R-20261126-4) and `gem push`.
+(Added 2026-11-26, R-20261126-6, matching openehr-ruby's paragraph of the same
+intent; practiced since the 0.10.0 publish.)
+
 **Check for new dependency releases right before tagging.** The Release run
 re-resolves dependencies (no lock file is committed), so a gem released after
 `master`'s last CI run can change what the tag is tested against. Immediately
@@ -247,27 +260,45 @@ anlage の `CLAUDE.md`「作業ツリー規律」と同旨。根拠と採らな�
   commit 済みの計画書で行う(上の「Repository-context-dependent commands…」の
   `codex exec resume` の扱いは、この項が上書きする)
 
-## 全開の進め方(2026-11-24 導入。裁定 R-20261124-8)
+## 全開の進め方(2026-11-24 導入。裁定 R-20261124-8、2026-11-26 改定 R-20261126-4)
 
-要点だけを書く。正典は裁定台帳の R-20261124-8。これより前の記述と食い違うときは、この節が優先する。
+要点だけを書く。正典は裁定台帳の R-20261124-8 と R-20261126-4(R-20261124-8 の 2・3・5 を改める。
+食い違うときは R-20261126-4 が優先)。これより前の記述と食い違うときは、この節が優先する。
 
 - **止まらずに進める範囲**: 承認済みの計画書と、このリポジトリ宛ての作業列にある項目。
   計画書が要る項目は、計画書を push してそのまま実装に進む(確認は事後)
 - **必ず止まってゲート報告を出す範囲**: 計画書に無い挙動の変更と公開 API の変更。
   gem の追加と未リリースのコードへの依存。データの移行と削除、開発機の設定の変更。
-  臨床の判断と人間の入力を待つもの。タグと publish。ほかのリポジトリへの書き込み
+  臨床の判断と人間の入力を待つもの。publish(`gem push` は人間)と、リリースの PR の
+  マージより前のタグ(マージのあとのタグは下の「タグ」の項)。ほかのリポジトリへの書き込み
   (`anlage-ops` の `status/openehr-rails.md` は除く)
 - **セッションが自分でマージしてよい PR**: 自分で開いた、docs のみの PR と、
   止まらずに進める範囲の実装の PR。条件は、head の CI がすべて green、競合なし、
   1 Issue = 1 PR。マージのあと `master` の CI を確かめ、赤なら次に進まず例外報告。
   `master` では force-push と履歴の書き換えをしない
+- **裁定で中身が決まっている変更も、セッションがマージする**(R-20261126-4 の 2):
+  人間のレビューが要る中身でも、裁定に結果が書いてあり、PR がそのとおりならマージしてよい。
+  条件は同じ(head の CI がすべて green、競合なし)。マージは、CI の結果を確かめたあとの、
+  別のコマンドで行う(確かめずに続けて走らせない)。PR の本文に、対応する裁定と項目を書く。
+  裁定に無い判断を足したときは、足した点を分けて書き、その PR はマージせずにゲート報告にする
 - **人間がマージする PR**: 依存を変えるもの(`Gemfile`、gemspec、lock)、版番号を
   変えるもの、CI のワークフローを変えるもの、ファイルの削除が主な中身のもの、
-  必ず止まる範囲に当たったもの。権限でマージが止められたら、回避せずに報告する
+  必ず止まる範囲に当たったもの、裁定でまだ決まっていない判断を含むもの。
+  権限でマージが止められたら、回避せずに報告する
 - **変更履歴は断片ファイル**: PR では `CHANGELOG.md` に触らない。
   `changelog.d/<Issue 番号>-<slug>.md` を 1 PR につき 1 つ足し、変更履歴の文と
   semver の判定・理由を書く。棚卸しで断片を `CHANGELOG.md` にまとめ、断片を消す
   (タグの時点で `changelog.d/` に断片が残っていないこと)
+- **タグ: リリースの PR のマージを、タグの承認とする**(R-20261126-4 の 1): 人間が
+  版番号を変える PR をマージしたら、指示を待たずにタグを打つ。打つ前に、マージのコミットの
+  `master` の CI が green、依存する gem の新しい版がその CI のあとに出ていない(出ていたら
+  CI を回し直す)、棚卸しの判定とタグに入る中身(前のタグからの差分)が一致する、を確かめる。
+  どれかが欠けたら、打たずに報告。タグのあと、Release run の成功と sha256 を status に書く。
+  公開済みの版のタグは動かさない
+- **合図: 区切りごとに台帳を読む**(R-20261126-4 の 3): 作業列の項目が 1 つ済むたびと、
+  待ちに入る前に、anlage-ops を pull して `rulings.md` を読む。このレーン宛てで状態が
+  「発行」、`status/openehr-rails.md` に着手の記録が無い裁定があれば、合図を待たずに着手する。
+  「裁定 R-… を読んで着手」の合図も、これまでどおり有効
 - **公開はできた順**: 公開できる中身が `master` にそろったら棚卸しに進む。
   手順は Release convention のとおりで、変えない
 - **報告**: ゲート・バンドル・例外の報告は `docs/reports/` に push し、
