@@ -12,7 +12,7 @@ module OpenehrRails
     # items) into RM objects -- see doc/HANDOFF_openehr_aql_create_from_json.md
     # and spec/openehr_rails/rm/create_from_json_roundtrip_spec.rb.
     class DatasetAdapter
-      def self.build(ehr_scope: OpenehrRails::Rm::Ehr.all, composition_scope: OpenehrRails::Rm::Composition.latest)
+      def self.build(ehr_scope: OpenehrRails::Rm::Ehr.all, composition_scope: OpenehrRails::Rm::Composition.latest.not_deleted)
         new(ehr_scope: ehr_scope, composition_scope: composition_scope).call
       end
 

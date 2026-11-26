@@ -13,6 +13,15 @@ module OpenehrRails
         new(canonical_hash, uid: uid, ehr: ehr, owner: owner, context_start_time: context_start_time).commit
       end
 
+      # Logical delete (#81): appends a version of the current head whose
+      # lifecycle_state is 523 (deleted), recorded by a 'deleted' Contribution.
+      # The head stays latest_version; Composition.not_deleted leaves it out.
+      def self.delete(uid:, ehr: nil)
+        head = Composition.latest.find_by!(uid: uid)
+        new(head.to_canonical_hash, uid: uid, ehr: ehr || head.ehr, owner: head.owner,
+                                    context_start_time: head.context_start_time).commit(deleting: true)
+      end
+
       def initialize(canonical_hash, uid:, ehr: nil, owner: nil, context_start_time: nil)
         @canonical_hash = canonical_hash
         @uid = uid
@@ -21,11 +30,11 @@ module OpenehrRails
         @context_start_time = context_start_time
       end
 
-      def commit
+      def commit(deleting: false)
         ActiveRecord::Base.transaction do
           previous = head_composition
           composition = create_composition
-          record_version(composition, previous)
+          record_version(composition, previous, deleting: deleting)
           composition
         end
       end
@@ -47,8 +56,11 @@ module OpenehrRails
         Composition.latest.find_by(uid: @uid)
       end
 
-      def record_version(composition, previous)
-        change_type = previous ? 'amendment' : 'creation'
+      def record_version(composition, previous, deleting:)
+        change_type = if deleting then 'deleted'
+                      elsif previous then 'amendment'
+                      else 'creation'
+                      end
         previous&.update_columns(latest_version: false)
 
         contribution = Contribution.record!(change_type, ehr: composition.ehr)
@@ -56,7 +68,8 @@ module OpenehrRails
           versioned_object_uid: composition.uid,
           composition: composition,
           contribution: contribution,
-          version_tree_id: next_version_tree_id(composition.uid)
+          version_tree_id: next_version_tree_id(composition.uid),
+          lifecycle_state_code: deleting ? Version::LIFECYCLE_DELETED : Version::LIFECYCLE_COMPLETE
         )
       end
 

@@ -10,7 +10,7 @@ module OpenehrRails
   class EhrsController < ApplicationController
     def index
       @summaries = ::OpenehrRails::Rm::Ehr.order(created_at: :desc).map do |ehr|
-        compositions = ::OpenehrRails::Rm::Composition.latest.where(ehr: ehr)
+        compositions = ::OpenehrRails::Rm::Composition.latest.not_deleted.where(ehr: ehr)
         EhrSummary.new(ehr, compositions.count, compositions.maximum(:context_start_time))
       end
     end
@@ -18,7 +18,7 @@ module OpenehrRails
     def show
       @ehr = ::OpenehrRails::Rm::Ehr.find_by!(ehr_id: params[:id])
 
-      scope = ::OpenehrRails::Rm::Composition.latest.where(ehr: @ehr)
+      scope = ::OpenehrRails::Rm::Composition.latest.not_deleted.where(ehr: @ehr)
       @template_ids = scope.distinct.order(:template_id).pluck(:template_id).compact
       scope = scope.where(template_id: params[:template_id]) if params[:template_id].present?
 

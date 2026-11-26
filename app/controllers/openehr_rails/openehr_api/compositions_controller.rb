@@ -60,9 +60,7 @@ module OpenehrRails
         head_composition = find_composition!
         check_if_match!(head_composition) if request.headers['If-Match'].present?
 
-        composition = OpenehrRails::Rm::CompositionCommitter.commit(head_composition.to_canonical_hash,
-                                                                      uid: head_composition.uid, ehr: ehr)
-        composition.version.update!(lifecycle_state_code: OpenehrRails::Rm::Version::LIFECYCLE_DELETED)
+        OpenehrRails::Rm::CompositionCommitter.delete(uid: head_composition.uid, ehr: ehr)
         head :no_content
       end
 

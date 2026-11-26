@@ -31,6 +31,12 @@ module OpenehrRails
       validates :archetype_node_id, presence: true
 
       scope :latest, -> { where(latest_version: true) }
+      # A logical delete appends a version with lifecycle_state 523 (#81); that
+      # head stays latest_version, so callers that mean "current records" use
+      # latest.not_deleted.
+      scope :not_deleted, lambda {
+        where.not(id: Version.where(lifecycle_state_code: Version::LIFECYCLE_DELETED).select(:composition_id))
+      }
 
       def to_canonical_hash
         CanonicalSerializer.new(self).call

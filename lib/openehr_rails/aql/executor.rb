@@ -8,7 +8,7 @@ module OpenehrRails
     # execute -> translate any engine error into OpenehrRails::Aql::Error.
     class Executor
       def self.execute(aql_string, params: {}, ehr_scope: OpenehrRails::Rm::Ehr.all,
-                        composition_scope: OpenehrRails::Rm::Composition.latest)
+                        composition_scope: OpenehrRails::Rm::Composition.latest.not_deleted)
         query = QueryValidator.validate!(aql_string)
         dataset = DatasetAdapter.build(ehr_scope: ehr_scope, composition_scope: composition_scope)
 
