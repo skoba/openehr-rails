@@ -37,40 +37,47 @@ module OpenehrRails
       def attributes_from_rm_composition(composition)
         composition = composition.deep_stringify_keys if composition.respond_to?(:deep_stringify_keys)
         const_get(:FIELD_MAP).each_with_object({}) do |(name, field), attrs|
-          value_node = dig_rm_path(composition, field)
+          value_node = OpenehrRails::Storable.value_node(composition, field)
           next if value_node.nil?
 
-          attrs[name] = rm_value_to_attribute(value_node, field)
+          attrs[name] = OpenehrRails::Storable.attribute_value(value_node, field)
         end
       end
 
       private
 
-      def dig_rm_path(composition, field)
-        segments = OpenehrRails::Storable.path_segments(field[:path])
-        node = composition
-        segments.each do |attribute, node_id|
-          return nil if node.nil?
-          next node = node[attribute] if attribute == 'value'
-
-          child = node[attribute]
-          child = Array(child).find { |c| c['archetype_node_id'] == node_id } if child.is_a?(Array)
-          node = child
-        end
-        node
-      end
-
       def rm_value_to_attribute(value_node, field)
-        return value_node unless value_node.is_a?(Hash)
+        OpenehrRails::Storable.attribute_value(value_node, field)
+      end
+    end
 
-        case field[:rm_type]
-        when 'DV_QUANTITY', 'DV_COUNT', 'DV_PROPORTION'
-          value_node['magnitude']
-        when 'DV_CODED_TEXT'
-          value_node.dig('defining_code', 'code_string') || value_node['value']
-        else
-          value_node['value']
-        end
+    # The data value node at field[:path] in a canonical COMPOSITION hash
+    # (string keys), or nil. Shared by Storable models and the FHIR facade's
+    # runtime records (#101). Where a root repeats, the first instance wins.
+    def self.value_node(composition, field)
+      node = composition
+      path_segments(field[:path]).each do |attribute, node_id|
+        return nil if node.nil?
+        next node = node[attribute] if attribute == 'value'
+
+        child = node[attribute]
+        child = Array(child).find { |c| c['archetype_node_id'] == node_id } if child.is_a?(Array)
+        node = child
+      end
+      node
+    end
+
+    # The attribute value a Storable column holds for a data value node.
+    def self.attribute_value(value_node, field)
+      return value_node unless value_node.is_a?(Hash)
+
+      case field[:rm_type]
+      when 'DV_QUANTITY', 'DV_COUNT', 'DV_PROPORTION'
+        value_node['magnitude']
+      when 'DV_CODED_TEXT'
+        value_node.dig('defining_code', 'code_string') || value_node['value']
+      else
+        value_node['value']
       end
     end
 

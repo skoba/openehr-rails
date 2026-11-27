@@ -148,3 +148,23 @@ anlage(実行時の経路の実例)は:
 - regression pin: `ENTRY_ELEMENT_MAPS` に無い Observation 以外の ENTRY は出ない
 - 入口の確かめ: engine の controller には request spec が無い。#94・#95・#99 と同じく、組み立てた demo に
   curl して確かめ、その結果を PR に書く。controller の判断は、spec のある class に置く
+
+## 8. ゲートの回答と実装(R-20261127-15)
+
+- 回答: 案 B。実行時の記録は owner の無い記録で、scaffold の model のあるテンプレートは今の経路だけ。
+  `template_source` は template_id ごとに 1 つ。重なりは `TemplateSourceError`(template_id を書く)で止める。
+  古い版のテンプレートで書いた記録の扱いは Known limitations に書く
+- 実装: 段 1 は `Fhir::ResourceBuilder`(`Serializer` から切り出し。出力は変えない)。段 2・3 は
+  `Fhir.template_source` と `Fhir::TemplateSource`、`ResourceRegistry.runtime_entries`、`Fhir::RuntimeRecord`、
+  `Fhir::ObservationQuery`(検索・1 件・作成先の判定。controller はこれに渡すだけ)。値のたどり方は
+  `Storable.value_node`・`attribute_value` に出して、2 つの経路で共有する
+- 実装の細目(回答を実装するときに要った点):
+  - `TemplateSourceError` は 500 で返す(ホストの設定の誤りで、要求の誤りではない)
+  - entry の番号は、テンプレートの中の archetype ごとの並び(Observation 以外も数える)。Condition を足しても、
+    今の id が変わらない
+  - プロファイルの 1 件の取得は、`app/fhir/profiles` にファイルがあっても、無いテンプレートは生成したものから探す
+    (いまは、ファイルが 1 つでもあると生成したものを見ない)
+  - CapabilityStatement の `supportedProfile` は、同じ archetype を 1 回だけ書く(2 つのテンプレートが同じ
+    archetype を使うと、2 回出ていた。demo で実測)
+  - プロファイルの id は、OPT 自身の template_id から作る(`template_source` の `template_id` ではない)。
+    ふつうは同じ

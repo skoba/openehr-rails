@@ -31,7 +31,7 @@ module OpenehrRails
           {
             type: resource_type,
             profile: nil,
-            supportedProfile: entries.map { |e| "urn:openehr:#{e.archetype_id}" },
+            supportedProfile: entries.map { |e| "urn:openehr:#{e.archetype_id}" }.uniq,
             interaction: [
               { code: 'read' },
               { code: 'search-type' },

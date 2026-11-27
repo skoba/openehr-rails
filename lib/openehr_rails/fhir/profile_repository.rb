@@ -4,7 +4,8 @@ module OpenehrRails
   module Fhir
     # Resolves StructureDefinition profiles for the FHIR endpoint. Prefers
     # files written by `--fhir` under app/fhir/profiles, and otherwise
-    # builds them on the fly from the registered operational templates.
+    # builds them on the fly from the operational templates of
+    # Fhir.template_source (default: the OpenehrTemplate registry).
     module ProfileRepository
       module_function
 
@@ -16,19 +17,21 @@ module OpenehrRails
         file = profiles_dir(root).join("#{id}.json")
         return JSON.parse(File.read(file)) if File.exist?(file)
 
-        all(root: root).find { |profile| profile['id'] == id || profile[:id] == id }
+        matches = ->(profile) { profile['id'] == id || profile[:id] == id }
+        # A template without a file (e.g. registered at runtime, #101) is
+        # still found among the generated profiles.
+        from_files(root).find(&matches) || from_registry.find(&matches)
       end
 
       def from_files(root)
         Dir.glob(profiles_dir(root).join('*.json')).map { |path| JSON.parse(File.read(path)) }
       end
 
+      # Templates from Fhir.template_source, which defaults to the gem's
+      # OpenehrTemplate registry (#101).
       def from_registry
-        return [] unless defined?(::OpenehrTemplate)
-
-        ::OpenehrTemplate.operational.flat_map do |template|
-          opt = OpenehrRails::Opt.parse(template.content)
-          ProfileGenerator.new(opt).profiles
+        TemplateSource.templates.flat_map do |template|
+          ProfileGenerator.new(TemplateSource.parsed(template.opt)).profiles
         end
       end
 
