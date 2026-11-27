@@ -379,6 +379,7 @@ This is `openehr-rails`, a Rails engine gem that turns an openEHR Operational Te
 
 ## Development Notes
 
+- `README.md` is the main text; `README.ja.md` is its Japanese translation. A PR that changes `README.md` fixes `README.ja.md` in the same PR (R-20261127-28; pinned by `spec/openehr_rails/readme_translation_spec.rb`)
 - Ruby 3.3+ required (raised from 3.0 in 2026-08 to track the `openehr` gem dependency dropping Ruby 3.2 support at EOL); CI matrix covers 3.3/3.4/4.0, local dev pinned via `.ruby-version` (currently 4.0.10)
 - Rails 7.0+ and Rails 8.x supported (CI matrix: `gemfiles/rails_{7_2,8_0,8_1}.gemfile`; demo app runs on Rails 8.1)
 - URI compatibility workaround implemented for Ruby 3.4
