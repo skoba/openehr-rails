@@ -32,6 +32,7 @@ OpenehrRails::Engine.routes.draw do
     match 'query/aql', to: 'queries#execute', via: %i[get post]
 
     post 'ehr', to: 'openehr_api/ehrs#create', as: :create_ehr
+    get 'ehr', to: 'openehr_api/ehrs#by_subject', as: :ehr_by_subject
     put 'ehr/:ehr_id', to: 'openehr_api/ehrs#upsert', as: :upsert_ehr
     get 'ehr/:ehr_id', to: 'openehr_api/ehrs#show', as: :api_ehr
     get 'ehr/:ehr_id/ehr_status', to: 'openehr_api/ehrs#ehr_status', as: :ehr_status
