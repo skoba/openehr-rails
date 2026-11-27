@@ -15,20 +15,17 @@ module OpenehrRails
         :rest_api
       end
 
-      # POST /v1/ehr  (server-generated ehr_id)
+      # POST /v1/ehr  (server-generated ehr_id). 409 when an EHR already has
+      # the same subject id, namespace pair (#99) -- see Rm::EhrCreation.
       def create
-        ehr = OpenehrRails::Rm::Ehr.create!(ehr_attributes.merge(ehr_id: SecureRandom.uuid))
-        render_ehr(ehr, status: :created)
+        render_creation(OpenehrRails::Rm::EhrCreation.new(ehr_attributes).call)
       end
 
-      # PUT /v1/ehr/:ehr_id  (client-supplied ehr_id)
+      # PUT /v1/ehr/:ehr_id  (client-supplied ehr_id). 409 when the ehr_id is
+      # in use, or (this implementation's own, #99) when an EHR already has
+      # the same subject id, namespace pair -- see Rm::EhrCreation.
       def upsert
-        if OpenehrRails::Rm::Ehr.exists?(ehr_id: params[:ehr_id])
-          return render json: { error: "EHR #{params[:ehr_id]} already exists" }, status: :conflict
-        end
-
-        ehr = OpenehrRails::Rm::Ehr.create!(ehr_attributes.merge(ehr_id: params[:ehr_id]))
-        render_ehr(ehr, status: :created)
+        render_creation(OpenehrRails::Rm::EhrCreation.new(ehr_attributes, ehr_id: params[:ehr_id]).call)
       end
 
       # GET /v1/ehr?subject_id=...&subject_namespace=...  (#95, "Get EHR by
@@ -77,6 +74,14 @@ module OpenehrRails
           raw = request.body.read
           raw.blank? ? {} : JSON.parse(raw)
         end
+      end
+
+      def render_creation(result)
+        return render_ehr(result.ehr, status: :created) if result.status == :created
+
+        body = { error: result.error }
+        body[:ehr_ids] = result.ehr_ids if result.ehr_ids.any?
+        render json: body, status: result.status
       end
 
       def render_ehr(ehr, status: :ok)

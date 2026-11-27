@@ -73,3 +73,14 @@ RM の EHR IM(https://specifications.openehr.org/releases/RM/latest/ehr.html、R
 - bug: 同じ subject で `POST` すると 409、EHR の数は増えない(いまは 201)
 - (a) なら bug ではなく enhancement: 同じ subject で `PUT` すると 409
 - regression pin: 匿名の EHR は何度でも作れる。`ehr_id` の重複の `PUT` は、これまでどおり 409
+
+## 7. ゲートの回答と実装(R-20261127-8)
+
+- 回答: 3 点とも推奨のとおり。PUT も 409、DB の制約は足さない(すり抜けは Known limitations に書く)、409 の本文に既にある `ehr_id` を入れる
+- 実装: 判定は `OpenehrRails::Rm::EhrCreation`(spec はここに書く)。controller の `create`・`upsert` は、その結果を状態コードに写すだけ
+- 実装の細目(挙動の方針は足していない):
+  - 確かめる順は、`ehr_id` の重複(PUT)が先、subject の重複があと
+  - `ehr_id` の重複の 409 の本文は、これまでどおり `{ "error": ... }` だけ(`ehr_ids` を足さない)
+  - subject を比べるのは、id と namespace の両方があるときだけ(片方だけのときも、匿名と同じに扱う)
+  - `ehr_ids` は古い順(`time_created`、同じなら `id`)。#95 の GET の 409 とそろえる
+- Red: 3 つ(POST の重複 2 つ〔bug〕、PUT の重複 1 つ〔enhancement〕)。いまの挙動を class に移したところで落ちることを確かめてから直した
