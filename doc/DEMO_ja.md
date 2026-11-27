@@ -1,5 +1,7 @@
 # openEHR テンプレートから Rails アプリを作るデモ（手順書）
 
+英語版: [DEMO.md](DEMO.md)（英語が主、この日本語版は附属）。
+
 このドキュメントは、`openehr-rails` gem を使って **openEHR Operational
 Template (.opt) から Rails のリソース（model / migration / controller /
 views / i18n / FHIR プロファイル）を自動生成し、動くアプリとして提示する**
@@ -11,7 +13,7 @@ views / i18n / FHIR プロファイル）を自動生成し、動くアプリと
 |---|---|---|---|
 | BMI 計算 (`bmi_calculation`) | OBSERVATION | DV_QUANTITY（数値＋単位）/ DV_TEXT | `/bmi_calculations` |
 | 問題リスト (`ProblemList`) | EVALUATION | DV_CODED_TEXT（コード化）/ DV_DATE_TIME | `/problemlists` |
-| 血圧 (`patient_blood_pressure`) | OBSERVATION | DV_QUANTITY（脈拍＋収縮期/拡張期）/ 複数アーキタイプ | `/patient_blood_pressures` |
+| 血圧 (`patient_blood_pressure.v1`) | OBSERVATION | DV_QUANTITY（脈拍＋収縮期/拡張期）/ 複数アーキタイプ | `/patient_blood_pressures` |
 
 これにより「数値中心のテンプレート」「コード化テキスト＋日時のテンプレート」
 「複数アーキタイプを束ねたバイタルサインのテンプレート」が同一アプリ内で共存し、
@@ -32,23 +34,23 @@ CRUD 画面・管理 UI・FHIR R5 facade が動く様子を確認できます。
   `openehr_rm_*` テーブル（型付きノードグラフ）へ永続化する。
 - 各カラムは `FIELD_MAP` で openEHR の RM パス・データ型と結び付いている。
 - 管理 UI (`/openehr`) から OPT をアップロードして実行時生成できる。
-- 同じデータを **HL7 FHIR R5** の Observation として読み書きできる。
+- 同じデータを **HL7 FHIR R5** のリソース（Observation、問題リストは Condition）として読める（Observation は書き込みも可）。
 
 ---
 
 ## 2. 前提環境
 
-- Ruby 3.4 系（動作確認: 3.4.4）
-- Bundler / Rails 8 系（`gem install rails`）
+- Ruby 3.3 以上（動作確認: 4.0.10）
+- Bundler / Rails 8 系（`gem install rails`。動作確認: 8.1.4.1）
 - SQLite3
 - `openehr-rails` のソース一式（このリポジトリ）
 
 確認:
 
 ```sh
-ruby -v      # ruby 3.4.x
+ruby -v
 bundle -v
-rails -v     # Rails 8.x
+rails -v
 ```
 
 ---
@@ -72,12 +74,15 @@ bin/rails server
 
 | URL | 内容 |
 |---|---|
-| <http://localhost:3000/> | 管理 UI（登録テンプレート一覧 = ルート） |
 | <http://localhost:3000/bmi_calculations> | BMI の CRUD 画面 |
 | <http://localhost:3000/problemlists> | 問題リストの CRUD 画面 |
 | <http://localhost:3000/patient_blood_pressures> | 血圧の CRUD 画面 |
 | <http://localhost:3000/openehr> | 管理 UI（テンプレート管理 / 実行時生成） |
+| <http://localhost:3000/openehr/query> | AQL クエリコンソール |
+| <http://localhost:3000/openehr/ehrs> | 患者タイムライン |
 | <http://localhost:3000/openehr/fhir/metadata> | FHIR CapabilityStatement |
+
+`/` は Rails の既定のページです（デモはルートのルートを定義しません）。
 
 `demo/` は再現可能なため git では追跡しません（`.gitignore` に登録済み）。
 作り直したいときは `demo/` を消して再実行すれば、毎回同じ結果になります。
@@ -135,34 +140,46 @@ bin/rails db:seed     # テンプレートを openehr_templates へ登録
 ```
 Generating scaffold for template: bmi_calculation
 Model name: BmiCalculation
+      create  app/templates/operational/bmi_calculation.opt
+      append  db/seeds.rb
       create  app/models/bmi_calculation.rb
       create  db/migrate/XXXXXXXXXXXXXX_create_bmi_calculations.rb
       create  app/controllers/bmi_calculations_controller.rb
       create  app/views/bmi_calculations/{index,show,new,edit,_form}.html.erb
       create  config/locales/bmi_calculation.en.yml
        route  resources :bmi_calculations
-      create  app/fhir/profiles/openehr-observation-height-v2.json
-      create  app/fhir/profiles/openehr-observation-body-weight-v2.json
-      create  app/fhir/profiles/openehr-observation-body-mass-index-v2.json
+      create  spec/requests/bmi_calculations_spec.rb
+      create  app/fhir/profiles/openehr-bmi-calculation-observation-height-v2.json
+      create  app/fhir/profiles/openehr-bmi-calculation-observation-body-weight-v2.json
+      create  app/fhir/profiles/openehr-bmi-calculation-observation-body-mass-index-v2.json
 ```
 
-### 4.4 問題リストテンプレートを scaffold（2 つ目のリソース）
+プロファイルの id にはテンプレートの id が入ります（同じアーキタイプが 2 つのテンプレートにあれば、プロファイルも 2 つ）。
+
+### 4.4 問題リストと血圧のテンプレートを scaffold
 
 ```sh
 bin/rails generate openehr:scaffold ../demo_assets/templates/problem_list.opt --fhir
 bin/rails db:migrate
 bin/rails db:seed
+
+bin/rails generate openehr:scaffold ../demo_assets/templates/patient_blood_pressure.opt --fhir
+bin/rails db:migrate
+bin/rails db:seed
 ```
 
-`Model name: Problemlist` / `route resources :problemlists` /
-`app/fhir/profiles/openehr-evaluation-problem-diagnosis-v1.json` が生成されます。
+`Problemlist`（`resources :problemlists`、
+`app/fhir/profiles/openehr-problemlist-evaluation-problem-diagnosis-v1.json`）と
+`PatientBloodPressure`（`resources :patient_blood_pressures`、アーキタイプごとに 1 つのプロファイル）が生成されます。
 
 ### 4.5 デモ用サンプルデータの投入
 
 ```sh
 bin/rails runner ../demo_assets/demo_seed.rb
-# => [demo_seed] BmiCalculation: 3 records
+# => [demo_seed] BmiCalculation: 4 records
 #    [demo_seed] Problemlist: 3 records
+#    [demo_seed] PatientBloodPressure: 3 records
+#    [demo_seed] Ehr: 3 records
 ```
 
 ---
@@ -259,7 +276,7 @@ bin/rails runner 'r=BmiCalculation.first; puts r.rm_composition.keys.inspect'
 
 ## 6. CRUD 画面の確認
 
-- <http://localhost:3000/bmi_calculations> — 一覧（seed の 3 件: BMI 22.5 / 19.2 / 29.3）。
+- <http://localhost:3000/bmi_calculations> — 一覧（seed の 4 件: patient-001 の 2 件 BMI 22.7 / 22.5、patient-002 の 19.2、patient-003 の 29.3）。
   「New」から数値を入力して新規作成、編集・削除も可能。
 - <http://localhost:3000/problemlists> — 問題リスト（Hypertension / Type 2
   diabetes mellitus / Suspected asthma）。診断確実性は Suspected / Confirmed の
@@ -267,8 +284,6 @@ bin/rails runner 'r=BmiCalculation.first; puts r.rm_composition.keys.inspect'
 - <http://localhost:3000/patient_blood_pressures> — 血圧（seed の 3 件:
   120/80・148/92・110/70、脈拍 72/88/60）。脈拍・収縮期・拡張期がそれぞれ
   単位付き（/min・mm[Hg]）の数値フィールドとして入力できる。
-
-> 📷 マニュアル掲載時はここに一覧・新規フォームのスクリーンショットを挿入してください。
 
 ---
 
@@ -285,7 +300,7 @@ bin/rails runner 'r=BmiCalculation.first; puts r.rm_composition.keys.inspect'
   `rails g openehr:fhir_profile <URL>` も同様に URL を直接渡せます。
   リダイレクト追従・タイムアウト・サイズ上限・スキーム制限は
   `OpenehrRails::Opt::RemoteFetcher` が担当）。
-- 「Generate UI」ボタンで、**実行中のアプリ内**で scaffold ジェネレータを起動
+- 「Generate UI」ボタン（まだ scaffold していないテンプレートに出る）で、**実行中のアプリ内**で scaffold ジェネレータを起動
   （ファイル生成 → マイグレーション → ルート再読込）。サーバを再起動せずに
   新しいリソースが使えるようになります。
 
@@ -298,33 +313,41 @@ bin/rails runner 'r=BmiCalculation.first; puts r.rm_composition.keys.inspect'
 ## 8. HL7 FHIR R5 facade の確認
 
 エンジンは `<mount>/fhir`（既定 `/openehr/fhir`）に FHIR R5 API を提供します。
-openEHR の OBSERVATION エントリ（BMI の各項目）が FHIR Observation として
-公開されます。
+エントリは、そのプロファイルが表すリソースとして公開されます。OBSERVATION の
+エントリ（BMI、血圧）は Observation、問題リストの problem_diagnosis は Condition です。
 
 ### 8.1 CapabilityStatement
 
 ```sh
 curl -s http://localhost:3000/openehr/fhir/metadata | head
 # {"resourceType":"CapabilityStatement","status":"active",...,"fhirVersion":"5.0.0",...}
+# rest[0].resource: Observation（プロファイル 5。read・search-type・create。code・subject）
+#                   Condition  （プロファイル 1。read・search-type。category・subject）
 ```
 
 ### 8.2 StructureDefinition（生成プロファイル）
 
 ```sh
-curl -s http://localhost:3000/openehr/fhir/StructureDefinition/openehr-observation-height-v2
+curl -s http://localhost:3000/openehr/fhir/StructureDefinition/openehr-bmi-calculation-observation-height-v2
 ```
 
 ### 8.3 Observation 検索
 
 ```sh
 curl -s http://localhost:3000/openehr/fhir/Observation
-# {"resourceType":"Bundle","type":"searchset","total":12,
+# {"resourceType":"Bundle","type":"searchset","total":18,
 #  "entry":[{"resource":{"resourceType":"Observation",...,
 #    "valueQuantity":{"value":170.0,"unit":"cm",...}}}, ...]}
 
 # アーキタイプ（code）で絞り込み
 curl -s "http://localhost:3000/openehr/fhir/Observation?code=openEHR-EHR-OBSERVATION.height.v2"
+
+# 問題リストは Condition（アーキタイプの coding がある category で絞り込み）
+curl -s "http://localhost:3000/openehr/fhir/Condition?category=openEHR-EHR-EVALUATION.problem_diagnosis.v1"
 ```
+
+`Condition.clinicalStatus` は FHIR R5 で必須ですが、アーキタイプには記録されません。
+facade が付けます（解決の日時が無ければ `unknown`、あれば `inactive`）。README の FHIR の節を参照。
 
 ### 8.4 Observation 作成（FHIR-in / openEHR-stored）
 
@@ -352,8 +375,10 @@ bin/rails runner 'r=BmiCalculation.where.not(height: nil).last; \
 
 > ⚠️ 既知の制約: `body_mass_index` のように **複数項目を持つアーキタイプ**へ
 > POST する場合は FHIR `component[]` 形式が必要です。`valueQuantity` 単体で
-> POST するとレコードは作られますが型カラムには値が入りません。デモでは
-> 単一項目の身長 (`height.v2`) を使った例を推奨します。
+> POST すると、値の入らないレコードが作られ、応答は 400（OperationOutcome
+> `undefined method '[]' for nil`）です。デモでは単一項目の身長 (`height.v2`)
+> を使った例を推奨します。作成できるのは Observation だけで、Condition の
+> アーキタイプのコードでは 422 です。
 
 ---
 
@@ -365,7 +390,8 @@ bin/rails runner 'r=BmiCalculation.where.not(height: nil).last; \
 Language）を実行できる管理画面です。テキストエリアにクエリを入力して
 「Run query」を押すと、`POST /openehr/v1/query/aql`（下記 10 節）を叩いて
 結果を表として表示します。既定で入力されている例（身長の値を全 EHR から
-横断検索）をそのまま実行できます。
+横断検索）をそのまま実行できます。URL で問いを渡して開くこともできます
+（`/openehr/query?q=...&query_parameters=...`。開いただけでは実行しません）。
 
 クエリは `OpenehrRails::Aql.execute` / `Model.aql` と同じ実行エンジンを通る
 ため、実行できないクエリは事前に検証され、分かりやすいエラーメッセージが
@@ -405,14 +431,15 @@ QUERY・EHR・COMPOSITION の 3 リソースを提供します。
 # QUERY: AQL を JSON で実行
 curl -s -G http://localhost:3000/openehr/v1/query/aql \
   --data-urlencode 'q=SELECT o/data[at0001]/events[at0002]/data[at0003]/items[at0004]/value/magnitude AS height FROM EHR e CONTAINS COMPOSITION c CONTAINS OBSERVATION o[openEHR-EHR-OBSERVATION.height.v2]'
-# => {"q":"...","columns":[{"name":"height"}],"rows":[[170.0],[158.0],...]}
+# => {"q":"...","columns":[{"name":"height"}],"rows":[[170.0],[170.0],[158.0],[180.0]]}
 
 # EHR: 新規作成（サーバ生成 ehr_id）
 curl -s -X POST http://localhost:3000/openehr/v1/ehr -d '{}' -H 'Content-Type: application/json'
 # => 201 Created, Location: .../v1/ehr/<uuid>
 
-# EHR: 参照
+# EHR: 参照、subject で引く
 curl -s http://localhost:3000/openehr/v1/ehr/patient-001
+curl -s "http://localhost:3000/openehr/v1/ehr?subject_id=<id>&subject_namespace=<namespace>"
 
 # COMPOSITION: 参照（bare uid でも versioned uid = "uid::system::n" でも解決）
 curl -s http://localhost:3000/openehr/v1/ehr/patient-001/composition/<uid>
@@ -421,13 +448,13 @@ curl -s http://localhost:3000/openehr/v1/ehr/patient-001/composition/<uid>
 `PUT .../composition/:uid` は `If-Match: "<uid>::<system_id>::<version>"`
 ヘッダが現在の版と一致しないと `412 Precondition Failed` を返します
 （openEHR REST API の楽観的排他制御）。`DELETE` は物理削除ではなく
-`Version::LIFECYCLE_DELETED` を付与する論理削除です。
+`Version::LIFECYCLE_DELETED` を付与する論理削除です。同じ subject の EHR が既にあるときの EHR の作成は 409 です。
 
 > ⚠️ 既知の制約: COMPOSITION の作成/更新は、Storable が生成する正準 JSON と
 > 同じ形（entry 直下に `language`/`encoding`/`subject` を含まない）しか
 > 受理しません。第三者が openEHR 完全準拠の JSON（entry レベルに
-> `language`/`encoding`/`subject` を含む）を送ると `archetype_details` 等の
-> 解釈でエラーになります。
+> `language`/`encoding`/`subject` を含む）を送ると 400 になります
+> （例: `unknown RM node type "CODE_PHRASE"`）。
 
 ---
 
@@ -460,5 +487,6 @@ demo_assets/
   templates/patient_blood_pressure.opt 題材 OPT（血圧 / OBSERVATION・複数アーキタイプ）
   demo_seed.rb                    デモ用サンプルデータ投入スクリプト
 demo/                          スクリプトが生成する Rails アプリ（git 非追跡）
-doc/DEMO_ja.md                本書
+doc/DEMO.md                   英語版（主）
+doc/DEMO_ja.md                本書（日本語の附属）
 ```

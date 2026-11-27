@@ -246,7 +246,7 @@ cd demo && bin/rails server          # http://localhost:3000
 
 For the steps in detail, what is generated, the admin UI and how to check
 the FHIR R5 facade, see the walkthrough in
-[doc/DEMO_ja.md](doc/DEMO_ja.md) (in Japanese). `demo/` can be rebuilt at
+[doc/DEMO.md](doc/DEMO.md) (Japanese: [doc/DEMO_ja.md](doc/DEMO_ja.md)). `demo/` can be rebuilt at
 any time, so it is not tracked in git.
 
 ## License
