@@ -6,7 +6,7 @@ module OpenehrRails
   # ResourceRegistry. Created resources are converted to openEHR RM and
   # stored canonically by the backing Storable model. Records of templates
   # registered at runtime are read from the RM graph (#101); search and read
-  # are decided in Fhir::ObservationQuery.
+  # are decided in Fhir::ResourceQuery.
   #
   # Mounted under the admin engine, so the FHIR base URL is
   # <mount-point>/fhir (e.g. /openehr/fhir).
@@ -33,26 +33,30 @@ module OpenehrRails
     end
 
     # GET /fhir/Observation?code=<archetype_id>&subject=<id>
+    # GET /fhir/Condition?category=<archetype_id>&subject=<id>  (#104)
+    # The archetype is matched on the element that carries its coding.
     def search
-      observations = OpenehrRails::Fhir::ObservationQuery.new(code: params[:code], subject: params[:subject]).search
+      resources = OpenehrRails::Fhir::ResourceQuery.new(resource_type: resource_type,
+                                                        archetype_id: params[archetype_param],
+                                                        subject: params[:subject]).search
 
-      render_fhir(searchset_bundle(observations))
+      render_fhir(searchset_bundle(resources))
     end
 
-    # GET /fhir/Observation/:id  (id = "<recordId>-<archetypeSlug>", or
+    # GET /fhir/<Type>/:id  (id = "<recordId>-<archetypeSlug>", or
     # "c<uuid hex>-<entry index>" for a runtime record)
     def show
-      observation = OpenehrRails::Fhir::ObservationQuery.find(params[:id])
-      return render_not_found('Observation', params[:id]) unless observation
+      resource = OpenehrRails::Fhir::ResourceQuery.find(params[:id], resource_type: resource_type)
+      return render_not_found(resource_type, params[:id]) unless resource
 
-      render_fhir observation
+      render_fhir resource
     end
 
     # POST /fhir/Observation
     def create
       resource = parse_body
       code = resource.dig('code', 'coding', 0, 'code')
-      entry = OpenehrRails::Fhir::ObservationQuery.creatable_entry(code)
+      entry = OpenehrRails::Fhir::ResourceQuery.creatable_entry(code)
 
       attrs = OpenehrRails::Fhir::Deserializer.new(entry.model, resource).attributes
       record = entry.model.create!(attrs)
@@ -65,17 +69,26 @@ module OpenehrRails
 
     private
 
+    # Set by the routes (defaults: { resource_type: ... }).
+    def resource_type
+      params[:resource_type] || 'Observation'
+    end
+
+    def archetype_param
+      OpenehrRails::Fhir::CapabilityStatement.archetype_search_param(resource_type)
+    end
+
     def parse_body
       raw = request.body.read
       raw.blank? ? {} : JSON.parse(raw)
     end
 
-    def searchset_bundle(observations)
+    def searchset_bundle(resources)
       {
         resourceType: 'Bundle',
         type: 'searchset',
-        total: observations.size,
-        entry: observations.map { |o| { resource: o } }
+        total: resources.size,
+        entry: resources.map { |resource| { resource: resource } }
       }
     end
 

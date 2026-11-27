@@ -19,9 +19,12 @@ OpenehrRails::Engine.routes.draw do
   scope :fhir, defaults: { format: :json } do
     get 'metadata', to: 'fhir#metadata'
     get 'StructureDefinition/:id', to: 'fhir#structure_definition'
-    get 'Observation', to: 'fhir#search'
+    get 'Observation', to: 'fhir#search', defaults: { resource_type: 'Observation' }
     post 'Observation', to: 'fhir#create'
-    get 'Observation/:id', to: 'fhir#show'
+    get 'Observation/:id', to: 'fhir#show', defaults: { resource_type: 'Observation' }
+    # Entries mapped to Condition (problem_diagnosis, #104): read and search only.
+    get 'Condition', to: 'fhir#search', defaults: { resource_type: 'Condition' }
+    get 'Condition/:id', to: 'fhir#show', defaults: { resource_type: 'Condition' }
   end
 
   # openEHR REST API (base URL: <mount-point>/v1). uid path segments carry

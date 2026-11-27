@@ -32,29 +32,41 @@ module OpenehrRails
         @composition = composition
       end
 
-      def observations(entries)
+      def resources(entries)
         uuid = self.class.uuid_of(@composition)
         return [] unless uuid
 
         canonical = @composition.to_canonical_hash.deep_stringify_keys
         entries.filter_map do |entry|
-          values, units = read(canonical, entry)
-          ResourceBuilder.new(entry, values: values, units: units, id: "c#{uuid.delete('-')}-#{entry.index}",
-                                     subject_ehr_id: @composition.ehr&.ehr_id,
-                                     effective_at: @composition.context_start_time).build
+          read = read(canonical, entry)
+          ResourceBuilder.new(entry, **read, id: "c#{uuid.delete('-')}-#{entry.index}",
+                                             subject_ehr_id: @composition.ehr&.ehr_id,
+                                             effective_at: @composition.context_start_time).build
         end
       end
 
       private
 
+      # values, plus what the record itself says about them: DV_QUANTITY
+      # units, and a coded value's text and terminology (#104).
       def read(canonical, entry)
-        entry.fields.each_with_object([{}, {}]) do |field, (values, units)|
+        read = { values: {}, units: {}, displays: {}, terminologies: {} }
+        entry.fields.each do |field|
           node = OpenehrRails::Storable.value_node(canonical, field)
           next if node.nil?
 
-          values[field[:name]] = OpenehrRails::Storable.attribute_value(node, field)
-          units[field[:name]] = node['units'] if node.is_a?(Hash) && node['units']
+          name = field[:name]
+          read[:values][name] = OpenehrRails::Storable.attribute_value(node, field)
+          next unless node.is_a?(Hash)
+
+          read[:units][name] = node['units'] if node['units']
+          next unless node['defining_code']
+
+          read[:displays][name] = node['value'] if node['value']
+          terminology = node.dig('defining_code', 'terminology_id', 'value')
+          read[:terminologies][name] = terminology if terminology
         end
+        read
       end
     end
   end

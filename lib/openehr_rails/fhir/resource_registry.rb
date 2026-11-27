@@ -10,7 +10,6 @@ module OpenehrRails
     #   survive code reloading in development.
     # - :rm_graph (#101) -- templates from Fhir.template_source that no
     #   scaffolded model covers; their records are read from the RM graph.
-    #   Only Observation entries for now (plan 3.3).
     module ResourceRegistry
       ARCHETYPE_SYSTEM = 'http://openehr.org/ckm/archetypes'
 
@@ -24,6 +23,13 @@ module OpenehrRails
 
         def runtime?
           source == :rm_graph
+        end
+
+        # Served only as the resource its profile describes (#104): an
+        # Observation entry, or one with a TypeMap::ENTRY_ELEMENT_MAPS row
+        # (the same rule as TypeMap.assert_supported!).
+        def servable?
+          resource_type == 'Observation' || !TypeMap.element_map_for(archetype_id).nil?
         end
       end
 
@@ -81,12 +87,10 @@ module OpenehrRails
 
       def runtime_entries_for(template)
         template.fields.group_by { |field| field[:archetype_id] }.each_with_index.filter_map do |(archetype_id, fields), index|
-          resource_type = TypeMap.resource_for_entry(fields.first[:entry_rm_type])
-          next unless resource_type == 'Observation'
-
-          Entry.new(model: nil, archetype_id: archetype_id, rm_type: fields.first[:entry_rm_type],
-                    resource_type: resource_type, fields: fields, source: :rm_graph,
-                    template_id: template.template_id, index: index)
+          entry = Entry.new(model: nil, archetype_id: archetype_id, rm_type: fields.first[:entry_rm_type],
+                            resource_type: TypeMap.resource_for_entry(fields.first[:entry_rm_type]),
+                            fields: fields, source: :rm_graph, template_id: template.template_id, index: index)
+          entry if entry.servable?
         end
       end
 

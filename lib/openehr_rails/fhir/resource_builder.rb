@@ -2,34 +2,57 @@
 
 module OpenehrRails
   module Fhir
-    # Builds one HL7 FHIR R5 Observation for one archetype entry from plain
+    # Builds the HL7 FHIR R5 resource for one archetype entry from plain
     # values, independent of where the record lives (#101): a scaffolded
     # Storable model (Serializer) or a composition in the RM graph
-    # (RuntimeRecord). Single-leaf entries use value[x]; multi-leaf entries
-    # use component[].
+    # (RuntimeRecord).
+    #
+    # The resource is the one the entry's profile describes (#104):
+    # - Observation entries: single-leaf entries use value[x], multi-leaf
+    #   entries use component[];
+    # - entries with a TypeMap::ENTRY_ELEMENT_MAPS row (problem_diagnosis ->
+    #   Condition): each mapped leaf on its element, the archetype coding on
+    #   the :anchor element; unmapped leaves are left out;
+    # - any other entry: nothing (nil), as for its profile.
     #
     #   entry          - ResourceRegistry::Entry (archetype_id, fields)
     #   values         - {field name => value}; a field is "present" when its
     #                    value is truthy (as before #101)
     #   units          - {field name => unit} overriding the field's own :units
+    #   displays       - {field name => display} for coded values, overriding
+    #                    the OPT's code_labels (the record's own text)
+    #   terminologies  - {field name => terminology} overriding the field's
     #   id             - the resource id
     #   subject_ehr_id - becomes subject Patient/<ehr_id> when present
-    #   effective_at   - Time for effectiveDateTime, or nil
+    #   effective_at   - Time for effectiveDateTime (Observation), or nil
     class ResourceBuilder
       ARCHETYPE_SYSTEM = ResourceRegistry::ARCHETYPE_SYSTEM
       UCUM_SYSTEM = 'http://unitsofmeasure.org'
 
-      def initialize(entry, values:, id:, units: {}, subject_ehr_id: nil, effective_at: nil)
+      # rubocop:disable-next Metrics/ParameterLists -- keyword arguments, each optional but values/id
+      def initialize(entry, values:, id:, units: {}, displays: {}, terminologies: {}, subject_ehr_id: nil,
+                     effective_at: nil)
         @entry = entry
         @values = values
         @units = units
+        @displays = displays
+        @terminologies = terminologies
         @id = id
         @subject_ehr_id = subject_ehr_id
         @effective_at = effective_at
       end
 
-      # nil when no field of the entry has a value.
+      # nil when no field of the entry has a value, or the entry is not served.
       def build
+        return build_observation if @entry.resource_type == 'Observation'
+
+        element_map = TypeMap.element_map_for(@entry.archetype_id)
+        element_map ? build_mapped(element_map) : nil
+      end
+
+      private
+
+      def build_observation
         fields = @entry.fields.select { |field| @values[field[:name]] }
         return nil if fields.empty?
 
@@ -37,9 +60,9 @@ module OpenehrRails
           resourceType: 'Observation',
           id: @id,
           status: 'final',
-          code: { coding: [{ system: ARCHETYPE_SYSTEM, code: @entry.archetype_id }] }
+          code: { coding: [archetype_coding] }
         }
-        observation[:subject] = { reference: "Patient/#{@subject_ehr_id}" } if @subject_ehr_id.present?
+        observation[:subject] = subject if subject
         observation[:effectiveDateTime] = @effective_at.iso8601 if @effective_at
 
         if fields.size == 1
@@ -50,7 +73,42 @@ module OpenehrRails
         observation
       end
 
-      private
+      # problem_diagnosis -> Condition (multi-leaf-non-observation-plan 8.1).
+      def build_mapped(element_map)
+        leaves = @entry.fields.filter_map do |field|
+          leaf = element_map[:leaves][field[:node_id]]
+          [leaf[:element], field] if leaf && @values[field[:name]]
+        end
+        return nil if leaves.empty?
+
+        resource = { resourceType: @entry.resource_type, id: @id }
+        resource[element_map[:anchor].to_sym] = [{ coding: [archetype_coding] }]
+        resource[:subject] = subject if subject
+        leaves.each { |element, field| resource[element.to_sym] = element_value(field) }
+        resource
+      end
+
+      def archetype_coding
+        { system: ARCHETYPE_SYSTEM, code: @entry.archetype_id }
+      end
+
+      def subject
+        { reference: "Patient/#{@subject_ehr_id}" } if @subject_ehr_id.present?
+      end
+
+      # A mapped leaf's value: coded and text leaves become CodeableConcept,
+      # date/time leaves the recorded string.
+      def element_value(field)
+        case field[:rm_type]
+        when 'DV_CODED_TEXT' then fhir_value(field)
+        when 'DV_TEXT' then { text: @values[field[:name]].to_s }
+        else date_time_string(@values[field[:name]])
+        end
+      end
+
+      def date_time_string(value)
+        value.respond_to?(:iso8601) ? value.iso8601 : value.to_s
+      end
 
       def value_entry(field)
         { value_key(field) => fhir_value(field) }
@@ -74,8 +132,8 @@ module OpenehrRails
           units = @units[field[:name]] || field[:units]
           { value: value, unit: units, system: UCUM_SYSTEM, code: units }
         when 'DV_CODED_TEXT'
-          { coding: [{ system: field[:terminology_id] || 'local', code: value,
-                       display: field[:code_labels]&.fetch(value, value) }] }
+          { coding: [{ system: @terminologies[field[:name]] || field[:terminology_id] || 'local', code: value,
+                       display: @displays[field[:name]] || field[:code_labels]&.fetch(value, value) || value }] }
         when 'DV_COUNT'
           value.to_i
         when 'DV_BOOLEAN'

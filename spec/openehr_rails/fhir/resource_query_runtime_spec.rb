@@ -16,7 +16,7 @@ require_relative '../storable_spec_model'
 #   - one template per template_id; a repeated template_id is a configuration
 #     error naming it (answer 3);
 #   - stages 1-3 serve Observation entries only (plan 3.3).
-describe OpenehrRails::Fhir::ObservationQuery do
+describe OpenehrRails::Fhir::ResourceQuery do
   let(:bmi_opt) { File.read(File.expand_path('../../generators/templates/bmi_calculation.opt', __dir__)) }
   let(:problem_list_opt) { File.read(File.expand_path('../../templates/problem_list.opt', __dir__)) }
   let(:height_code) { 'openEHR-EHR-OBSERVATION.height.v2' }
@@ -42,7 +42,7 @@ describe OpenehrRails::Fhir::ObservationQuery do
   end
 
   def search(code: nil, subject: nil)
-    OpenehrRails::Fhir::ObservationQuery.new(code: code, subject: subject).search
+    described_class.new(resource_type: 'Observation', archetype_id: code, subject: subject).search
   end
 
   describe 'search' do
@@ -110,7 +110,7 @@ describe OpenehrRails::Fhir::ObservationQuery do
     it 'finds one runtime record by c<uuid hex>-<entry index>' do # enhancement
       commit_runtime(uid: uuid, body_weight: 65.0)
 
-      observation = described_class.find("c#{hex}-1")
+      observation = described_class.find("c#{hex}-1", resource_type: 'Observation')
 
       expect(observation[:code][:coding].first[:code]).to eq('openEHR-EHR-OBSERVATION.body_weight.v2')
     end
@@ -119,15 +119,15 @@ describe OpenehrRails::Fhir::ObservationQuery do
       commit_runtime(uid: uuid)
       OpenehrRails::Rm::CompositionCommitter.delete(uid: uuid)
 
-      expect(described_class.find("c#{hex}-0")).to be_nil
-      expect(described_class.find('c0000-0')).to be_nil
+      expect(described_class.find("c#{hex}-0", resource_type: 'Observation')).to be_nil
+      expect(described_class.find('c0000-0', resource_type: 'Observation')).to be_nil
     end
 
     it 'still reads a scaffolded record by <record id>-<slug>' do # regression pin
       OpenehrRails::Fhir::ResourceRegistry.register_model(BmiCalculation)
       record = BmiCalculation.create!(height: 160.0, ehr_id: 'ehr-9')
 
-      observation = described_class.find("#{record.id}-openehr-observation-height-v2")
+      observation = described_class.find("#{record.id}-openehr-observation-height-v2", resource_type: 'Observation')
 
       expect(observation[:valueQuantity][:value]).to eq(160.0)
     end
@@ -151,10 +151,25 @@ describe OpenehrRails::Fhir::ObservationQuery do
       expect(profiles.count("urn:openehr:#{height_code}")).to eq(1)
     end
 
-    it 'serves Observation entries only (no Condition until the EVALUATION fix)' do # regression pin
+    # #104 replaced the Observation-only rule of #101 stages 1-3: an entry with a
+    # TypeMap::ENTRY_ELEMENT_MAPS row is served as its mapped resource.
+    it 'serves a mapped EVALUATION entry as a Condition entry' do # enhancement (#104)
       OpenehrRails::Fhir.template_source = -> { [{ template_id: 'ProblemList', opt: problem_list_opt }] }
 
-      expect(OpenehrRails::Fhir::ResourceRegistry.entries).to eq([])
+      expect(OpenehrRails::Fhir::ResourceRegistry.entries.map { |e| [e.archetype_id, e.resource_type] })
+        .to eq([['openEHR-EHR-EVALUATION.problem_diagnosis.v1', 'Condition']])
+    end
+
+    it 'does not serve entries that are neither Observation nor mapped (e.g. INSTRUCTION)' do # regression pin
+      referral_opt = File.read(File.expand_path('../../templates/jp_referral.opt', __dir__))
+      OpenehrRails::Fhir.template_source = -> { [{ template_id: 'jp_referral', opt: referral_opt }] }
+
+      fields = OpenehrRails::Fhir::TemplateSource.templates.first.fields
+      expect(fields.pluck(:entry_rm_type)).to include('INSTRUCTION') # the template has one
+
+      entries = OpenehrRails::Fhir::ResourceRegistry.entries
+      expect(entries.map(&:rm_type)).not_to include('INSTRUCTION')
+      expect(entries.map(&:resource_type).uniq - %w[Observation Condition]).to eq([])
     end
 
     it 'stops on a template_id returned twice, naming it' do # enhancement

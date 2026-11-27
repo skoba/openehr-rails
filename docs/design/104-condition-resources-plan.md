@@ -77,3 +77,17 @@ Issue: skoba/openehr-rails#104(bug)。裁定: R-20261127-15 の 4(起票し、#1
 - enhancement: CapabilityStatement の Condition に `create` が無く、`searchParam` が `category`・`subject`
 - regression pin: Observation の entry の出力は変わらない(`serializer_spec.rb` を変えずに通す)
 - 入口の確かめ: demo に curl(problem list の scaffold の記録と、実行時の記録)
+
+## 5. 実装(R-20261127-15 の 4 のとおり進めた)
+
+- `ResourceRegistry::Entry#servable?`(Observation か、`ENTRY_ELEMENT_MAPS` に行がある)。実行時の entries は、これで選ぶ
+- `ResourceBuilder#build` は、Observation はこれまでどおり、行のある entry は表のとおり、どちらでもない entry は nil
+- `Fhir::ObservationQuery`(#103。未公開)を `Fhir::ResourceQuery`(`resource_type:`)に広げた。1 件の取得はリソースの種類を確かめる
+- 作成の先(`creatable_entry`)は Observation の entry だけ。Condition の archetype のコードで `POST /fhir/Observation` すると 422
+  (いまは problem list の記録を作っていた。Observation の入口から Condition の記録を作らせない)
+- `code.coding.system` は、Observation の coded の値と同じ規則(field の `terminology_id`、無ければ `local`)。
+  ICD-11 の値集合の URI を system にはしない(値集合は code system ではない。別の判断になるので足さない)
+- 実行時の記録の coded の値は、記録の `value` を `display`、`defining_code.terminology_id` を `system` にする(§2.2)
+- Red: いまの挙動のまま `ResourceQuery` に移したところで、新しい spec の 8 例のうち 6 例が落ちた
+  (problem list の記録が Observation で返る、Condition が無い、作成が通る、CapabilityStatement に create が載る)
+- #103 の pin「Observation だけ」は、この修正で置き換わる(spec の注釈に書いた)。INSTRUCTION を出さない pin を足した

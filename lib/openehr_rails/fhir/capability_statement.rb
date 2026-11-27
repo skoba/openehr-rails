@@ -26,23 +26,32 @@ module OpenehrRails
         }
       end
 
+      # The search parameter that narrows a resource type to one archetype:
+      # the element carrying the archetype coding (#104).
+      def archetype_search_param(resource_type)
+        resource_type == 'Observation' ? :code : :category
+      end
+
       def resource_components
-        ResourceRegistry.entries.group_by(&:resource_type).map do |resource_type, entries|
+        ResourceRegistry.entries.select(&:servable?).group_by(&:resource_type).map do |resource_type, entries|
           {
             type: resource_type,
             profile: nil,
             supportedProfile: entries.map { |e| "urn:openehr:#{e.archetype_id}" }.uniq,
-            interaction: [
-              { code: 'read' },
-              { code: 'search-type' },
-              { code: 'create' }
-            ],
+            interaction: interactions(resource_type),
             searchParam: [
-              { name: 'code', type: 'token' },
+              { name: archetype_search_param(resource_type).to_s, type: 'token' },
               { name: 'subject', type: 'reference' }
             ]
           }.compact
         end
+      end
+
+      # Only Observation can be created (#104).
+      def interactions(resource_type)
+        codes = %w[read search-type]
+        codes << 'create' if resource_type == 'Observation'
+        codes.map { |code| { code: code } }
       end
     end
   end
