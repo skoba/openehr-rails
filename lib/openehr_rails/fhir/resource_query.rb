@@ -45,6 +45,15 @@ module OpenehrRails
         entry
       end
 
+      # POST /fhir/Observation: creates the model record the resource maps to
+      # and returns the Observation built from it.
+      def self.create(resource)
+        code = resource.dig('code', 'coding', 0, 'code')
+        entry = creatable_entry(code)
+        record = entry.model.create!(Deserializer.new(entry.model, resource).attributes)
+        Serializer.new(record).observations.find { |o| o[:code][:coding].first[:code] == code }
+      end
+
       def self.find_model(id)
         slug = id.split('-', 2).last
         entry = ResourceRegistry.find_by_slug(slug) # rubocop:disable Rails/DynamicFindBy -- registry lookup, not ActiveRecord

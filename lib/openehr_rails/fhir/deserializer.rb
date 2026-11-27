@@ -23,6 +23,7 @@ module OpenehrRails
         else
           merge_components(entry, attrs)
         end
+        refuse_empty!(entry, attrs)
         attrs
       end
 
@@ -34,6 +35,20 @@ module OpenehrRails
         raise UnmappedResource, "no field maps to Observation.code #{code.inspect}" unless entry
 
         entry
+      end
+
+      # #111: a resource that maps to no value would create an empty record.
+      # Refused (422) before anything is created.
+      def refuse_empty!(entry, attrs)
+        return if entry.fields.any? { |field| attrs.key?(field[:name].to_sym) }
+
+        if entry.fields.size > 1 && !@observation.key?('component')
+          raise UnmappedResource,
+                "#{entry.archetype_id} has #{entry.fields.size} elements; send their values as component[] " \
+                "(code #{entry.fields.map { |f| "#{f[:archetype_id]}##{f[:node_id]}" }.join(', ')})"
+        end
+
+        raise UnmappedResource, "no value in the resource maps to an element of #{entry.archetype_id}"
       end
 
       def merge_components(entry, attrs)

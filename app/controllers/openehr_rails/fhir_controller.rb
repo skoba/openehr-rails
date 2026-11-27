@@ -54,14 +54,7 @@ module OpenehrRails
 
     # POST /fhir/Observation
     def create
-      resource = parse_body
-      code = resource.dig('code', 'coding', 0, 'code')
-      entry = OpenehrRails::Fhir::ResourceQuery.creatable_entry(code)
-
-      attrs = OpenehrRails::Fhir::Deserializer.new(entry.model, resource).attributes
-      record = entry.model.create!(attrs)
-      observation = OpenehrRails::Fhir::Serializer.new(record).observations
-                                                  .find { |o| o[:code][:coding].first[:code] == code }
+      observation = OpenehrRails::Fhir::ResourceQuery.create(parse_body)
 
       response.headers['Location'] = "#{request.path}/#{observation[:id]}"
       render_fhir(observation, status: :created)
