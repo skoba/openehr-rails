@@ -1,7 +1,7 @@
 # #63 DV_DATE_TIME の部分精度とオフセットを保つ(計画。ゲート待ち)
 
 Issue: skoba/openehr-rails#63(anlage の上流候補 21 項)。裁定: R-20261124-16 の作業列 6、R-20261126-3 の 4
-(「計画を出したところでゲート報告」)。状態: **計画。ゲートの回答を待つ。実装には進まない**。
+(「計画を出したところでゲート報告」)。状態: **ゲートの回答は R-20261126-14(6 節)。前半(canonical JSON と to_rm)を実装した。後半(AQL)は上流の修正の公開を待つ**。
 
 - 基準点: openehr-rails master `a5e9a15`、openehr 2.6.1(openehr-ruby#59 は 2.6.0 に入った。タグ `v2.6.0` が修正のコミット `83a1d18` を含む)
 - 「実測」はこのリポジトリの作業ツリーで実行したもの。「推論」は根拠を添える
@@ -84,3 +84,21 @@ jp_referral の `problem_diagnosis_at0077`(DV_DATE_TIME)に文字列を入れて
 - (i) を選んだ場合: 「AQL の SELECT が `2026-03-01` を返す」(bug)
 - regression pin: 全精度の値に対する範囲の WHERE の結果は変わらない。#63 より前に書いた行は、いまの値を返す
 - Upgrade note: 既存の行は元に戻らない。案 B なら migration の手順
+
+## 6. ゲートの回答と、前半の実装(R-20261126-14)
+
+- 回答: 案 A。AQL に元の文字列を渡すのは、上流の修正のあと。canonical JSON と to_rm を先に元の値に戻す。
+  上流の不具合は統括が openehr-ruby のセッションに伝えた(人間の投稿は要らない。4 節の文面は使わない)
+- 上流の状態(2026-11-27、読み取り): 修正は openehr-ruby の #108 で master に入ったが、タグ `v2.7.0` には入っていない
+  (`git log v2.6.1..v2.7.0` に無い)。後半は、修正を含む版の公開を待つ
+- 実装(前半):
+  - `GraphBuilder` は DV_DATE_TIME の行の `text_value` に、commit された ISO 8601 文字列を入れる。`datetime_value` はいまのまま
+  - `DataValues::DvDateTime#original_value` は `text_value` を返し、無ければ(#63 より前の行)`datetime_value.iso8601`。
+    `to_canonical_hash` はこれを使う
+  - `RmObjectBuilder` は既定で `original_value` から `DvDateTime` を組む(`to_rm` が元の値を返す)。
+    回答の 2(AQL はあと)と両立させるため、`normalize_date_times: true` を受け、そのときは `datetime_value` から組む。
+    AQL の `DatasetAdapter` だけがこれを渡す。後半で、この引数ごと外す
+  - `DataValue.matching`(path の値の検索)の文字列の分岐は、DV_DATE_TIME の行の `text_value` に当たらないようにした。
+    以前は当たらなかったので、検索の結果を変えないため(regression pin)
+- 範囲の外: EVENT の `time`、HISTORY の `origin`、context の `start_time` は、ノードと composition の datetime 列にあり、
+  これまでどおり UTC に直る。#63 の対象(ELEMENT の DV_DATE_TIME)ではないので、触っていない
