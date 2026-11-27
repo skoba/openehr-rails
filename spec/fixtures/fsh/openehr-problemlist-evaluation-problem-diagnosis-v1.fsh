@@ -20,3 +20,4 @@ Title: "openEHR Problem diagnosis (ProblemList: openEHR-EHR-EVALUATION.problem_d
 * abatementDateTime only dateTime
 * verificationStatus 0..1
 * verificationStatus only CodeableConcept
+* clinicalStatus ^comment = "Set by the openEHR-Rails facade, not taken from the record: the archetype has no clinical status. unknown (as a null flavor) when the record has no date/time of resolution (at0030); inactive when it has one, because at0030 covers resolution or remission without saying which (inactive also satisfies con-3)."

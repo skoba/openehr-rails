@@ -28,6 +28,16 @@ module OpenehrRails
     class ResourceBuilder
       ARCHETYPE_SYSTEM = ResourceRegistry::ARCHETYPE_SYSTEM
       UCUM_SYSTEM = 'http://unitsofmeasure.org'
+      # Condition.clinicalStatus (1..1, required binding to the R5 value set
+      # condition-clinical): code system and display as THO 3.0.0 defines them.
+      CONDITION_CLINICAL_SYSTEM = 'http://terminology.hl7.org/CodeSystem/condition-clinical'
+      CONDITION_CLINICAL = {
+        'unknown' => 'Unknown',
+        'inactive' => 'Inactive'
+      }.freeze
+      # A FHIR dateTime as recorded: YYYY, YYYY-MM, YYYY-MM-DD, or a full
+      # date-time with seconds and an offset.
+      FHIR_DATE_TIME = /\A\d{4}(-\d{2}(-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2}))?)?)?\z/
 
       # rubocop:disable-next Metrics/ParameterLists -- keyword arguments, each optional but values/id
       def initialize(entry, values:, id:, units: {}, displays: {}, terminologies: {}, subject_ehr_id: nil,
@@ -85,7 +95,17 @@ module OpenehrRails
         resource[element_map[:anchor].to_sym] = [{ coding: [archetype_coding] }]
         resource[:subject] = subject if subject
         leaves.each { |element, field| resource[element.to_sym] = element_value(field) }
+        resource[:clinicalStatus] = clinical_status(resource) if @entry.resource_type == 'Condition'
         resource
+      end
+
+      # Not in the record (the archetype has none); the facade sets it
+      # (R-20261127-24): inactive when a date/time of resolution was recorded
+      # -- it covers resolution or remission, and inactive holds both and
+      # satisfies con-3 -- else unknown, as a null flavor.
+      def clinical_status(resource)
+        code = resource[:abatementDateTime] ? 'inactive' : 'unknown'
+        { coding: [{ system: CONDITION_CLINICAL_SYSTEM, code: code, display: CONDITION_CLINICAL.fetch(code) }] }
       end
 
       def archetype_coding
@@ -106,8 +126,30 @@ module OpenehrRails
         end
       end
 
+      # A FHIR dateTime (R-20261127-24). A valid value stays as recorded. A
+      # value with a time but no offset is read as UTC, as
+      # Observation.effectiveDateTime is (context start time); missing seconds
+      # are filled in; basic-format values become extended. Anything else is
+      # passed on as recorded.
       def date_time_string(value)
-        value.respond_to?(:iso8601) ? value.iso8601 : value.to_s
+        return value.iso8601 if value.respond_to?(:iso8601)
+
+        string = value.to_s
+        return string if string.match?(FHIR_DATE_TIME)
+
+        parts = Date._iso8601(string)
+        return string unless parts[:year] && parts[:mon] && parts[:mday]
+        return format('%<year>04d-%<mon>02d-%<mday>02d', parts) unless parts[:hour]
+
+        time_from(parts, string[/[.,](\d+)/, 1].to_s.length)
+      end
+
+      def time_from(parts, fraction_digits)
+        seconds = (parts[:sec] || 0) + (parts[:sec_fraction] || 0)
+        time = Time.new(parts[:year], parts[:mon], parts[:mday], parts[:hour], parts[:min] || 0, seconds,
+                        parts[:offset] || 0)
+        string = time.iso8601(fraction_digits.clamp(0, 9))
+        parts[:offset] ? string : string.sub(/\+00:00\z/, 'Z')
       end
 
       def value_entry(field)

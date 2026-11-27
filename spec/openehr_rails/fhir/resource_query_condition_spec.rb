@@ -94,11 +94,48 @@ describe OpenehrRails::Fhir::ResourceQuery do
         # system: the field's terminology_id, else 'local' -- the rule coded
         # Observation values already follow (this leaf has a value set, no terminology_id).
         code: { coding: [{ system: 'local', code: 'CA40.0', display: 'CA40.0' }] },
+        # R-20261127-24: set by the facade, not recorded -- no at0030, so unknown.
+        clinicalStatus: { coding: [{ system: 'http://terminology.hl7.org/CodeSystem/condition-clinical',
+                                     code: 'unknown', display: 'Unknown' }] },
         onsetDateTime: '2026-11-01T08:00:00+09:00',
         recordedDate: '2026-11-02',
         verificationStatus: { coding: [{ system: 'local', code: 'at0076',
                                          display: field_map['problem_diagnosis_at0073'][:code_labels]['at0076'] }] }
       )
+    end
+
+    it 'is inactive, with abatementDateTime, when the record has a date/time of resolution (at0030)' do # enhancement
+      resolved = problem_list_model.create!(values.merge('problem_diagnosis_at0030' => '2026-11-10T09:00:00+09:00',
+                                                         'ehr_id' => 'ehr-8'))
+
+      condition = search('Condition', subject: 'Patient/ehr-8').sole
+
+      expect(condition[:id]).to start_with("#{resolved.id}-")
+      expect(condition[:abatementDateTime]).to eq('2026-11-10T09:00:00+09:00')
+      expect(condition[:clinicalStatus]).to eq(
+        coding: [{ system: 'http://terminology.hl7.org/CodeSystem/condition-clinical', code: 'inactive',
+                   display: 'Inactive' }]
+      )
+    end
+
+    # R-20261127-24 "確かめること": FHIR dateTime needs seconds and an offset
+    # once a time is given. A value without an offset is read as UTC, as
+    # Observation.effectiveDateTime is; a valid value or a (partial) date
+    # stays as recorded.
+    {
+      '2026-11-01T08:00:00' => '2026-11-01T08:00:00Z',
+      '2026-11-01T08:00' => '2026-11-01T08:00:00Z',
+      '2026-11-01T08:00+09:00' => '2026-11-01T08:00:00+09:00',
+      '20261101T080000+0900' => '2026-11-01T08:00:00+09:00',
+      '2026-11-01T08:00:00.5Z' => '2026-11-01T08:00:00.5Z',
+      '2026-11-01T08:00:00.50' => '2026-11-01T08:00:00.50Z',
+      '2026-11-01' => '2026-11-01'
+    }.each do |recorded, served|
+      it "serves onset #{recorded} as the FHIR dateTime #{served}" do # enhancement
+        problem_list_model.create!(values.merge('problem_diagnosis_at0077' => recorded, 'ehr_id' => 'ehr-7'))
+
+        expect(search('Condition', subject: 'Patient/ehr-7').sole[:onsetDateTime]).to eq(served)
+      end
     end
 
     it 'is read by id as a Condition only' do # enhancement
@@ -127,6 +164,17 @@ describe OpenehrRails::Fhir::ResourceQuery do
       expect(condition[:id]).to eq("c#{uuid.delete('-')}-0")
       expect(condition[:code][:coding].first).to include(code: 'CA40.0', display: '肺炎')
       expect(search('Observation')).to eq([])
+    end
+
+    it 'gets clinicalStatus unknown without at0030, inactive with it' do # enhancement
+      commit_runtime
+      expect(search('Condition').sole.dig(:clinicalStatus, :coding, 0, :code)).to eq('unknown')
+
+      values['problem_diagnosis_at0030'] = '2026-11-10T09:00:00+09:00'
+      commit_runtime
+      condition = search('Condition').sole
+      expect([condition.dig(:clinicalStatus, :coding, 0, :code), condition[:abatementDateTime]])
+        .to eq(['inactive', '2026-11-10T09:00:00+09:00'])
     end
   end
 

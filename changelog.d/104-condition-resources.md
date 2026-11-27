@@ -18,6 +18,23 @@
   of runtime records carry the record's own text as `display` and its
   terminology as `system` (#104).
 
+- Conditions carry `clinicalStatus` (required in FHIR R5), a value the facade
+  sets rather than one from the record: `unknown` (as a null flavor) when the
+  record has no date/time of resolution (at0030), `inactive` with
+  `abatementDateTime` when it has one (at0030 covers resolution or remission,
+  so not `resolved`; `inactive` satisfies con-3). System
+  `http://terminology.hl7.org/CodeSystem/condition-clinical`. The generated
+  StructureDefinition and FSH note this on `clinicalStatus` (comment only, no
+  binding or fixed value) (#104).
+- Condition date/time elements are FHIR dateTimes: a value with a time but no
+  offset is read as UTC, as `Observation.effectiveDateTime` is, and missing
+  seconds are filled in; valid values and dates stay as recorded (#104).
+
+### Known limitations
+- `Condition.verificationStatus` carries the archetype's local at-codes, which
+  do not satisfy R5's required binding to `condition-ver-status`; at0003 →
+  `recordedDate` is an approximation (both as decided for the profiles) (#104).
+
 ### Upgrade notes
 - Problem-list records (problem_diagnosis) disappear from
   `GET /fhir/Observation` and appear at `GET /fhir/Condition`. A client that

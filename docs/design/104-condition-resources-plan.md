@@ -34,6 +34,7 @@ Issue: skoba/openehr-rails#104(bug)。裁定: R-20261127-15 の 4(起票し、#1
 | at0003 | `recordedDate` | 記録の文字列 |
 | at0030 | `abatementDateTime` | 記録の文字列 |
 | at0073 | `verificationStatus` | CodeableConcept(local の at-code のまま。condition-ver-status への写しはしない。§8.2 と同じ) |
+| (facade が付ける) | `clinicalStatus` | at0030 が無ければ `unknown`(null flavor に当たるもの)、あれば `inactive`。system は `http://terminology.hl7.org/CodeSystem/condition-clinical`。記録にある値ではない(R-20261127-24) |
 
 - 表に無い leaf(例: problem_list.opt の at0070)は出さない。`component` は使わない
 - `subject` は Observation と同じ(`Patient/<ehr_id>`)。`effectiveDateTime` は Condition に無いので出さない
@@ -91,3 +92,22 @@ Issue: skoba/openehr-rails#104(bug)。裁定: R-20261127-15 の 4(起票し、#1
 - Red: いまの挙動のまま `ResourceQuery` に移したところで、新しい spec の 8 例のうち 6 例が落ちた
   (problem list の記録が Observation で返る、Condition が無い、作成が通る、CapabilityStatement に create が載る)
 - #103 の pin「Observation だけ」は、この修正で置き換わる(spec の注釈に書いた)。INSTRUCTION を出さない pin を足した
+
+## 6. 裁定の回答と、足したもの(R-20261127-23・24)
+
+- §2.4 の問い: `category`(R-20261127-23 の 1)。実装のとおり
+- `clinicalStatus`(R-20261127-24): §2.2 の表の行のとおり。code と display は、THO の CodeSystem condition-clinical(3.0.0)で
+  確かめた(`unknown`|Unknown、`inactive`|Inactive。remission と resolved は inactive の下)。FHIR R5 の Condition(5.0.0)で、
+  `clinicalStatus` は 1..1、束縛は required(ValueSet condition-clinical は、この code system を含む)、con-3 は error、
+  con-2 は warning であることも確かめた
+- プロファイル: `TypeMap::ENTRY_ELEMENT_MAPS` の行に `facade_elements` を足し、StructureDefinition と FSH の両方に
+  `clinicalStatus` の注記(comment)だけを出す。束縛と固定は足さない。FSH の golden は 1 行増えた。
+  sushi では確かめ直していない(手元に無い。入れるのは開発機の変更にあたる)。`recordedDate ^comment` と同じ形の、
+  R5 にある要素への caret の規則なので、通ると見込む(推論)
+- 日時(R-20261127-24 の「確かめること」): オフセットの無い時刻つきの値は、実行時の経路と文字列の列では、そのまま出ていた
+  (実測)。`Observation.effectiveDateTime` と同じ読み方(オフセットが無ければ UTC)にそろえた。秒の無い値は秒を補い、
+  basic 形式は extended にする。正しい値と日付は、記録のまま
+- 見つけたが、直していないもの:
+  - 年月だけの DV_DATE_TIME(`2026-11`)は、保存のときに `GraphBuilder#parse_time` が `ArgumentError` を出す
+    (scaffold・実行時の両方。実測)
+  - Observation の DV_DATE_TIME の葉は、scaffold の経路で `valueDateTime` が `Time#to_s` の形(`2026-11-20 09:30:00 UTC`)になる(実測)

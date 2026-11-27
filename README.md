@@ -159,6 +159,30 @@ profile describes: Observation entries as Observation, entries with a row in
 `TypeMap::ENTRY_ELEMENT_MAPS` as that resource (today problem_diagnosis →
 Condition), and other entries (INSTRUCTION, ACTION, ...) not at all.
 
+#### Condition: values the facade sets, and known limitations
+
+* `Condition.clinicalStatus` is required in FHIR R5, but the
+  problem_diagnosis archetype records no clinical status. The facade sets it,
+  and it is not a value from the record (system
+  `http://terminology.hl7.org/CodeSystem/condition-clinical`):
+  * `unknown` when the record has no date/time of resolution (at0030) — used
+    as a null flavor: the record does not say;
+  * `inactive` when it has one, served with `abatementDateTime`. at0030 means
+    "resolution or remission" without saying which, so the facade does not
+    claim `resolved`; `inactive` covers both and satisfies con-3.
+
+  The generated profiles note this on `clinicalStatus` (no binding or fixed
+  value is added).
+* `verificationStatus` carries the archetype's local at-codes (e.g. `at0076`),
+  which do not satisfy R5's required binding to `condition-ver-status`;
+  translating them is a ConceptMap concern.
+* at0003 (date/time clinically recognised) → `recordedDate` is an
+  approximation; the profiles say so in `ElementDefinition.comment`.
+* Date/time leaves (`onsetDateTime`, `recordedDate`, `abatementDateTime`) are
+  served as recorded when they are valid FHIR dateTimes. A value with a time
+  but no offset is read as UTC (as `Observation.effectiveDateTime` is), and
+  missing seconds are filled in.
+
 #### Templates registered at runtime
 
 Records that no scaffolded model owns — compositions committed into the
