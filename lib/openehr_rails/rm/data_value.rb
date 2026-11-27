@@ -49,9 +49,9 @@ module OpenehrRails
               .or(where(date_value: value))
           else
             text = value.to_s
-            # DV_DATE_TIME rows hold their committed string in text_value
-            # (#63); a string search keeps not matching them, as before.
-            text_rows = where(text_value: text).where.not(rm_type: 'DV_DATE_TIME')
+            # DV_DATE_TIME (#63) and DV_DATE (#109) rows hold their committed
+            # string in text_value; a string search keeps not matching them.
+            text_rows = where(text_value: text).where.not(rm_type: %w[DV_DATE_TIME DV_DATE])
             text_rows.or(where(code_string: text))
                      .or(where(uri_value: text))
                      .or(where(duration_value: text))

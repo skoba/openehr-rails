@@ -275,7 +275,9 @@ module OpenehrRails
         when 'DV_BOOLEAN'
           OpenEHR::RM::DataTypes::Basic::DvBoolean.new(value: dv.boolean_value)
         when 'DV_DATE'
-          OpenEHR::RM::DataTypes::Quantity::DateTime::DvDate.new(value: dv.date_value.iso8601)
+          OpenEHR::RM::DataTypes::Quantity::DateTime::DvDate.new(
+            value: @normalize_date_times ? dv.date_value.iso8601 : dv.original_value
+          )
         when 'DV_TIME'
           OpenEHR::RM::DataTypes::Quantity::DateTime::DvTime.new(value: dv.time_value.strftime('%H:%M:%S'))
         when 'DV_DATE_TIME'

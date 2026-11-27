@@ -92,10 +92,12 @@ describe OpenehrRails::Aql::Executor, '.execute' do
 
     rows = OpenehrRails::Aql.execute(query).rows
 
-    # Measured: the naive input is parsed in the process's local zone and
-    # comes back as UTC (`2026-01-31T15:00:00Z` under JST) -- pinned as the
-    # same instant, not as the literal string.
+    # The naive input is read as UTC and comes back as UTC (#109,
+    # R-20261127-31: a value without an offset counts as UTC, as the openehr
+    # gem orders it). Before #109 it was parsed in the process's local zone
+    # (`2026-01-31T15:00:00Z` under JST). Pinned as the instant, not as the
+    # literal string.
     expect(rows.size).to eq(1)
-    expect(Time.iso8601(rows.first.first)).to eq(Time.parse('2026-02-01T00:00:00').utc)
+    expect(Time.iso8601(rows.first.first)).to eq(Time.utc(2026, 2, 1))
   end
 end

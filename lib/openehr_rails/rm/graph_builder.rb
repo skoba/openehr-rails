@@ -171,7 +171,9 @@ module OpenehrRails
         when 'DV_BOOLEAN'
           { boolean_value: hash['value'] }
         when 'DV_DATE'
-          { date_value: hash['value'] }
+          # text_value keeps the committed string (partial precision, #109);
+          # date_value is the earliest day it covers.
+          { date_value: parse_date(hash['value']), text_value: iso_string(hash['value']) }
         when 'DV_TIME'
           { time_value: hash['value'] }
         when 'DV_DATE_TIME'
@@ -208,10 +210,19 @@ module OpenehrRails
         value.respond_to?(:iso8601) ? value.iso8601 : value.to_s
       end
 
+      # The earliest UTC instant of a DV_DATE_TIME string (#109, PartialTemporal).
+      # A string the gem's reader does not take (basic format, Time#to_s) is
+      # parsed as before, so what was stored before still stores.
       def parse_time(value)
         return value if value.nil? || value.respond_to?(:iso8601)
 
-        Time.zone ? Time.zone.parse(value.to_s) : Time.parse(value.to_s)
+        PartialTemporal.instant(value) || (Time.zone ? Time.zone.parse(value.to_s) : Time.parse(value.to_s))
+      end
+
+      def parse_date(value)
+        return value if value.nil? || value.is_a?(Date)
+
+        PartialTemporal.date(value) || value
       end
     end
   end

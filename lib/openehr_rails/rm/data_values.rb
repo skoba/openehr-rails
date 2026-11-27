@@ -101,8 +101,14 @@ module OpenehrRails
 
       def value = date_value
 
+      # The string as committed (#109); rows written before #109 have no
+      # text_value and read back as the stored day.
+      def original_value
+        text_value.presence || date_value.iso8601
+      end
+
       def to_canonical_hash
-        { '_type' => 'DV_DATE', 'value' => date_value.iso8601 }
+        { '_type' => 'DV_DATE', 'value' => original_value }
       end
     end
 
