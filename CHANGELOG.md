@@ -7,6 +7,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.1] - 2026-11-27
+
+> **Upgrade note.** No migration, and no dependency change. Three behaviour
+> changes, all from bug fixes:
+> (1) the normalized instant of a date-time without a UTC offset (used for
+> ordering and AQL comparisons) is now read as UTC instead of in the app's
+> `Time.zone`; rows stored before keep their value until committed again (#109);
+> (2) an Observation DV_DATE leaf is served, profiled and read on POST as
+> `valueDateTime` instead of `valueDate` (#110);
+> (3) a FHIR POST that maps to no value answers 422 instead of creating an empty
+> record and answering 400 (#111).
+
+### Fixed
+- A DV_DATE_TIME or DV_DATE of reduced precision (`2026`, `2026-11`; for a
+  date-time also `2026-11-27T09`, `2026-11-27T09:30`) is stored in the RM graph.
+  A year or year-month value used to raise `ArgumentError` (DV_DATE_TIME) or
+  fail validation (DV_DATE). The committed string comes back unchanged from
+  canonical JSON (`/openehr/v1`), `to_rm` and the FHIR facade. The same holds for
+  `EVENT_CONTEXT.start_time` and the event times of a history (#109).
+- The FHIR facade serves an Observation's date and time values in FHIR's forms,
+  on the scaffold path and the runtime path, by the rule Condition follows (#104):
+  - DV_DATE_TIME (`valueDateTime`, also in `component[]`): a typed column's
+    time was served as `"2026-11-20 09:30:00 UTC"` and is now ISO 8601. A
+    recorded string is served as recorded when it is a FHIR dateTime
+    (`2026`, `2026-11`, `2026-11-27`, a full date-time with an offset). A
+    time without seconds gets `:00`, and a time without an offset is read as
+    UTC. A value to the hour, which FHIR has no form for, is served to the day.
+    Condition now does the same for a value to the hour (#110).
+  - DV_DATE is served as `valueDateTime` holding the date, because
+    Observation.value[x] has no `date` in R5. Generated profiles type such a
+    leaf `dateTime`, and `POST /fhir/Observation` reads it from `valueDateTime`
+    (#110).
+  - DV_TIME (`valueTime`) is `hh:mm:ss`. A typed column's time was served with
+    a date. Seconds are zero-filled. A recorded offset is left out, because
+    FHIR time cannot carry one; the clock reading is kept. A value to the hour
+    is left out (#110).
+- `POST /fhir/Observation` with a resource that maps to no value (for example a
+  multi-leaf archetype such as body_mass_index sent with `valueQuantity` alone,
+  without `component[]`) is refused with 422 and an OperationOutcome naming why,
+  before anything is created. It used to create a record with every value nil
+  and then answer 400. A single-leaf POST (height) is unchanged (#111).
+
+### Changed
+- The normalized value a DV_DATE_TIME or DV_DATE is ordered and compared by
+  (`datetime_value`, `date_value`, used by SQL and the AQL engine) is the
+  earliest instant or day the value covers, and a value without a UTC offset is
+  read as UTC. This is the instant the openehr gem orders the value by. Before,
+  an offset-less value was read in the app's `Time.zone`, and a value to the
+  hour lost its hour. It is an internal value; what the API returns is the
+  committed string. Values with an offset, which is everything a scaffolded
+  model writes, are normalized as before. Rows stored before this release keep
+  their normalized value until they are committed again (#109).
+
+### Known limitations
+- AQL `SELECT` of a date-time value returns the normalized UTC instant, so a
+  partial value comes back as its earliest instant (`2026-11` →
+  `2026-11-01T00:00:00Z`). The committed string is returned by REST and FHIR.
+  Returning it from AQL as well is #92, waiting for an openehr release.
+- A scaffolded model's `datetime`/`date` column cannot hold a partial value
+  (Rails casts `2026-11` to nil). Partial values are stored through the RM
+  graph (`/openehr/v1`, `Rm::CompositionCommitter`).
+
 ## [0.14.0] - 2026-11-27
 
 > **Upgrade note.** No migration, and no dependency change. Two things change
