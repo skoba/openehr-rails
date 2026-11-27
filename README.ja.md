@@ -161,6 +161,12 @@ Observation のエントリは Observation として、`TypeMap::ENTRY_ELEMENT_M
 行があるエントリはそのリソースとして(いまは problem_diagnosis →
 Condition)出し、ほかのエントリ(INSTRUCTION、ACTION、…)は出しません。
 
+Observation の日付と時刻の値は、下の Condition の dateTime の決まりに従います。
+DV_DATE は、日付を入れた `valueDateTime` として出します(R5 の
+`Observation.value[x]` に `date` はありません)。DV_TIME は `valueTime` の
+`hh:mm:ss` として出します。記録にある時刻帯は外し(FHIR の time は時刻帯を
+持てません)、時までの値は出しません。
+
 #### Condition: facade が付ける値と、既知の制約
 
 * `Condition.clinicalStatus` は FHIR R5 で必須ですが、problem_diagnosis の
@@ -183,7 +189,7 @@ Condition)出し、ほかのエントリ(INSTRUCTION、ACTION、…)は出しま
 * 日時の葉(`onsetDateTime`、`recordedDate`、`abatementDateTime`)は、FHIR の
   dateTime として正しければ、記録のとおりに出します。時刻があってオフセットが
   無い値は UTC として読み(`Observation.effectiveDateTime` と同じ)、無い秒は
-  補います。
+  補います。時までの値は、FHIR に書く形が無いので、日付までを出します。
 
 #### 実行時に登録したテンプレート
 
