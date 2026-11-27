@@ -17,7 +17,11 @@ module OpenehrRails
 
     # GET /query -- HTML console. Executes via fetch against
     # POST /v1/query/aql below, so there is exactly one execution path.
-    def show; end
+    # GET /query?q=...&query_parameters=... opens it with those values in
+    # the inputs (#94); it still runs only when the button is pressed.
+    def show
+      @prefill = OpenehrRails::QueryConsolePrefill.new(q: params[:q], query_parameters: params[:query_parameters])
+    end
 
     # GET  /v1/query/aql?q=...&query_parameters={"min":100}
     # POST /v1/query/aql  { "q": "...", "query_parameters": {...} }
