@@ -74,6 +74,10 @@ module OpenehrRails
 
           rules << "* #{path} from #{value_set_uri(field[:value_set_uri])} (required)"
         end
+        # Elements the facade sets itself (R-20261127-24): a comment, no binding.
+        (element_map[:facade_elements] || {}).each do |element, note|
+          rules << "* #{element} ^comment = \"#{note[:comment]}\""
+        end
         rules
       end
 

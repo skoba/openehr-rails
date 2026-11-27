@@ -39,8 +39,6 @@
   only the fields that version shares with the current one (#101).
 - A composition whose uid is not a UUID has no valid FHIR id
   (`c<uuid hex>-<entry index>`) and is not served (#101).
-- Only Observation entries are served from runtime templates; EVALUATION and
-  other entry types follow with the Condition fix (#101).
 - Where a template repeats an archetype root, values are read from its first
   instance, as `Storable.from_rm_composition` does (#101).
 

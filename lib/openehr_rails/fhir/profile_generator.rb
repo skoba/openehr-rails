@@ -86,8 +86,16 @@ module OpenehrRails
       def mapped_elements(entry, resource_type, element_map)
         [
           *anchor_slice(resource_type, element_map[:anchor], entry[:archetype_id]),
-          *entry[:fields].filter_map { |field| mapped_element(resource_type, element_map, field) }
+          *entry[:fields].filter_map { |field| mapped_element(resource_type, element_map, field) },
+          *facade_elements(resource_type, element_map)
         ]
+      end
+
+      # Elements the facade sets itself (R-20261127-24): a comment, no binding.
+      def facade_elements(resource_type, element_map)
+        (element_map[:facade_elements] || {}).map do |element, note|
+          { path: "#{resource_type}.#{element}", comment: note[:comment] }
+        end
       end
 
       # The archetype coding sits in its own slice of the anchor (a 0..*

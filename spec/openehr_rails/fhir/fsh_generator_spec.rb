@@ -167,6 +167,12 @@ describe OpenehrRails::Fhir::FshGenerator do
       expect(fsh).to match(/^\* recordedDate \^comment = "Approximation: openEHR at0003 .+"$/)
     end
 
+    # R-20261127-24: the facade-set clinicalStatus is noted, not bound or fixed.
+    it 'notes clinicalStatus as set by the facade in a ^comment only' do
+      expect(fsh).to match(/^\* clinicalStatus \^comment = ".*facade.*unknown.*inactive.*"$/)
+      expect(fsh.lines.grep(/clinicalStatus/).size).to eq(1)
+    end
+
     # at0073's local at-codes cannot be bound: Condition.verificationStatus has
     # a required binding to condition-ver-status, so translating them is a
     # ConceptMap concern (plan section 8.2).

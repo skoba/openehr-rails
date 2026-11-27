@@ -42,7 +42,7 @@ require 'openehr_rails/fhir/resource_builder'
 require 'openehr_rails/fhir/serializer'
 require 'openehr_rails/fhir/deserializer'
 require 'openehr_rails/fhir/runtime_record'
-require 'openehr_rails/fhir/observation_query'
+require 'openehr_rails/fhir/resource_query'
 require 'openehr_rails/fhir/capability_statement'
 require 'openehr_rails/fhir/profile_repository'
 

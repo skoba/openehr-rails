@@ -57,6 +57,9 @@ module OpenehrRails
       #              Absent means "do not bind" -- e.g. Condition.verificationStatus
       #              already carries a required binding to condition-ver-status,
       #              so an archetype's local at-codes must not be bound to it.
+      # :facade_elements - {element => {comment:}} for elements the facade
+      #              sets although no leaf fills them (Condition.clinicalStatus,
+      #              1..1 in R5); both outputs note them with the comment only.
       # :comment   - ElementDefinition.comment, emitted in both outputs, for a
       #              leaf whose FHIR element is the nearest fit rather than a
       #              synonym (plan section 9.2). The profile then states the
@@ -76,6 +79,16 @@ module OpenehrRails
             },
             'at0030' => { element: 'abatementDateTime', sd_path: 'abatement[x]' },
             'at0073' => { element: 'verificationStatus' }
+          }.freeze,
+          # Elements no leaf fills, which the facade sets itself
+          # (R-20261127-24); each profile notes it, with no binding or fixed value.
+          facade_elements: {
+            'clinicalStatus' => {
+              comment: 'Set by the openEHR-Rails facade, not taken from the record: the archetype has no ' \
+                       'clinical status. unknown (as a null flavor) when the record has no date/time of ' \
+                       'resolution (at0030); inactive when it has one, because at0030 covers resolution or ' \
+                       'remission without saying which (inactive also satisfies con-3).'
+            }
           }.freeze
         }.freeze
       }.freeze

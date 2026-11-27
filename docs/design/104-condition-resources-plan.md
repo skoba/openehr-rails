@@ -34,6 +34,7 @@ Issue: skoba/openehr-rails#104(bug)。裁定: R-20261127-15 の 4(起票し、#1
 | at0003 | `recordedDate` | 記録の文字列 |
 | at0030 | `abatementDateTime` | 記録の文字列 |
 | at0073 | `verificationStatus` | CodeableConcept(local の at-code のまま。condition-ver-status への写しはしない。§8.2 と同じ) |
+| (facade が付ける) | `clinicalStatus` | at0030 が無ければ `unknown`(null flavor に当たるもの)、あれば `inactive`。system は `http://terminology.hl7.org/CodeSystem/condition-clinical`。記録にある値ではない(R-20261127-24) |
 
 - 表に無い leaf(例: problem_list.opt の at0070)は出さない。`component` は使わない
 - `subject` は Observation と同じ(`Patient/<ehr_id>`)。`effectiveDateTime` は Condition に無いので出さない
@@ -77,3 +78,36 @@ Issue: skoba/openehr-rails#104(bug)。裁定: R-20261127-15 の 4(起票し、#1
 - enhancement: CapabilityStatement の Condition に `create` が無く、`searchParam` が `category`・`subject`
 - regression pin: Observation の entry の出力は変わらない(`serializer_spec.rb` を変えずに通す)
 - 入口の確かめ: demo に curl(problem list の scaffold の記録と、実行時の記録)
+
+## 5. 実装(R-20261127-15 の 4 のとおり進めた)
+
+- `ResourceRegistry::Entry#servable?`(Observation か、`ENTRY_ELEMENT_MAPS` に行がある)。実行時の entries は、これで選ぶ
+- `ResourceBuilder#build` は、Observation はこれまでどおり、行のある entry は表のとおり、どちらでもない entry は nil
+- `Fhir::ObservationQuery`(#103。未公開)を `Fhir::ResourceQuery`(`resource_type:`)に広げた。1 件の取得はリソースの種類を確かめる
+- 作成の先(`creatable_entry`)は Observation の entry だけ。Condition の archetype のコードで `POST /fhir/Observation` すると 422
+  (いまは problem list の記録を作っていた。Observation の入口から Condition の記録を作らせない)
+- `code.coding.system` は、Observation の coded の値と同じ規則(field の `terminology_id`、無ければ `local`)。
+  ICD-11 の値集合の URI を system にはしない(値集合は code system ではない。別の判断になるので足さない)
+- 実行時の記録の coded の値は、記録の `value` を `display`、`defining_code.terminology_id` を `system` にする(§2.2)
+- Red: いまの挙動のまま `ResourceQuery` に移したところで、新しい spec の 8 例のうち 6 例が落ちた
+  (problem list の記録が Observation で返る、Condition が無い、作成が通る、CapabilityStatement に create が載る)
+- #103 の pin「Observation だけ」は、この修正で置き換わる(spec の注釈に書いた)。INSTRUCTION を出さない pin を足した
+
+## 6. 裁定の回答と、足したもの(R-20261127-23・24)
+
+- §2.4 の問い: `category`(R-20261127-23 の 1)。実装のとおり
+- `clinicalStatus`(R-20261127-24): §2.2 の表の行のとおり。code と display は、THO の CodeSystem condition-clinical(3.0.0)で
+  確かめた(`unknown`|Unknown、`inactive`|Inactive。remission と resolved は inactive の下)。FHIR R5 の Condition(5.0.0)で、
+  `clinicalStatus` は 1..1、束縛は required(ValueSet condition-clinical は、この code system を含む)、con-3 は error、
+  con-2 は warning であることも確かめた
+- プロファイル: `TypeMap::ENTRY_ELEMENT_MAPS` の行に `facade_elements` を足し、StructureDefinition と FSH の両方に
+  `clinicalStatus` の注記(comment)だけを出す。束縛と固定は足さない。FSH の golden は 1 行増えた。
+  sushi では確かめ直していない(手元に無い。入れるのは開発機の変更にあたる)。`recordedDate ^comment` と同じ形の、
+  R5 にある要素への caret の規則なので、通ると見込む(推論)
+- 日時(R-20261127-24 の「確かめること」): オフセットの無い時刻つきの値は、実行時の経路と文字列の列では、そのまま出ていた
+  (実測)。`Observation.effectiveDateTime` と同じ読み方(オフセットが無ければ UTC)にそろえた。秒の無い値は秒を補い、
+  basic 形式は extended にする。正しい値と日付は、記録のまま
+- 見つけたが、直していないもの:
+  - 年月だけの DV_DATE_TIME(`2026-11`)は、保存のときに `GraphBuilder#parse_time` が `ArgumentError` を出す
+    (scaffold・実行時の両方。実測)
+  - Observation の DV_DATE_TIME の葉は、scaffold の経路で `valueDateTime` が `Time#to_s` の形(`2026-11-20 09:30:00 UTC`)になる(実測)

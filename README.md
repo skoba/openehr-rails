@@ -141,6 +141,11 @@ The engine also serves a FHIR R5 API under `<mount>/fhir`
 * `GET /openehr/fhir/Observation?code=<archetype_id>&subject=<ref>` —
   searchset Bundle
 * `GET /openehr/fhir/Observation/:id` — read
+* `GET /openehr/fhir/Condition?category=<archetype_id>&subject=<ref>` and
+  `GET /openehr/fhir/Condition/:id` — entries mapped to Condition
+  (`openEHR-EHR-EVALUATION.problem_diagnosis.v1`), read and search only. The
+  archetype coding sits on `Condition.category` (`Condition.code` is the
+  diagnosis), so that is the parameter that narrows to it
 * `POST /openehr/fhir/Observation` — create; the FHIR resource is
   converted through the model's FIELD_MAP and stored canonically as an
   openEHR RM Composition (`rm_composition` column). Errors are
@@ -149,7 +154,34 @@ The engine also serves a FHIR R5 API under `<mount>/fhir`
 Mapping is derived automatically from openEHR RM types
 (OBSERVATION→Observation, DV_QUANTITY→Quantity,
 DV_CODED_TEXT→CodeableConcept, ...; see
-`OpenehrRails::Fhir::TypeMap`).
+`OpenehrRails::Fhir::TypeMap`). An entry is served as the resource its
+profile describes: Observation entries as Observation, entries with a row in
+`TypeMap::ENTRY_ELEMENT_MAPS` as that resource (today problem_diagnosis →
+Condition), and other entries (INSTRUCTION, ACTION, ...) not at all.
+
+#### Condition: values the facade sets, and known limitations
+
+* `Condition.clinicalStatus` is required in FHIR R5, but the
+  problem_diagnosis archetype records no clinical status. The facade sets it,
+  and it is not a value from the record (system
+  `http://terminology.hl7.org/CodeSystem/condition-clinical`):
+  * `unknown` when the record has no date/time of resolution (at0030) — used
+    as a null flavor: the record does not say;
+  * `inactive` when it has one, served with `abatementDateTime`. at0030 means
+    "resolution or remission" without saying which, so the facade does not
+    claim `resolved`; `inactive` covers both and satisfies con-3.
+
+  The generated profiles note this on `clinicalStatus` (no binding or fixed
+  value is added).
+* `verificationStatus` carries the archetype's local at-codes (e.g. `at0076`),
+  which do not satisfy R5's required binding to `condition-ver-status`;
+  translating them is a ConceptMap concern.
+* at0003 (date/time clinically recognised) → `recordedDate` is an
+  approximation; the profiles say so in `ElementDefinition.comment`.
+* Date/time leaves (`onsetDateTime`, `recordedDate`, `abatementDateTime`) are
+  served as recorded when they are valid FHIR dateTimes. A value with a time
+  but no offset is read as UTC (as `Observation.effectiveDateTime` is), and
+  missing seconds are filled in.
 
 #### Templates registered at runtime
 
@@ -177,7 +209,8 @@ end
   composition whose uid is not a UUID is not served. `POST` to an archetype
   only a runtime template has answers 422 (there is no model to create
   into).
-* Only Observation entries are served from runtime templates for now.
+* Coded values of runtime records carry the record's own text as `display`
+  and its terminology as `system`.
 
 ### Starting a new app from scratch
 

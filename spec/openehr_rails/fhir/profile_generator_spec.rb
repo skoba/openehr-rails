@@ -169,6 +169,15 @@ describe OpenehrRails::Fhir::ProfileGenerator do
       expect(recorded[:comment]).to start_with('Approximation: openEHR at0003')
     end
 
+    # R-20261127-24: clinicalStatus (1..1 in R5) is set by the facade, not
+    # recorded; the profile says so and adds no binding or fixed value.
+    it 'notes on Condition.clinicalStatus that the facade sets it' do
+      status = profile[:differential][:element].find { |e| e[:path] == 'Condition.clinicalStatus' }
+
+      expect(status.keys).to contain_exactly(:path, :comment)
+      expect(status[:comment]).to include('facade', 'unknown', 'inactive', 'at0030')
+    end
+
     it 'binds Condition.code to the leaf value set rather than the archetype id' do
       code = profile[:differential][:element].find { |e| e[:path] == 'Condition.code' }
 

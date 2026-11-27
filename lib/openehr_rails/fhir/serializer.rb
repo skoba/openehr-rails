@@ -15,6 +15,10 @@ module OpenehrRails
       end
 
       def observations
+        resources.select { |resource| resource[:resourceType] == 'Observation' }
+      end
+
+      def resources
         ResourceRegistry.entries_for(@record.class).filter_map do |entry|
           ResourceBuilder.new(entry, values: values(entry), units: units(entry), id: "#{@record.id}-#{entry.slug}",
                                      subject_ehr_id: subject_ehr_id, effective_at: @record.composed_at).build
