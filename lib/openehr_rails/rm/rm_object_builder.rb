@@ -64,9 +64,15 @@ module OpenehrRails
 
       # normalize_date_times: true rebuilds DV_DATE_TIME values from the
       # normalized UTC instant instead of the committed string. The AQL
-      # adapter asks for it because openehr's DvDateTime#magnitude applies a
-      # positive UTC offset with the wrong sign (#63); drop the option once
-      # the openehr release carrying that fix is the gemspec's lower bound.
+      # adapter asks for it for two reasons (#63, #92):
+      # 1. openehr's DvDateTime#magnitude applied a positive UTC offset with
+      #    the wrong sign -- fixed in openehr 2.8.0;
+      # 2. openehr's AQL compares `.../value` with a literal as ISO 8601 text
+      #    (still so in 2.9.0), and only uniform UTC strings make that text
+      #    order match instant order; comparing the date-time itself with a
+      #    literal raises instead.
+      # Drop the option only once an openehr release compares date-times in
+      # AQL conditions and is the gemspec's lower bound (R-20261127-19).
       def initialize(composition, normalize_date_times: false)
         @composition = composition
         @normalize_date_times = normalize_date_times

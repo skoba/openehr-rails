@@ -49,8 +49,16 @@ module OpenehrRails
       # rest of the EHR stays queryable; the warning is the report.
       #
       # DV_DATE_TIME values go in as the normalized UTC instant, not the
-      # committed string, until the upstream DvDateTime#magnitude offset fix
-      # is released (#63; see RmObjectBuilder#initialize).
+      # committed string (#63, #92; see RmObjectBuilder#initialize). This has
+      # two jobs:
+      # 1. avoid the wrong-sign offset in DvDateTime#magnitude (fixed in
+      #    openehr 2.8.0);
+      # 2. keep comparing `.../value` with a literal in step with instant order:
+      #    openehr's AQL compares that as ISO 8601 text (still so in 2.9.0), so
+      #    committed strings with mixed offsets (+09:00, Z) or precision
+      #    (2026-03-01 vs a full date-time) would not order by instant.
+      # Job 2 still holds: keep the option until an openehr release compares
+      # date-times in AQL conditions (R-20261127-19).
       def materialize(composition)
         composition.to_rm(normalize_date_times: true)
       rescue StandardError => e
