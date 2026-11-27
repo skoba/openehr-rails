@@ -307,6 +307,21 @@ anlage の `CLAUDE.md`「作業ツリー規律」と同旨。根拠と採らな�
 - **変えないもの**: TDD(Red の出力を報告に載せる)、合否は CI、実測と推論の区別、
   越境は読み取りだけ、publish は CI artifact だけで `gem push` は人間
 
+## 差分の削除を見る(2026-11-27 導入。裁定 R-20261127-33)
+
+anlage で、1 行を直すスクリプトが `README.ja.md` を空にし、その削除をだれも見ないまま
+main に入った(anlage PR #240)。同じことはどのレーンでも起こりうるので、手順をここに書く。
+
+- commit の前に `git diff --cached --stat` を見る。変えたつもりの行数と合わないとき、
+  意図しない削除や 0 バイトになったファイルがあるときは、commit しない
+- PR の本文に、差分の追加と削除の行数を書く。1 つのファイルで 20 行を超える削除と、
+  空になるファイル・消えるファイルは、意図したものとして理由を書く(マージするのが
+  人間でもセッションでも、本文で削除が分かるように)
+- マージの前(人間にマージを頼む前も)に、PR の差分の削除を見直す
+- ファイルを書き換えるスクリプトは、読んでから書く。同じファイルを、1 つの式の中で、
+  読みながら書き込み用に開かない(例: `cat f | sed … > f`)
+- PR の本文には、差分で確かめたことだけを書く
+
 ## Project Overview
 
 This is `openehr-rails`, a Rails engine gem that turns an openEHR Operational Template (`.opt`, ADL2/XML) into a working Rails resource in one command: `rails generate openehr:scaffold path/to/template.opt --fhir` emits a model, migration, controller, views, i18n locale, and (with `--fhir`) HL7 FHIR R5 `StructureDefinition` profiles. Generated models persist both as typed columns (for forms/search) and as full openEHR RM data (canonical JSON + a typed node graph with immutable-append versioning), and are queryable via a growing AQL surface. A mountable admin engine (`/openehr`) provides template upload/management, runtime scaffolding, and a FHIR R5 facade. Legacy ADL-archetype-only generators (model/controller/migration/helper/assets/i18n/template/template_model, based on `Openehr::Generators::ArchetypedBase`) have been removed — OPT is the only supported input format for scaffolding.
