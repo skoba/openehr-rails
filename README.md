@@ -1,3 +1,5 @@
+English | [日本語](README.ja.md)
+
 [![CI](https://github.com/skoba/openehr-rails/actions/workflows/ci.yml/badge.svg)](https://github.com/skoba/openehr-rails/actions/workflows/ci.yml)
 
 # Synopsis
