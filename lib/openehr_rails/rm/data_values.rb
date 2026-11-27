@@ -121,8 +121,14 @@ module OpenehrRails
 
       def value = datetime_value
 
+      # The ISO 8601 string as committed (#63). Rows written before #63 have
+      # no text_value; they read back as the normalized UTC instant.
+      def original_value
+        text_value.presence || datetime_value.iso8601
+      end
+
       def to_canonical_hash
-        { '_type' => 'DV_DATE_TIME', 'value' => datetime_value.iso8601 }
+        { '_type' => 'DV_DATE_TIME', 'value' => original_value }
       end
     end
 

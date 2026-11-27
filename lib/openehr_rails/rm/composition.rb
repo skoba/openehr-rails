@@ -42,8 +42,8 @@ module OpenehrRails
         CanonicalSerializer.new(self).call
       end
 
-      def to_rm
-        RmObjectBuilder.new(self).call
+      def to_rm(normalize_date_times: false)
+        RmObjectBuilder.new(self, normalize_date_times: normalize_date_times).call
       end
 
       def purge_graph!

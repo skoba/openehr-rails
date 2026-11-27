@@ -47,8 +47,12 @@ module OpenehrRails
       # data) must not take every query in the store down with it (#44):
       # warn, naming the composition and the cause, and leave it out. The
       # rest of the EHR stays queryable; the warning is the report.
+      #
+      # DV_DATE_TIME values go in as the normalized UTC instant, not the
+      # committed string, until the upstream DvDateTime#magnitude offset fix
+      # is released (#63; see RmObjectBuilder#initialize).
       def materialize(composition)
-        composition.to_rm
+        composition.to_rm(normalize_date_times: true)
       rescue StandardError => e
         report_skip("openehr-rails AQL: skipping composition uid=#{composition.uid} (id=#{composition.id}): " \
                     "#{e.class}: #{e.message}")

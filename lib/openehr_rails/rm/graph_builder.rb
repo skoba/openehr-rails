@@ -175,7 +175,9 @@ module OpenehrRails
         when 'DV_TIME'
           { time_value: hash['value'] }
         when 'DV_DATE_TIME'
-          { datetime_value: parse_time(hash['value']) }
+          # text_value keeps the committed ISO 8601 string (partial precision,
+          # UTC offset); datetime_value is the normalized instant (#63).
+          { datetime_value: parse_time(hash['value']), text_value: iso_string(hash['value']) }
         when 'DV_DURATION'
           { duration_value: hash['value'] }
         when 'DV_PROPORTION'
@@ -198,6 +200,12 @@ module OpenehrRails
         else
           { text_value: hash['value'].to_s }
         end
+      end
+
+      def iso_string(value)
+        return nil if value.nil?
+
+        value.respond_to?(:iso8601) ? value.iso8601 : value.to_s
       end
 
       def parse_time(value)

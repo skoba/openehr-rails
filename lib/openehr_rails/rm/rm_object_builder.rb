@@ -62,8 +62,14 @@ module OpenehrRails
         'ELEMENT' => OpenEHR::RM::DataStructures::ItemStructure::Representation::Element
       }.freeze
 
-      def initialize(composition)
+      # normalize_date_times: true rebuilds DV_DATE_TIME values from the
+      # normalized UTC instant instead of the committed string. The AQL
+      # adapter asks for it because openehr's DvDateTime#magnitude applies a
+      # positive UTC offset with the wrong sign (#63); drop the option once
+      # the openehr release carrying that fix is the gemspec's lower bound.
+      def initialize(composition, normalize_date_times: false)
         @composition = composition
+        @normalize_date_times = normalize_date_times
       end
 
       def call
@@ -178,7 +184,7 @@ module OpenehrRails
         activities = child_nodes(node, 'activities')
         attrs[:activities] = activities unless activities.empty?
         expiry = data_value_row(node, 'expiry_time')
-        attrs[:expiry_time] = dv_date_time(expiry.datetime_value) if expiry&.datetime_value
+        attrs[:expiry_time] = stored_dv_date_time(expiry) if expiry&.datetime_value
         attrs
       end
 
@@ -267,7 +273,7 @@ module OpenehrRails
         when 'DV_TIME'
           OpenEHR::RM::DataTypes::Quantity::DateTime::DvTime.new(value: dv.time_value.strftime('%H:%M:%S'))
         when 'DV_DATE_TIME'
-          dv_date_time(dv.datetime_value)
+          stored_dv_date_time(dv)
         when 'DV_DURATION'
           OpenEHR::RM::DataTypes::Quantity::DateTime::DvDuration.new(value: dv.duration_value)
         when 'DV_IDENTIFIER'
@@ -314,6 +320,10 @@ module OpenehrRails
 
       def terminology_id(name)
         OpenEHR::RM::Support::Identification::TerminologyID.new(name: name)
+      end
+
+      def stored_dv_date_time(row)
+        dv_date_time(@normalize_date_times ? row.datetime_value : row.original_value)
       end
 
       def dv_date_time(value)
