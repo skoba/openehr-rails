@@ -29,7 +29,9 @@ module OpenehrRails
         'DV_IDENTIFIER' => 'Identifier',
         'DV_URI' => 'url',
         'DV_BOOLEAN' => 'boolean',
-        'DV_DATE' => 'date',
+        # Observation.value[x] has no `date` in R5: a DV_DATE is a dateTime
+        # holding the date (#110).
+        'DV_DATE' => 'dateTime',
         'DV_TIME' => 'time',
         'DV_DATE_TIME' => 'dateTime',
         'DV_DURATION' => 'Duration',
