@@ -7,6 +7,102 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-11-27
+
+> **Upgrade note.** No migration, and no dependency change. Three things change
+> for an existing host app.
+> (1) Templates with an embedded archetype root, a SECTION, a repeated entry or an
+> INSTRUCTION now save instead of raising `UnsupportedTemplateShape` (#60). A
+> model scaffolded with 0.11.0 or earlier still raises for a root or entry that
+> repeats in its template, and asks for a re-scaffold: regenerate the model to
+> get the new `root_chain` / `root_label` / `action_archetype_id` FIELD_MAP keys.
+> (2) A `DV_DATE_TIME` read back from the RM graph (canonical JSON, REST GET,
+> `to_rm`) is the string it was committed with, not a UTC instant. Rows written
+> before 0.12.0 keep reading back as the UTC instant; AQL is unchanged.
+> (3) The gem no longer packages `spec/`, `docs/`, `demo_assets/` or scripts.
+
+### Added
+- `Storable` saves INSTRUCTION entries. `narrative` (mandatory DV_TEXT) is built
+  from the filled elements under the INSTRUCTION, in template order, as
+  "label: value" (under an embedded root, "root name／label: value"), joined by
+  a full-width semicolon (DV_TEXT cannot hold a line break); coded values use
+  their display text, quantities "value units", date-times `YYYY-MM-DD HH:MM`.
+  This is the rule anlage uses for form-built compositions. Each ACTIVITY gets
+  `action_archetype_id`: the OPT's C_STRING pattern as `/pattern/`, else `/.*/`.
+  An INSTRUCTION with no filled element is not written (#69).
+- The RM graph keeps `ACTIVITY.action_archetype_id` (in the node's existing
+  `extra` JSON column; no migration), and `rm_graph.to_rm` / the canonical
+  serializer read it back. Graphs written before keep the `/.*/` approximation;
+  the narrative was already stored and now holds the built text rather than
+  falling back to the node name (#69).
+- `Opt::FieldExtractor` fields carry `root_chain`: every archetype root from the
+  entry down to the field, each as `[root_path, ordinal]`, where the ordinal is
+  the document-order count among roots with that path. It tells which instance
+  of a repeated root holds a field, which `instance_index` (per field path)
+  cannot (#61). They also carry `root_label` (the template name of the nearest
+  embedded root instance, e.g. 紹介元医療機関 / 紹介先医療機関) and, under an
+  ACTIVITY, `action_archetype_id` (#69).
+- The AQL console (`GET /query`) opens with a query filled in when the URL
+  carries `q` (and optionally `query_parameters`, as a JSON string), so another
+  page can link to it, e.g. with an EHR's `ehr_id` in the query. Opening the page
+  does not run the query; the button still does. Values are HTML-escaped; each
+  is taken only as a string of at most 10,000 characters, and the page says so
+  when one is longer. Without these parameters the console is unchanged (#94).
+
+### Changed
+- `Storable::UNSUPPORTED_SHAPES` drops `:section` and `:instruction`, and gains
+  `:repeated_entry`. A model scaffolded before `root_chain` (0.11.0 or earlier)
+  whose template repeats an entry now refuses a value for that entry instead of
+  merging the instances, and asks for a re-scaffold (#62). `:embedded_root`
+  remains for roots such a model cannot place: models scaffolded before 0.9.0, or
+  a root on the field's path that repeats in the template; its message now asks
+  for a re-scaffold (#61). `openehr:scaffold` no longer warns about INSTRUCTION
+  fields (#69).
+- `Rm::Composition#to_rm` and `Rm::RmObjectBuilder.new` accept
+  `normalize_date_times:` (default `false`). AQL still evaluates `DV_DATE_TIME`
+  values as the normalized UTC instant, because openehr's
+  `DvDateTime#magnitude` (2.7.0 and earlier) applies a positive UTC offset with
+  the wrong sign; AQL switches to the committed string once a fixed openehr is the
+  lower bound (#63, follow-up #92).
+- The gem ships only what a host application runs: `lib/` (generator templates
+  included), `app/`, `config/`, `README.md`, `CHANGELOG.md`, `LICENSE` and the
+  gemspec. `spec/` (OPT fixtures), `docs/`, `doc/`, `demo_assets/`, scripts and
+  CI/tooling files are no longer packaged. Measured on 0.11.0's tree: 201 -> 84
+  files, 354,304 -> 80,384 bytes. The application template
+  (`templates/openehr_template.rb`) is used from the repository URL and is not
+  packaged either (#74).
+
+### Fixed
+- `Storable` saves values under an embedded archetype root (e.g. the analyte
+  CLUSTER of a lab result) as an archetyped `CLUSTER` inside its entry, with
+  `archetype_details`; `rm_graph.to_rm` rebuilds it. 0.9.0 refused such a save
+  (`UnsupportedTemplateShape`, #60) because the write path used to emit a second,
+  bogus entry. Templates without embedded roots write the same composition as
+  before (#61).
+- `Storable` saves entries nested in a SECTION inside a `SECTION` node under
+  `content` (with `archetype_details`), and keeps two instances of one entry
+  archetype as two entries (e.g. `clinical_synopsis` x2 in a referral);
+  `rm_graph.to_rm` rebuilds them. 0.9.0 refused such a save because the write
+  path dropped the SECTION and merged the instances (#62).
+- Repeated entries directly under `content` (e.g. two `body_mass_index`
+  OBSERVATIONs) are written as separate entries; before, the second instance
+  overwrote the first one's element (#61, #62).
+- A `DV_DATE_TIME` value read back from the RM graph keeps the ISO 8601 string it
+  was committed with: partial precision (`2026-03-01`, `2026-03-01T10:00`) and the
+  UTC offset (`+09:00`) are no longer lost. Canonical JSON (`to_canonical_hash`,
+  the REST GET) and `Rm::Composition#to_rm` return it unchanged. Until now a
+  date-only `2026-03-01` came back as the previous day's instant
+  (`2026-02-28T15:00:00Z` with `Time.zone` at +09:00). The committed string is
+  kept in the `DV_DATE_TIME` row's existing `text_value`; `datetime_value` stays
+  the normalized instant used for SQL and ordering (#63).
+
+### Known limitations
+- Reading a repeated entry or root back with `from_rm_composition` still takes
+  the first instance (#89).
+- AQL returns `DV_DATE_TIME` values as the UTC instant (#92).
+- A REST `GET` of a logically deleted composition still returns its body (#85).
+- FHIR Observation *instance* ids still use the archetype-only slug (#76).
+
 ## [0.11.0] - 2026-11-26
 
 > **Upgrade note.** Two things change for an existing host app.
