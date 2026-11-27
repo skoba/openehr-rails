@@ -6,12 +6,13 @@
 </p>
 
 <label for="aql-query">AQL query</label><br>
-<textarea id="aql-query" rows="6" style="width: 100%; font-family: monospace;">SELECT o/data[at0001]/events[at0002]/data[at0003]/items[at0004]/value/magnitude AS height
-FROM EHR e CONTAINS COMPOSITION c CONTAINS OBSERVATION o[openEHR-EHR-OBSERVATION.height.v2]</textarea>
+<% if @prefill.notice %><p class="alert"><%= @prefill.notice %></p><% end %>
+
+<textarea id="aql-query" rows="6" style="width: 100%; font-family: monospace;"><%= @prefill.query %></textarea>
 
 <p>
   <label for="aql-params">Query parameters (JSON, optional)</label><br>
-  <input id="aql-params" type="text" style="width: 100%; font-family: monospace;" placeholder='{"min": 100}'>
+  <input id="aql-params" type="text" style="width: 100%; font-family: monospace;" value="<%= @prefill.query_parameters %>" placeholder='{"min": 100}'>
 </p>
 
 <button id="aql-run">Run query</button>
