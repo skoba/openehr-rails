@@ -7,6 +7,7 @@
 require 'openehr_rails/rm/type_map'
 require 'openehr_rails/rm/ehr'
 require 'openehr_rails/rm/ehr_serializer'
+require 'openehr_rails/rm/ehr_subject_lookup'
 require 'openehr_rails/rm/composition'
 require 'openehr_rails/rm/node'
 require 'openehr_rails/rm/nodes'

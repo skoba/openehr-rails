@@ -31,6 +31,20 @@ module OpenehrRails
         render_ehr(ehr, status: :created)
       end
 
+      # GET /v1/ehr?subject_id=...&subject_namespace=...  (#95, "Get EHR by
+      # subject id"). 200 / 404 per the specification; 409 (several EHRs for
+      # the subject, with their ehr_ids) and 400 (a parameter missing) are
+      # this implementation's own -- see Rm::EhrSubjectLookup.
+      def by_subject
+        result = OpenehrRails::Rm::EhrSubjectLookup.new(subject_id: params[:subject_id],
+                                                        subject_namespace: params[:subject_namespace]).call
+        return render_ehr(result.ehr) if result.status == :ok
+
+        body = { error: result.error }
+        body[:ehr_ids] = result.ehr_ids if result.status == :conflict
+        render json: body, status: result.status
+      end
+
       # GET /v1/ehr/:ehr_id
       def show
         render_ehr(find_ehr!)
