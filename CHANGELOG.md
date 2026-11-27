@@ -7,6 +7,92 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-11-27
+
+> **Upgrade note.** No migration, and no dependency change. Two things change
+> for an existing host app's FHIR facade (`/openehr/fhir`).
+> (1) Records in the RM graph that no scaffolded model owns (committed through
+> `/openehr/v1` or `Rm::CompositionCommitter`) are now served, for templates in
+> the `OpenehrTemplate` registry or handed over with the new
+> `OpenehrRails::Fhir.template_source`. A template that has a scaffolded model
+> is still served by the model only (#101).
+> (2) Problem-list records (problem_diagnosis) move from `GET /fhir/Observation`
+> to `GET /fhir/Condition`, with a `clinicalStatus` the facade sets; records of
+> other non-Observation entries without a mapping (INSTRUCTION, ACTION, ...)
+> are no longer served, and `POST /fhir/Observation` with such a code answers
+> 422 (#104).
+
+### Added
+- The FHIR facade (`/openehr/fhir`) serves records of templates registered
+  at runtime: compositions in the RM graph that no scaffolded model owns
+  (committed through `/openehr/v1` or `Rm::CompositionCommitter`). Search
+  (`code`, `subject`), read by id, the CapabilityStatement and
+  StructureDefinition answer for them through the same endpoints. Values
+  are read from the RM graph with the same path walk Storable uses (#101).
+- `OpenehrRails::Fhir.template_source`: a callable returning one
+  `{ template_id:, opt: }` per template id, for a host app that keeps its
+  templates outside the gem's `OpenehrTemplate` registry (the default):
+
+  ```ruby
+  # config/initializers/openehr.rb
+  Rails.application.config.to_prepare do
+    OpenehrRails::Fhir.template_source = lambda do
+      Template.where(status: 'active').map { |t| { template_id: t.template_id, opt: t.source_xml } }
+    end
+  end
+  ```
+
+  A template id returned twice raises `OpenehrRails::Fhir::TemplateSourceError`
+  (answered 500) instead of one being picked silently (#101).
+- `GET /fhir/Condition?category=<archetype_id>&subject=<ref>` and
+  `GET /fhir/Condition/:id`, for scaffolded models and runtime templates (#101)
+  alike; read and search only (the CapabilityStatement lists no `create` for
+  Condition, and `category`/`subject` as its search parameters). Coded values
+  of runtime records carry the record's own text as `display` and its
+  terminology as `system` (#104).
+
+- Conditions carry `clinicalStatus` (required in FHIR R5), a value the facade
+  sets rather than one from the record: `unknown` (as a null flavor) when the
+  record has no date/time of resolution (at0030), `inactive` with
+  `abatementDateTime` when it has one (at0030 covers resolution or remission,
+  so not `resolved`; `inactive` satisfies con-3). System
+  `http://terminology.hl7.org/CodeSystem/condition-clinical`. The generated
+  StructureDefinition and FSH note this on `clinicalStatus` (comment only, no
+  binding or fixed value) (#104).
+- Condition date/time elements are FHIR dateTimes: a value with a time but no
+  offset is read as UTC, as `Observation.effectiveDateTime` is, and missing
+  seconds are filled in; valid values and dates stay as recorded (#104).
+
+### Changed
+- `GET /fhir/StructureDefinition/:id` also finds a generated profile when the
+  host has profile files under `app/fhir/profiles` for other templates (#101).
+- The CapabilityStatement lists each archetype once in `supportedProfile`
+  even when several templates use it (#101).
+
+### Fixed
+- The FHIR facade no longer serves every entry as an Observation. An entry is
+  served as the resource its StructureDefinition describes:
+  `openEHR-EHR-EVALUATION.problem_diagnosis.v1` as a Condition (`category`
+  carries the archetype coding; `code`, `onsetDateTime`, `recordedDate`,
+  `abatementDateTime` and `verificationStatus` per the mapping table), Observation
+  entries as before, and entries with no mapping (INSTRUCTION, ACTION, other
+  EVALUATIONs, ...) not at all. The CapabilityStatement lists only what is
+  served (#104).
+- `POST /fhir/Observation` with the code of an entry served as another resource
+  answers 422 instead of creating the record (#104).
+
+### Known limitations
+- Runtime records are read with the fields of the template the source
+  returns now. A record written with an older version of the template shows
+  only the fields that version shares with the current one (#101).
+- A composition whose uid is not a UUID has no valid FHIR id
+  (`c<uuid hex>-<entry index>`) and is not served (#101).
+- Where a template repeats an archetype root, values are read from its first
+  instance, as `Storable.from_rm_composition` does (#101).
+- `Condition.verificationStatus` carries the archetype's local at-codes, which
+  do not satisfy R5's required binding to `condition-ver-status`; at0003 →
+  `recordedDate` is an approximation (both as decided for the profiles) (#104).
+
 ## [0.13.0] - 2026-11-27
 
 > **Upgrade note.** No migration, and no dependency change. One thing changes
