@@ -12,7 +12,7 @@ views / i18n / FHIR プロファイル）を自動生成し、動くアプリと
 | テンプレート | openEHR エントリ種別 | 主なデータ型 | 生成リソース |
 |---|---|---|---|
 | BMI 計算 (`bmi_calculation`) | OBSERVATION | DV_QUANTITY（数値＋単位）/ DV_TEXT | `/bmi_calculations` |
-| 問題リスト (`ProblemList`) | EVALUATION | DV_CODED_TEXT（コード化）/ DV_DATE_TIME | `/problemlists` |
+| プロブレムリスト (`ProblemList`) | EVALUATION | DV_CODED_TEXT（コード化）/ DV_DATE_TIME | `/problemlists` |
 | 血圧 (`patient_blood_pressure.v1`) | OBSERVATION | DV_QUANTITY（脈拍＋収縮期/拡張期）/ 複数アーキタイプ | `/patient_blood_pressures` |
 
 これにより「数値中心のテンプレート」「コード化テキスト＋日時のテンプレート」
@@ -34,7 +34,7 @@ CRUD 画面・管理 UI・FHIR R5 facade が動く様子を確認できます。
   `openehr_rm_*` テーブル（型付きノードグラフ）へ永続化する。
 - 各カラムは `FIELD_MAP` で openEHR の RM パス・データ型と結び付いている。
 - 管理 UI (`/openehr`) から OPT をアップロードして実行時生成できる。
-- 同じデータを **HL7 FHIR R5** のリソース（Observation、問題リストは Condition）として読める（Observation は書き込みも可）。
+- 同じデータを **HL7 FHIR R5** のリソース（Observation、プロブレムリストは Condition）として読める（Observation は書き込みも可）。
 
 ---
 
@@ -75,7 +75,7 @@ bin/rails server
 | URL | 内容 |
 |---|---|
 | <http://localhost:3000/bmi_calculations> | BMI の CRUD 画面 |
-| <http://localhost:3000/problemlists> | 問題リストの CRUD 画面 |
+| <http://localhost:3000/problemlists> | プロブレムリストの CRUD 画面 |
 | <http://localhost:3000/patient_blood_pressures> | 血圧の CRUD 画面 |
 | <http://localhost:3000/openehr> | 管理 UI（テンプレート管理 / 実行時生成） |
 | <http://localhost:3000/openehr/query> | AQL クエリコンソール |
@@ -156,7 +156,7 @@ Model name: BmiCalculation
 
 プロファイルの id にはテンプレートの id が入ります（同じアーキタイプが 2 つのテンプレートにあれば、プロファイルも 2 つ）。
 
-### 4.4 問題リストと血圧のテンプレートを scaffold
+### 4.4 プロブレムリストと血圧のテンプレートを scaffold
 
 ```sh
 bin/rails generate openehr:scaffold ../demo_assets/templates/problem_list.opt --fhir
@@ -278,7 +278,7 @@ bin/rails runner 'r=BmiCalculation.first; puts r.rm_composition.keys.inspect'
 
 - <http://localhost:3000/bmi_calculations> — 一覧（seed の 4 件: patient-001 の 2 件 BMI 22.7 / 22.5、patient-002 の 19.2、patient-003 の 29.3）。
   「New」から数値を入力して新規作成、編集・削除も可能。
-- <http://localhost:3000/problemlists> — 問題リスト（Hypertension / Type 2
+- <http://localhost:3000/problemlists> — プロブレムリスト（Hypertension / Type 2
   diabetes mellitus / Suspected asthma）。診断確実性は Suspected / Confirmed の
   プルダウン。
 - <http://localhost:3000/patient_blood_pressures> — 血圧（seed の 3 件:
@@ -314,7 +314,7 @@ bin/rails runner 'r=BmiCalculation.first; puts r.rm_composition.keys.inspect'
 
 エンジンは `<mount>/fhir`（既定 `/openehr/fhir`）に FHIR R5 API を提供します。
 エントリは、そのプロファイルが表すリソースとして公開されます。OBSERVATION の
-エントリ（BMI、血圧）は Observation、問題リストの problem_diagnosis は Condition です。
+エントリ（BMI、血圧）は Observation、プロブレムリストの problem_diagnosis は Condition です。
 
 ### 8.1 CapabilityStatement
 
@@ -342,7 +342,7 @@ curl -s http://localhost:3000/openehr/fhir/Observation
 # アーキタイプ（code）で絞り込み
 curl -s "http://localhost:3000/openehr/fhir/Observation?code=openEHR-EHR-OBSERVATION.height.v2"
 
-# 問題リストは Condition（アーキタイプの coding がある category で絞り込み）
+# プロブレムリストは Condition（アーキタイプの coding がある category で絞り込み）
 curl -s "http://localhost:3000/openehr/fhir/Condition?category=openEHR-EHR-EVALUATION.problem_diagnosis.v1"
 ```
 
@@ -408,7 +408,7 @@ VERSIONED_COMPOSITION のようなバージョン対応クエリ（対象外）�
 <http://localhost:3000/openehr/ehrs> は EHR（患者）ごとの記録件数と最終更新
 日時の一覧です。「Timeline」から患者ごとの詳細画面
 （`/openehr/ehrs/:ehr_id`）に入ると、その患者に紐づく **全テンプレートの
-記録を時系列で横断表示**します（BMI・血圧・問題リストが同じタイムライン上に
+記録を時系列で横断表示**します（BMI・血圧・プロブレムリストが同じタイムライン上に
 並びます）。
 
 - テンプレートで絞り込むフィルタリンクを上部に表示。
@@ -460,7 +460,7 @@ curl -s http://localhost:3000/openehr/v1/ehr/patient-001/composition/<uid>
 
 ## 11. 3 リソースの共存
 
-BMI（OBSERVATION / 数値）・問題リスト（EVALUATION / コード化テキスト＋日時）・
+BMI（OBSERVATION / 数値）・プロブレムリスト（EVALUATION / コード化テキスト＋日時）・
 血圧（OBSERVATION / 複数アーキタイプの数値）が同一アプリで動作します。
 `bin/rails routes | grep -E 'bmi|problemlist|patient_blood_pressure|openehr'`
 で各リソースと管理エンジン・FHIR ルートが確認できます。
@@ -483,7 +483,7 @@ FORCE=1 bash script/build_demo.sh
 script/build_demo.sh          再現スクリプト（本手順を自動化）
 demo_assets/
   templates/bmi_calculation.opt        題材 OPT（BMI / OBSERVATION）
-  templates/problem_list.opt           題材 OPT（問題リスト / EVALUATION）
+  templates/problem_list.opt           題材 OPT（プロブレムリスト / EVALUATION）
   templates/patient_blood_pressure.opt 題材 OPT（血圧 / OBSERVATION・複数アーキタイプ）
   demo_seed.rb                    デモ用サンプルデータ投入スクリプト
 demo/                          スクリプトが生成する Rails アプリ（git 非追跡）
