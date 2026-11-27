@@ -151,6 +151,34 @@ Mapping is derived automatically from openEHR RM types
 DV_CODED_TEXT→CodeableConcept, ...; see
 `OpenehrRails::Fhir::TypeMap`).
 
+#### Templates registered at runtime
+
+Records that no scaffolded model owns — compositions committed into the
+RM graph through the openEHR REST API (`/openehr/v1`) or
+`OpenehrRails::Rm::CompositionCommitter` — are served through the same
+endpoints, read straight from the RM graph. Their templates come from the
+gem's `OpenehrTemplate` registry by default. A host app that keeps its
+templates elsewhere hands them over with one callable, returning one
+`{ template_id:, opt: }` (the OPT XML) per template id:
+
+```ruby
+# config/initializers/openehr.rb
+Rails.application.config.to_prepare do
+  OpenehrRails::Fhir.template_source = lambda do
+    Template.where(status: 'active').map { |t| { template_id: t.template_id, opt: t.source_xml } }
+  end
+end
+```
+
+* Return the version current records should be read with; a template id
+  returned twice raises `OpenehrRails::Fhir::TemplateSourceError` (500).
+* A template that has a scaffolded model is served by the model only.
+* Runtime records have ids `c<composition uuid hex>-<entry index>`; a
+  composition whose uid is not a UUID is not served. `POST` to an archetype
+  only a runtime template has answers 422 (there is no model to create
+  into).
+* Only Observation entries are served from runtime templates for now.
+
 ### Starting a new app from scratch
 
 [`templates/openehr_template.rb`](templates/openehr_template.rb) is a

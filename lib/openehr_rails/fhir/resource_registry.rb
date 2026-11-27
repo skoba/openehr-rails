@@ -2,18 +2,28 @@
 
 module OpenehrRails
   module Fhir
-    # Tracks which ActiveRecord models (those including Storable) expose
-    # which openEHR archetypes as FHIR resources. Populated automatically
-    # by Storable's `included` hook, so no generated registration code is
-    # needed. Model names are stored as strings to survive code reloading
-    # in development.
+    # Tracks which openEHR archetypes are exposed as FHIR resources, from two
+    # sources:
+    # - :model -- ActiveRecord models including Storable. Populated
+    #   automatically by Storable's `included` hook, so no generated
+    #   registration code is needed. Model names are stored as strings to
+    #   survive code reloading in development.
+    # - :rm_graph (#101) -- templates from Fhir.template_source that no
+    #   scaffolded model covers; their records are read from the RM graph.
+    #   Only Observation entries for now (plan 3.3).
     module ResourceRegistry
       ARCHETYPE_SYSTEM = 'http://openehr.org/ckm/archetypes'
 
+      # index: position of the entry among its template's entries (:rm_graph
+      # only; part of the resource id).
       Entry = Struct.new(:model, :archetype_id, :rm_type, :resource_type, :fields,
-                         keyword_init: true) do
+                         :source, :template_id, :index, keyword_init: true) do
         def slug
           "openehr-#{archetype_id.delete_prefix('openEHR-EHR-').parameterize.dasherize}"
+        end
+
+        def runtime?
+          source == :rm_graph
         end
       end
 
@@ -54,7 +64,30 @@ module OpenehrRails
       end
 
       def entries
+        model_entries + runtime_entries
+      end
+
+      def model_entries
         models.flat_map { |model| entries_for(model) }
+      end
+
+      # Entries of templates no scaffolded model covers (#101, R-20261127-15
+      # answer 2: a template with a model is served by the model path only).
+      def runtime_entries
+        covered = models.filter_map { |model| model.const_get(:TEMPLATE_ID).to_s if model.const_defined?(:TEMPLATE_ID) }
+        TemplateSource.templates.reject { |template| covered.include?(template.template_id) }
+                      .flat_map { |template| runtime_entries_for(template) }
+      end
+
+      def runtime_entries_for(template)
+        template.fields.group_by { |field| field[:archetype_id] }.each_with_index.filter_map do |(archetype_id, fields), index|
+          resource_type = TypeMap.resource_for_entry(fields.first[:entry_rm_type])
+          next unless resource_type == 'Observation'
+
+          Entry.new(model: nil, archetype_id: archetype_id, rm_type: fields.first[:entry_rm_type],
+                    resource_type: resource_type, fields: fields, source: :rm_graph,
+                    template_id: template.template_id, index: index)
+        end
       end
 
       def entries_for(model)
@@ -72,7 +105,9 @@ module OpenehrRails
             archetype_id: archetype_id,
             rm_type: fields.first[:entry_rm_type],
             resource_type: TypeMap.resource_for_entry(fields.first[:entry_rm_type]),
-            fields: fields
+            fields: fields,
+            source: :model,
+            template_id: (model.const_get(:TEMPLATE_ID).to_s if model.const_defined?(:TEMPLATE_ID))
           )
         end
       end
@@ -81,8 +116,9 @@ module OpenehrRails
         entries.find { |entry| entry.archetype_id == archetype_id }
       end
 
+      # Model entries only: "<record id>-<slug>" ids belong to the model path.
       def find_by_slug(slug)
-        entries.find { |entry| entry.slug == slug }
+        model_entries.find { |entry| entry.slug == slug }
       end
     end
   end
