@@ -232,20 +232,22 @@ template to produce a standalone repo (with its own README and CI
 workflow) suitable for pushing to GitHub as a
 [template repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-template-repository).
 
-### デモ環境（OPT → Rails アプリ）
+### Demo app (OPT → Rails app)
 
-`script/build_demo.sh` は、この gem を使って **OPT から Rails アプリを生成し
-動かすデモ**をゼロから再現構築します（`demo/` を新規作成 → BMI / 問題リストの
-2 テンプレートを scaffold → サンプルデータ投入まで一括実行）。
+`script/build_demo.sh` builds a demo Rails app from scratch with this gem:
+it creates `demo/`, scaffolds three templates (BMI, problem list, blood
+pressure) with FHIR profiles, and loads the sample data
+(`demo_assets/demo_seed.rb`), in one run.
 
 ```sh
-bash script/build_demo.sh
-cd demo && bin/rails server   # http://localhost:3000
+bash script/build_demo.sh            # FORCE=1 rebuilds an existing demo/
+cd demo && bin/rails server          # http://localhost:3000
 ```
 
-手順の詳細・生成物の解説・管理 UI・FHIR R5 facade の確認方法は
-日本語マニュアル [doc/DEMO_ja.md](doc/DEMO_ja.md) を参照してください。
-生成される `demo/` は再現可能なため git では追跡しません。
+For the steps in detail, what is generated, the admin UI and how to check
+the FHIR R5 facade, see the walkthrough in
+[doc/DEMO_ja.md](doc/DEMO_ja.md) (in Japanese). `demo/` can be rebuilt at
+any time, so it is not tracked in git.
 
 ## License
 This product is under Apache 2.0 license
