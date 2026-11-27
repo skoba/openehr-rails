@@ -178,7 +178,7 @@ Condition)出し、ほかのエントリ(INSTRUCTION、ACTION、…)は出しま
 * `verificationStatus` には、アーキタイプのローカルの at-code(たとえば
   `at0076`)が入ります。これは R5 の `condition-ver-status` への required binding を
   満たしません。変換は ConceptMap の役目です。
-* at0003(臨床で認識された日時)→ `recordedDate` は近似です。プロファイルは、
+* at0003(臨床的に認識された日時)→ `recordedDate` は近似です。プロファイルは、
   そのことを `ElementDefinition.comment` に書いています。
 * 日時の葉(`onsetDateTime`、`recordedDate`、`abatementDateTime`)は、FHIR の
   dateTime として正しければ、記録のとおりに出します。時刻があってオフセットが
@@ -224,7 +224,7 @@ rails new myehr -m https://raw.githubusercontent.com/skoba/openehr-rails/master/
 ```
 
 `OPENEHR_SAMPLES=1` を設定すると、このリポジトリのデモで使っている 3 つの
-サンプルのテンプレート(BMI、問題リスト、血圧)も scaffold します。テンプレートは
+サンプルのテンプレート(BMI、プロブレムリスト、血圧)も scaffold します。テンプレートは
 `OpenehrRails::Opt::RemoteFetcher` で HTTP から取ってきます。オプションの
 すべては、ファイルの先頭の注釈を見てください。
 
@@ -237,7 +237,7 @@ push して
 ### デモのアプリ(OPT → Rails のアプリ)
 
 `script/build_demo.sh` は、この gem を使って、デモの Rails のアプリをゼロから
-作ります。`demo/` を作り、3 つのテンプレート(BMI、問題リスト、血圧)を FHIR の
+作ります。`demo/` を作り、3 つのテンプレート(BMI、プロブレムリスト、血圧)を FHIR の
 プロファイル付きで scaffold し、サンプルのデータ(`demo_assets/demo_seed.rb`)を
 入れます。1 回の実行で済みます。
 
