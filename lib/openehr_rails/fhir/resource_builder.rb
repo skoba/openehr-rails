@@ -38,6 +38,12 @@ module OpenehrRails
       # A FHIR dateTime as recorded: YYYY, YYYY-MM, YYYY-MM-DD, or a full
       # date-time with seconds and an offset.
       FHIR_DATE_TIME = /\A\d{4}(-\d{2}(-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2}))?)?)?\z/
+      # A value to the hour (YYYY-MM-DDThh, with or without an offset): FHIR
+      # has no form for it, and minutes are not made up (#110).
+      TO_THE_HOUR = /\A(\d{4}-\d{2}-\d{2})T\d{2}(Z|[+-]\d{2}(:?\d{2})?)?\z/
+      # A FHIR time (hh:mm:ss, optional fraction; no offset).
+      FHIR_TIME = /\A\d{2}:\d{2}:\d{2}(\.\d+)?\z/
+      TIME_OFFSET = /(Z|[+-]\d{2}(:?\d{2})?)\z/
 
       # rubocop:disable-next Metrics/ParameterLists -- keyword arguments, each optional but values/id
       def initialize(entry, values:, id:, units: {}, displays: {}, terminologies: {}, subject_ehr_id: nil,
@@ -126,16 +132,20 @@ module OpenehrRails
         end
       end
 
-      # A FHIR dateTime (R-20261127-24). A valid value stays as recorded. A
-      # value with a time but no offset is read as UTC, as
-      # Observation.effectiveDateTime is (context start time); missing seconds
-      # are filled in; basic-format values become extended. Anything else is
-      # passed on as recorded.
+      # A FHIR dateTime (R-20261127-24; Observation leaves too since #110). A
+      # valid value stays as recorded. A value with a time but no offset is
+      # read as UTC, as Observation.effectiveDateTime is (context start time);
+      # missing seconds are filled in; a value to the hour is served to the
+      # day; basic-format values become extended. Anything else is passed on
+      # as recorded. A typed column's Time or Date (scaffold path) is ISO 8601.
       def date_time_string(value)
         return value.iso8601 if value.respond_to?(:iso8601)
 
         string = value.to_s
         return string if string.match?(FHIR_DATE_TIME)
+
+        to_the_hour = TO_THE_HOUR.match(string)
+        return to_the_hour[1] if to_the_hour
 
         parts = Date._iso8601(string)
         return string unless parts[:year] && parts[:mon] && parts[:mday]
@@ -152,15 +162,35 @@ module OpenehrRails
         parts[:offset] ? string : string.sub(/\+00:00\z/, 'Z')
       end
 
+      # A FHIR time (#110): hh:mm:ss, seconds zero-filled. FHIR time SHALL NOT
+      # carry an offset, so the clock reading as recorded is served and the
+      # offset left out (converting to UTC would serve a reading the record
+      # does not show). A value to the hour has no FHIR form and is left out
+      # (nil). A typed column's Time (scaffold path) gives its clock reading.
+      def time_string(value)
+        if value.respond_to?(:strftime)
+          return value.strftime('%H:%M:%S') if value.subsec.zero?
+
+          return value.strftime('%H:%M:%S.%N').sub(/0+\z/, '')
+        end
+
+        string = value.to_s.sub(TIME_OFFSET, '')
+        return string if string.match?(FHIR_TIME)
+        return "#{string}:00" if string.match?(/\A\d{2}:\d{2}\z/)
+        return nil if string.match?(/\A\d{2}\z/)
+
+        value.to_s
+      end
+
       def value_entry(field)
-        { value_key(field) => fhir_value(field) }
+        { value_key(field) => fhir_value(field) }.compact
       end
 
       def component_entry(field)
         {
           code: { coding: [{ system: ARCHETYPE_SYSTEM, code: "#{field[:archetype_id]}##{field[:node_id]}" }] },
           value_key(field) => fhir_value(field)
-        }
+        }.compact
       end
 
       def value_key(field)
@@ -180,6 +210,10 @@ module OpenehrRails
           value.to_i
         when 'DV_BOOLEAN'
           value
+        when 'DV_DATE_TIME', 'DV_DATE'
+          date_time_string(value)
+        when 'DV_TIME'
+          time_string(value)
         else
           value.to_s
         end
