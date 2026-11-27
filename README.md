@@ -161,6 +161,12 @@ profile describes: Observation entries as Observation, entries with a row in
 `TypeMap::ENTRY_ELEMENT_MAPS` as that resource (today problem_diagnosis →
 Condition), and other entries (INSTRUCTION, ACTION, ...) not at all.
 
+Date and time values of an Observation follow the dateTime rule given for
+Condition below. A DV_DATE is served as `valueDateTime` holding the date
+(`Observation.value[x]` has no `date` in R5). A DV_TIME is served as
+`valueTime`, `hh:mm:ss`; a recorded offset is left out (FHIR time cannot
+carry one), and a value to the hour is not served.
+
 #### Condition: values the facade sets, and known limitations
 
 * `Condition.clinicalStatus` is required in FHIR R5, but the
@@ -183,7 +189,8 @@ Condition), and other entries (INSTRUCTION, ACTION, ...) not at all.
 * Date/time leaves (`onsetDateTime`, `recordedDate`, `abatementDateTime`) are
   served as recorded when they are valid FHIR dateTimes. A value with a time
   but no offset is read as UTC (as `Observation.effectiveDateTime` is), and
-  missing seconds are filled in.
+  missing seconds are filled in. A value to the hour, which FHIR has no form
+  for, is served to the day.
 
 #### Templates registered at runtime
 
