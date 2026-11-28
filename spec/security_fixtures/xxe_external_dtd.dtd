@@ -1,0 +1,6 @@
+<!--
+  Security fixture (kind: security): an external DTD subset for the XXE pin of
+  #133 (R-20261128-13). Not a clinical or openEHR artifact. If a parser loads
+  this file, the entity below resolves to the sentinel text.
+-->
+<!ENTITY leaked "XXE-SENTINEL-CONTENT">

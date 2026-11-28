@@ -18,7 +18,11 @@ module OpenehrRails
                  else
                    File.open(@filename)
                  end
-        @opt = Nokogiri::XML::Document.parse(source)
+        # The openehr gem's options, by name (#133): RECOVER | NONET |
+        # BIG_LINES, without NOENT or DTDLOAD, so an uploaded OPT cannot pull in
+        # an external entity or DTD. Nokogiri's defaults are the same value
+        # today; naming them keeps that from depending on a default.
+        @opt = Nokogiri::XML::Document.parse(source, nil, nil, SAFE_PARSE_OPTIONS)
         @opt.remove_namespaces!
 
         defs = definition
