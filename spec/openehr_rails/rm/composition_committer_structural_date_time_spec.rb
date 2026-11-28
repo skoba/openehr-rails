@@ -164,6 +164,21 @@ describe OpenehrRails::Rm::CompositionCommitter do
       expect { commit(hash) }.to raise_error(OpenehrRails::Rm::MissingRequiredAttributes, %r{/context/setting})
     end
 
+    # regression pin (R-20261128-9): anlage's form -- origin and time in the
+    # JSON, no context, the start time only as the keyword (a Time, or a
+    # recorded date) -- is not refused; the context gets the configured setting.
+    [Time.utc(2026, 3, 1, 0, 30), '2026-03-01'].each do |start|
+      it "accepts a commit whose context comes only from context_start_time: #{start.inspect}" do
+        composition = nil
+        expect { composition = commit(canonical(context: false), context_start_time: start) }.not_to raise_error
+
+        setting = composition.to_rm.context.setting
+        expect([setting.defining_code.code_string, setting.value]).to eq(['238', 'other care'])
+        expect(composition.to_canonical_hash.dig('context', 'start_time', 'value'))
+          .to eq(start.is_a?(String) ? start : start.iso8601)
+      end
+    end
+
     # regression pin: a composition with no context at all is allowed (COMPOSITION.context is optional).
     it 'accepts a composition with no context' do
       expect { commit(canonical(context: false)) }.not_to raise_error

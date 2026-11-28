@@ -34,7 +34,10 @@
   without `HISTORY.origin` or `EVENT.time`, or with a context lacking
   `start_time` or `setting`, is refused: `OpenehrRails::Rm::MissingRequiredAttributes`,
   answered by `/v1` with 422 naming the missing paths. Such commits used to
-  succeed and read back with made-up values. A logical delete re-commits the
+  succeed and read back with made-up values. A commit whose JSON has no
+  `context` and passes the start time only as `context_start_time:` (a `Time`,
+  or a recorded string such as `'2026-03-01'`) is not refused; its context
+  gets `OpenehrRails.default_setting`. A logical delete re-commits the
   stored head and is not checked. Rows stored before this release keep their
   instants; the committed strings were not kept and cannot be recovered.
 
