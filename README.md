@@ -66,6 +66,16 @@ missing paths. REST and FHIR return these date-times and the context as
 committed, partial values and offsets included; AQL `SELECT` returns the
 normalized instant (earliest instant, UTC).
 
+Known limitations of the generated date and time columns:
+
+* A value the column would drop or alter is refused with a validation error
+  naming it: in a `datetime` column a year, a year-month or a value to the
+  hour; in a `date` column a year or a year-month; in a `time` column a value
+  to the hour.
+* A date with no time (`2026-11-05`) in a `datetime` column is saved as
+  midnight: a time that was not recorded is added. To keep the recorded
+  precision, commit through the runtime path (`/openehr/v1`).
+
 Options:
 
 * `--namespace=ehr` namespaces controller, views and routes.
