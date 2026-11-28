@@ -7,6 +7,84 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-11-28
+
+> **Upgrade note.** No migration, and no dependency change. Things a host app
+> can see:
+> (1) a commit (`/openehr/v1` POST/PUT, or `Rm::CompositionCommitter.commit`)
+> without `HISTORY.origin` or `EVENT.time`, or with a context lacking
+> `start_time` or `setting`, is refused with
+> `OpenehrRails::Rm::MissingRequiredAttributes` (422 on `/v1`, naming the
+> missing paths). A commit whose JSON has no `context` and passes the start
+> time only as `context_start_time:` is not refused. A logical delete is not
+> checked (#121);
+> (2) a scaffolded model refuses, with a validation error naming the value, a
+> date/time its column would drop or alter (`2026-11` in a `datetime` or
+> `date` column, a value to the hour). A FHIR POST carrying one answers 422
+> (#122);
+> (3) REST `GET …/composition` returns `context` and a committed `category`,
+> and date-times come back in their committed form (#121, #124);
+> (4) a scaffold record writes its save time into `HISTORY.origin` and
+> `EVENT.time`, and its context setting is `238` other care
+> (`OpenehrRails.default_setting`) instead of `other` (#121).
+> Rows stored before this release keep their instants: the committed strings
+> were not kept and cannot be recovered.
+
+### Fixed
+- `EVENT.time`, `HISTORY.origin` and `EVENT_CONTEXT.start_time` come back as
+  committed through REST and FHIR (`effectiveDateTime` of a runtime record).
+  They were returned as full UTC instants: `2026-03-01` became
+  `2026-03-01T00:00:00Z`, and a `+09:00` offset became UTC. 0.14.1's notes said
+  these came back unchanged; they did not. The committed string is kept in the
+  row's existing `extra` JSON column; the instant columns stay for ordering
+  and AQL comparison (#121).
+- REST `GET /openehr/v1/ehr/:ehr_id/composition/:uid` returns the
+  composition's `context` (`start_time`, `setting`), which it left out. A
+  scaffold record gets the context its `composed_at` gives it when its
+  category is event; a persistent composition gets no context it was not
+  given (#121, #124).
+- No read makes up a date-time or a setting (#121):
+  - a scaffold record writes its save time (`composed_at`, in UTC) into
+    `HISTORY.origin` and `EVENT.time`. AQL used to answer `EVENT.time` with
+    the clock at query time;
+  - a stored row without `EVENT.time` or `HISTORY.origin` takes its context
+    start time; a row with neither is left out of AQL with a warning instead
+    of being given the clock;
+  - a context without a setting reads as `OpenehrRails.default_setting`
+    instead of `other` / `other`, which is not an openehr code.
+- A scaffolded model no longer drops or alters a date/time value its column
+  cannot hold. A DV_DATE_TIME, DV_DATE or DV_TIME field in a `datetime`,
+  `date` or `time` column refuses, with a validation error naming the value
+  ("cannot hold 2026-11 at the precision it was given"): a year or
+  year-month (`datetime`, `date`), a value to the hour (`datetime`, `time`),
+  and any string the column cannot read. Values to the minute or second,
+  `Date`/`Time` objects and string columns are unchanged. The check is in the
+  gem (`OpenehrRails::DateTimePrecision`, included by `Storable`), so
+  generated models need no regeneration (#122).
+- A committed `COMPOSITION.category` is stored, in the existing
+  `category_code` / `category_value` columns, and returned as committed by
+  REST and `to_rm`. A persistent (`431`) composition used to come back as
+  event (`433`). Without one, the configured default as before (#124).
+- The default category rebuilt by `to_rm` had its code and text swapped
+  (`code_string` `event`, value `433`); it is now `433` / `event` (#124).
+
+### Added
+- `OpenehrRails.default_setting` (`['238', 'other care']`): the setting of a
+  context openEHR-Rails supplies. A code outside the openehr setting group
+  raises `ArgumentError` on assignment, so a wrong initializer fails at boot
+  (#121).
+- `Rm::CompositionCommitter.commit(context_start_time:)` takes a String as a
+  recorded value, kept as written; a `Time` is stored as before (#121).
+
+### Known limitations
+- A date with no time (`2026-11-05`) in a scaffolded `datetime` column is
+  saved as midnight. To keep the recorded precision, commit through
+  `/openehr/v1` (#122; candidate #127).
+- AQL `SELECT` returns the normalized UTC instant of a date-time (#92, waiting
+  for an openehr release). AQL cannot select `c/category` (openehr gem).
+- Language, territory and composer are still filled from config when a commit
+  lacks them (candidate #128).
+
 ## [0.14.1] - 2026-11-27
 
 > **Upgrade note.** No migration, and no dependency change. Three behaviour
