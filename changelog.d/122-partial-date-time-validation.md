@@ -4,14 +4,15 @@
   cannot hold (#122). A DV_DATE_TIME, DV_DATE or DV_TIME field kept in a
   `datetime`, `date` or `time` column refuses, with a validation error naming
   the value ("cannot hold 2026-11 at the precision it was given"):
-  - for `datetime`: a year, a year-month, a date with no time, a value to the
-    hour (Rails cast these to nil or midnight);
+  - for `datetime`: a year, a year-month (Rails cast these to nil), a value to
+    the hour (cast to midnight);
   - for `date`: a year or a year-month (cast to nil);
   - for `time`: a value to the hour (cast to `hh:00:00`);
   - any string the column cannot read (cast to nil).
 
-  Values to the minute or second, with or without an offset, and `Date`/`Time`
-  objects save as before. A field kept in a string column is not checked. The
+  Values to the minute or second, with or without an offset, `Date`/`Time`
+  objects, and a date with no time in a `datetime` column (stored as midnight)
+  save as before. A field kept in a string column is not checked. The
   check is in the gem (`OpenehrRails::DateTimePrecision`, included by
   `Storable`), so generated models need no regeneration.
 

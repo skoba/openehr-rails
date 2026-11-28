@@ -16,10 +16,13 @@ module OpenehrRails
     OFFSET = '(Z|[+-]\d{2}(:?\d{2})?)?'
 
     # Forms the column alters; any form it cannot read at all casts to nil
-    # and is refused too.
+    # and is refused too (plan docs/design/121-122-structural-date-times-plan.md
+    # section 5, option A).
     ALTERED_FORMS = {
-      # a date with no time, or a time to the hour: the cast fills in the rest
-      datetime: [/\A\d{4}(-\d{2}){0,2}\z/, /\A\d{4}-\d{2}-\d{2}T\d{2}#{OFFSET}\z/],
+      # a time to the hour: the cast drops the hour (a year or a year-month
+      # casts to nil). A date with no time is not listed in the plan (section 5)
+      # and still saves as midnight.
+      datetime: [/\A\d{4}-\d{2}-\d{2}T\d{2}#{OFFSET}\z/],
       # a time to the hour: the cast fills in the minutes
       time: [/\A\d{2}#{OFFSET}\z/],
       date: []
