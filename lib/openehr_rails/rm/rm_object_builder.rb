@@ -97,10 +97,7 @@ module OpenehrRails
             @composition.territory_code || OpenehrRails.default_territory,
             'ISO_3166-1'
           ),
-          category: dv_coded_text(
-            *OpenehrRails.default_category,
-            'openehr'
-          ),
+          category: dv_coded_text(*composition_category, 'openehr'),
           composer: party_identified(@composition.composer_name || OpenehrRails.default_composer_name),
           content: @composition.content_nodes.map { |node| build_node(node) },
           context: build_event_context,
@@ -332,6 +329,15 @@ module OpenehrRails
 
       def stored_dv_date_time(row)
         dv_date_time(@normalize_date_times ? row.datetime_value : row.original_value)
+      end
+
+      # [value, code] of the committed category (#124), else the configured
+      # default. default_category is [code, value]; it used to be passed in
+      # that order, giving code_string 'event' and value '433'.
+      def composition_category
+        return [@composition.category_value, @composition.category_code] if @composition.category_code
+
+        OpenehrRails.default_category.reverse
       end
 
       # The stored setting, else the configured default (238 other care):

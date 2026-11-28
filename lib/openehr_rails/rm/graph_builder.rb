@@ -32,6 +32,9 @@ module OpenehrRails
           name_value: @hash.dig('name', 'value'),
           uid: @hash.dig('uid', 'value'),
           rm_version: details['rm_version'] || '1.0.4',
+          # COMPOSITION.category, as committed (#124); absent stays nil.
+          category_code: @hash.dig('category', 'defining_code', 'code_string'),
+          category_value: @hash.dig('category', 'value'),
           **context_attributes
         }.compact
       end

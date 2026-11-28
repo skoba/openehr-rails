@@ -28,9 +28,10 @@ describe OpenehrRails::Rm::RmObjectBuilder do
   it 'injects config defaults for missing attributes' do
     expect(rm_composition.language.code_string).to eq(OpenehrRails.default_language)
     expect(rm_composition.territory.code_string).to eq(OpenehrRails.default_territory)
-    # Category is DvCodedText; config gives [code, value, terminology]
-    expect(rm_composition.category.value).to eq('433')
-    expect(rm_composition.category.defining_code.code_string).to eq('event')
+    # Category is DvCodedText; config gives [code, value]. This pin had the two
+    # swapped (value '433', code_string 'event') until #124 fixed the order.
+    expect(rm_composition.category.value).to eq('event')
+    expect(rm_composition.category.defining_code.code_string).to eq('433')
     expect(rm_composition.composer.name).to eq(OpenehrRails.default_composer_name)
   end
 

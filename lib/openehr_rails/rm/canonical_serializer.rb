@@ -27,6 +27,8 @@ module OpenehrRails
         }
         hash['name'] = { '_type' => 'DV_TEXT', 'value' => @composition.name_value } if @composition.name_value
         hash['uid'] = { '_type' => 'HIER_OBJECT_ID', 'value' => @composition.uid } if @composition.uid
+        hash['category'] = coded_text(@composition.category_code, @composition.category_value) if
+          @composition.category_code
         context = serialize_context
         hash['context'] = context if context
         hash
@@ -38,6 +40,7 @@ module OpenehrRails
         setting_hash(code, value)
       end
 
+      # An openehr DV_CODED_TEXT (setting, category), in the one shape REST writes.
       def self.setting_hash(code, value)
         {
           '_type' => 'DV_CODED_TEXT',
@@ -73,11 +76,16 @@ module OpenehrRails
       def setting
         return self.class.default_setting_hash unless @composition.setting_code
 
-        self.class.setting_hash(@composition.setting_code, @composition.setting_value)
+        coded_text(@composition.setting_code, @composition.setting_value)
       end
 
+      def coded_text(code, value)
+        self.class.setting_hash(code, value)
+      end
+
+      # The committed category (#124), else the configured default.
       def event_category?
-        OpenehrRails.default_category.first.to_s == '433'
+        (@composition.category_code || OpenehrRails.default_category.first).to_s == '433'
       end
 
       def serialize_node(node)
