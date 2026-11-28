@@ -17,6 +17,7 @@ require 'openehr_rails/opt'
 require 'openehr_rails/opt/parser'
 require 'openehr_rails/opt/field_extractor'
 require 'openehr_rails/opt/remote_fetcher'
+require 'openehr_rails/date_time_precision'
 require 'openehr_rails/storable'
 # openehr_rails/rm/graph_builder depends on OpenehrRails::Storable::MULTIPLE_ATTRIBUTES
 # at load time, so this must come after the storable require above.
