@@ -384,6 +384,10 @@ This is `openehr-rails`, a Rails engine gem that turns an openEHR Operational Te
     those anchors takes priority.
   - **security** — built to exercise an attack/abuse case; the comment must say it is not
     a clinical artifact.
+  - An XML fixture's comment (OPTs included) must not contain `--`: XML 1.0
+    section 2.5 forbids it, so a strict XML parser refuses the file even though
+    our RECOVER-mode readers accept it (R-20261128-13; pinned by
+    `spec/xml_fixtures_well_formed_spec.rb`).
   - A fixture's provenance comment must describe its lineage as measured (checked against
     the actual design/implementation record), not as instructed — if an instructed lineage
     doesn't match what actually went into the fixture, write it to match reality instead.
