@@ -28,8 +28,11 @@ describe OpenehrRails::Rm::GraphPersister do
       expect(composition.ehr).to eq(ehr)
     end
 
-    it 'regenerates the JSON cache from the graph identically' do
-      expect(composition.to_canonical_hash).to eq(record.rm_composition)
+    # The JSON cache has no context; the graph adds the one Storable's
+    # composed_at gives an event record (#121, R-20261128-6 answer 4).
+    it 'regenerates the JSON cache from the graph identically, plus the context' do
+      expect(composition.to_canonical_hash.except('context')).to eq(record.rm_composition)
+      expect(composition.to_canonical_hash.dig('context', 'start_time', 'value')).to eq(record.composed_at.utc.iso8601)
     end
 
     it 'records version 1 as a creation' do

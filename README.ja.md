@@ -55,6 +55,17 @@ bin/rails db:seed   # テンプレートを openehr_templates のテーブルに
 検索は(使えるときは)RM のグラフに切り替わり、アーキタイプの任意の要素を
 問い合わせられます(`OpenehrRails::Rm` の層)。
 
+scaffold のフォームには、イベントの時刻の入力がありません。そのため、記録は
+保存の時刻(`composed_at`)を、`HISTORY.origin` と `EVENT.time`、context の
+`start_time` に書きます。context の setting は `OpenehrRails.default_setting` です
+(initializer でほかの openehr の setting の符号を設定しなければ `238` other care。
+その用語に無い符号は、起動のときにエラーになります)。openEHR の REST API
+(`/openehr/v1`)で commit する composition は、`HISTORY.origin` と `EVENT.time` を、
+context があるときはその `start_time` と `setting` も持つ必要があります。無いものは、
+足りないパスを書いた 422 で断ります。REST と FHIR は、これらの日時と context を、
+部分的な値も時刻帯も含めて、commit したとおりに返します。AQL の `SELECT` は、
+正規化した時点(いちばん早い時点、UTC)を返します。
+
 オプション:
 
 * `--namespace=ehr` は、コントローラ、ビュー、ルートに名前空間を付けます。

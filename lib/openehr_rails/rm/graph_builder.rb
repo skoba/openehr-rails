@@ -38,12 +38,17 @@ module OpenehrRails
 
       # EVENT_CONTEXT's start_time and setting, stored on the composition row.
       # other_context (an ITEM_STRUCTURE) is not persisted yet (#46, proposal 3).
+      # The committed start_time string, and that a context was committed at
+      # all, go into the row's `extra` (#121).
       def context_attributes
         context = @hash['context'] || {}
+        start_time = context.dig('start_time', 'value')
         {
-          context_start_time: parse_time(context.dig('start_time', 'value')),
+          context_start_time: parse_time(start_time),
           setting_code: context.dig('setting', 'defining_code', 'code_string'),
-          setting_value: context.dig('setting', 'value')
+          setting_value: context.dig('setting', 'value'),
+          **RecordedTimes.extra_columns(Composition, committed_context: @hash['context'].is_a?(Hash),
+                                                     start_time: start_time)
         }
       end
 
@@ -137,14 +142,18 @@ module OpenehrRails
       def special_columns(rm_type, hash)
         case rm_type
         when 'HISTORY'
-          { history_origin: parse_time(hash.dig('origin', 'value')) }.compact
+          origin = hash.dig('origin', 'value')
+          { history_origin: parse_time(origin), **RecordedTimes.extra_columns(Node, origin: origin) }.compact
         when 'POINT_EVENT'
-          { event_time: parse_time(hash.dig('time', 'value')) }.compact
+          time = hash.dig('time', 'value')
+          { event_time: parse_time(time), **RecordedTimes.extra_columns(Node, time: time) }.compact
         when 'INTERVAL_EVENT'
+          time = hash.dig('time', 'value')
           {
-            event_time: parse_time(hash.dig('time', 'value')),
+            event_time: parse_time(time),
             width: hash.dig('width', 'value'),
-            math_function_code: hash.dig('math_function', 'defining_code', 'code_string')
+            math_function_code: hash.dig('math_function', 'defining_code', 'code_string'),
+            **RecordedTimes.extra_columns(Node, time: time)
           }.compact
         when 'ELEMENT'
           { null_flavor_code: hash.dig('null_flavour', 'defining_code', 'code_string') }.compact

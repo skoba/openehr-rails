@@ -27,10 +27,58 @@ module OpenehrRails
         }
         hash['name'] = { '_type' => 'DV_TEXT', 'value' => @composition.name_value } if @composition.name_value
         hash['uid'] = { '_type' => 'HIER_OBJECT_ID', 'value' => @composition.uid } if @composition.uid
+        context = serialize_context
+        hash['context'] = context if context
         hash
       end
 
+      # The setting written for a stored context that has none.
+      def self.default_setting_hash
+        code, value = OpenehrRails.default_setting
+        setting_hash(code, value)
+      end
+
+      def self.setting_hash(code, value)
+        {
+          '_type' => 'DV_CODED_TEXT',
+          'value' => value,
+          'defining_code' => {
+            '_type' => 'CODE_PHRASE',
+            'terminology_id' => { 'value' => 'openehr' },
+            'code_string' => code
+          }
+        }
+      end
+
       private
+
+      # EVENT_CONTEXT (#121, R-20261128-6 answer 4): written when a context
+      # was committed, as committed; for a record whose context came only from
+      # the committer's keyword (Storable's composed_at), only when the
+      # composition's category is event -- a persistent composition gets no
+      # context it was not given.
+      def serialize_context
+        return nil unless @composition.context_start_time
+        return nil unless RecordedTimes.context_committed?(@composition) || event_category?
+
+        {
+          '_type' => 'EVENT_CONTEXT',
+          'start_time' => { '_type' => 'DV_DATE_TIME',
+                            'value' => RecordedTimes.value(@composition, :start_time,
+                                                           @composition.context_start_time) },
+          'setting' => setting
+        }
+      end
+
+      def setting
+        return self.class.default_setting_hash unless @composition.setting_code
+
+        self.class.setting_hash(@composition.setting_code, @composition.setting_value)
+      end
+
+      def event_category?
+        OpenehrRails.default_category.first.to_s == '433'
+      end
 
       def serialize_node(node)
         hash = { '_type' => node.rm_type, 'archetype_node_id' => node.archetype_node_id }
@@ -50,9 +98,12 @@ module OpenehrRails
 
       def merge_special_attributes(hash, node)
         if node.history_origin
-          hash['origin'] = { '_type' => 'DV_DATE_TIME', 'value' => node.history_origin.iso8601 }
+          hash['origin'] = { '_type' => 'DV_DATE_TIME',
+                             'value' => RecordedTimes.value(node, :origin, node.history_origin) }
         end
-        hash['time'] = { '_type' => 'DV_DATE_TIME', 'value' => node.event_time.iso8601 } if node.event_time
+        if node.event_time
+          hash['time'] = { '_type' => 'DV_DATE_TIME', 'value' => RecordedTimes.value(node, :time, node.event_time) }
+        end
         hash['width'] = { '_type' => 'DV_DURATION', 'value' => node.width } if node.width
         action_archetype_id = node.extra.is_a?(Hash) ? node.extra['action_archetype_id'] : nil
         hash['action_archetype_id'] = action_archetype_id if action_archetype_id

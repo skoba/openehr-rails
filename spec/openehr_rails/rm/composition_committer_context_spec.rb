@@ -101,12 +101,15 @@ describe OpenehrRails::Rm::CompositionCommitter do
       expect(composition.to_rm.context).to be_nil
     end
 
-    # regression pin: the keyword-only path (Storable) keeps the 'other' setting.
-    it "keeps the 'other' setting when only the keyword supplies a start time" do
+    # bug (#121, R-20261128-6 answer 3): the keyword-only path (Storable) used
+    # to get 'other' / 'other', which is not an openehr setting code; it now
+    # gets OpenehrRails.default_setting, 238 other care.
+    it 'gives the configured setting when only the keyword supplies a start time' do
       composition = described_class.commit(canonical_hash.compact, uid: 'ctx-8',
                                                                    context_start_time: Time.utc(2025, 1, 2))
+      setting = composition.to_rm.context.setting
 
-      expect(composition.to_rm.context.setting.value).to eq('other')
+      expect([setting.defining_code.code_string, setting.value]).to eq(['238', 'other care'])
     end
   end
 end

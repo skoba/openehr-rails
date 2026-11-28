@@ -54,6 +54,18 @@ path is not in FIELD_MAP, the search falls back to the RM graph (when
 available), allowing arbitrary archetype elements to be queried 
 (`OpenehrRails::Rm` layer).
 
+The scaffolded form has no input for the event time, so a record writes its
+save time (`composed_at`) into `HISTORY.origin` and `EVENT.time`, and into
+the context's `start_time`. The context's setting is
+`OpenehrRails.default_setting` (`238` other care unless the initializer sets
+another openehr setting code; a code outside that group raises at boot). A
+composition committed through the openEHR REST API (`/openehr/v1`) must carry
+`HISTORY.origin` and `EVENT.time`, and, when it has a context, its
+`start_time` and `setting`; one without them is refused with 422 naming the
+missing paths. REST and FHIR return these date-times and the context as
+committed, partial values and offsets included; AQL `SELECT` returns the
+normalized instant (earliest instant, UTC).
+
 Options:
 
 * `--namespace=ehr` namespaces controller, views and routes.

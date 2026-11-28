@@ -35,8 +35,9 @@ describe OpenehrRails::Fhir::ResourceQuery do
   end
 
   # A runtime record: the canonical COMPOSITION a form would commit, with no owner.
+  # Its HISTORY.origin and EVENT.time are +at+ (required since #121).
   def commit_runtime(uid:, ehr_id: 'ehr-1', height: 170.0, body_weight: nil, at: Time.utc(2026, 11, 20, 9, 30))
-    canonical = BmiCalculation.new(height: height, body_weight: body_weight).to_rm_composition
+    canonical = BmiCalculation.new(height: height, body_weight: body_weight, composed_at: at).to_rm_composition
     ehr = OpenehrRails::Rm::Ehr.find_or_create_by!(ehr_id: ehr_id)
     OpenehrRails::Rm::CompositionCommitter.commit(canonical, uid: uid, ehr: ehr, context_start_time: at)
   end

@@ -18,6 +18,7 @@ require 'openehr_rails/opt/parser'
 require 'openehr_rails/opt/field_extractor'
 require 'openehr_rails/opt/remote_fetcher'
 require 'openehr_rails/date_time_precision'
+require 'openehr_rails/event_times'
 require 'openehr_rails/storable'
 # openehr_rails/rm/graph_builder depends on OpenehrRails::Storable::MULTIPLE_ATTRIBUTES
 # at load time, so this must come after the storable require above.
@@ -67,6 +68,32 @@ module OpenehrRails
   mattr_accessor :default_category, default: %w[433 event]
   mattr_accessor :default_composer_name, default: 'unknown'
   mattr_accessor :default_encoding, default: 'UTF-8'
+
+  # The openehr terminology's "setting" group (EVENT_CONTEXT.setting).
+  SETTING_CODES = {
+    '225' => 'home', '227' => 'emergency care', '228' => 'primary medical care',
+    '229' => 'primary nursing care', '230' => 'primary allied health care', '231' => 'midwifery care',
+    '232' => 'secondary medical care', '233' => 'secondary nursing care',
+    '234' => 'secondary allied health care', '235' => 'complementary health care', '236' => 'dental care',
+    '237' => 'nursing home care', '238' => 'other care'
+  }.freeze
+
+  # [code, text] of the setting written for a record whose context the
+  # openEHR-Rails side supplies (a scaffold record, #121). A code outside the
+  # openehr setting group raises at once, so a wrong initializer fails at boot.
+  def self.default_setting
+    @default_setting ||= ['238', SETTING_CODES['238']]
+  end
+
+  def self.default_setting=(value)
+    code, text = Array(value).map(&:to_s)
+    unless SETTING_CODES.key?(code)
+      raise ArgumentError, "default_setting #{code.inspect} is not an openehr setting code " \
+                           "(#{SETTING_CODES.keys.join(', ')})"
+    end
+
+    @default_setting = [code, text.presence || SETTING_CODES[code]].freeze
+  end
 
   def self.runtime_scaffolding_allowed?
     return enable_runtime_scaffolding unless enable_runtime_scaffolding.nil?
