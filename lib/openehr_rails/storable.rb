@@ -22,6 +22,8 @@ module OpenehrRails
     MULTIPLE_ATTRIBUTES = %w[content events items activities].freeze
 
     included do
+      include OpenehrRails::DateTimePrecision
+
       before_save :refresh_rm_composition
       after_save :persist_rm_graph
       after_destroy :purge_rm_graph
