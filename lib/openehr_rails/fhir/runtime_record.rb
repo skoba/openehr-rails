@@ -41,11 +41,16 @@ module OpenehrRails
           read = read(canonical, entry)
           ResourceBuilder.new(entry, **read, id: "c#{uuid.delete('-')}-#{entry.index}",
                                              subject_ehr_id: @composition.ehr&.ehr_id,
-                                             effective_at: @composition.context_start_time).build
+                                             effective_at: effective_at).build
         end
       end
 
       private
+
+      # The recorded context start time (#121), else the stored instant.
+      def effective_at
+        OpenehrRails::Rm::RecordedTimes.recorded(@composition, :start_time) || @composition.context_start_time
+      end
 
       # values, plus what the record itself says about them: DV_QUANTITY
       # units, and a coded value's text and terminology (#104).

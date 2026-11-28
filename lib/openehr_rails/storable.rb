@@ -103,6 +103,7 @@ module OpenehrRails
         },
         'content' => rm_content
       }
+      OpenehrRails::EventTimes.stamp!(composition['content'], composed_at) if respond_to?(:composed_at) && composed_at
       composition['uid'] = { '_type' => 'HIER_OBJECT_ID', 'value' => uid } if respond_to?(:uid) && uid
       composition
     end

@@ -126,10 +126,8 @@ module OpenehrRails
         return nil unless @composition.context_start_time
 
         OpenEHR::RM::Composition::EventContext.new(
-          start_time: dv_date_time(@composition.context_start_time),
-          setting: dv_coded_text(
-            @composition.setting_value || 'other', @composition.setting_code || 'other', 'openehr'
-          )
+          start_time: dv_date_time(recorded_time(@composition, :start_time, @composition.context_start_time)),
+          setting: dv_coded_text(*context_setting, 'openehr')
         )
       end
 
@@ -209,10 +207,11 @@ module OpenehrRails
         attrs
       end
 
-      # HISTORY.origin is mandatory.
+      # HISTORY.origin is mandatory. A row stored without one (before #121)
+      # takes the context's start time; nothing is made up from the clock.
       def history_attributes(node)
         {
-          origin: dv_date_time(node.history_origin || node.composition.context_start_time || Time.current),
+          origin: dv_date_time(structural_time(node, :origin, node.history_origin)),
           events: child_nodes(node)
         }
       end
@@ -224,7 +223,8 @@ module OpenehrRails
       # EVENT.time and .data are mandatory; INTERVAL_EVENT adds width and
       # math_function.
       def event_attributes(node)
-        attrs = { time: dv_date_time(node.event_time || Time.current), data: build_node(child_node(node, 'data')) }
+        attrs = { time: dv_date_time(structural_time(node, :time, node.event_time)),
+                  data: build_node(child_node(node, 'data')) }
         if node.is_a?(OpenehrRails::Rm::IntervalEvent)
           attrs[:width] = parse_duration(node.width || 'PT0S')
           attrs[:math_function] = code_phrase(node.math_function_code || '144', 'openehr')
@@ -332,6 +332,35 @@ module OpenehrRails
 
       def stored_dv_date_time(row)
         dv_date_time(@normalize_date_times ? row.datetime_value : row.original_value)
+      end
+
+      # The stored setting, else the configured default (238 other care):
+      # never a code outside the openehr setting group (#121).
+      def context_setting
+        return [@composition.setting_value, @composition.setting_code] if @composition.setting_code
+
+        OpenehrRails.default_setting.reverse
+      end
+
+      # The recorded string (#121) unless date-times are normalized for AQL
+      # (#106), else the instant.
+      def recorded_time(row, name, instant)
+        return instant if @normalize_date_times
+
+        RecordedTimes.recorded(row, name) || instant
+      end
+
+      # HISTORY.origin / EVENT.time, falling back to the context's start time
+      # for rows stored before #121. A row with neither cannot be rebuilt: AQL
+      # leaves it out with a warning (DatasetAdapter#materialize) instead of
+      # answering with the clock.
+      def structural_time(node, name, instant)
+        return recorded_time(node, name, instant) if instant
+
+        start = @composition.context_start_time
+        return recorded_time(@composition, :start_time, start) if start
+
+        raise MissingRequiredAttributes, ["#{node.path}/#{name}"]
       end
 
       def dv_date_time(value)

@@ -17,6 +17,7 @@ module OpenehrRails
       # specific rescues after, or they'd never be reached.
       rescue_from StandardError, with: :render_error
       rescue_from ActiveRecord::RecordInvalid, with: :render_invalid
+      rescue_from OpenehrRails::Rm::MissingRequiredAttributes, with: :render_invalid
       rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
       rescue_from PreconditionFailed, with: :render_precondition_failed
 

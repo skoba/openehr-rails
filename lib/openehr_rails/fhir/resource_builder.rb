@@ -24,7 +24,8 @@ module OpenehrRails
     #   terminologies  - {field name => terminology} overriding the field's
     #   id             - the resource id
     #   subject_ehr_id - becomes subject Patient/<ehr_id> when present
-    #   effective_at   - Time for effectiveDateTime (Observation), or nil
+    #   effective_at   - Time, or a recorded string (#121), for
+    #                    effectiveDateTime (Observation), or nil
     class ResourceBuilder
       ARCHETYPE_SYSTEM = ResourceRegistry::ARCHETYPE_SYSTEM
       UCUM_SYSTEM = 'http://unitsofmeasure.org'
@@ -79,7 +80,7 @@ module OpenehrRails
           code: { coding: [archetype_coding] }
         }
         observation[:subject] = subject if subject
-        observation[:effectiveDateTime] = @effective_at.iso8601 if @effective_at
+        observation[:effectiveDateTime] = date_time_string(@effective_at) if @effective_at
 
         if fields.size == 1
           observation.merge!(value_entry(fields.first))

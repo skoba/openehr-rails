@@ -18,8 +18,12 @@ module OpenehrRails
       # The head stays latest_version; Composition.not_deleted leaves it out.
       def self.delete(uid:, ehr: nil)
         head = Composition.latest.find_by!(uid: uid)
-        new(head.to_canonical_hash, uid: uid, ehr: ehr || head.ehr, owner: head.owner,
-                                    context_start_time: head.context_start_time).commit(deleting: true)
+        hash = head.to_canonical_hash
+        # The hash carries the context (and its recorded start_time) when the
+        # head has one (#121); the keyword is only for a head serialized without.
+        start = hash['context'] ? nil : head.context_start_time
+        new(hash, uid: uid, ehr: ehr || head.ehr, owner: head.owner,
+                  context_start_time: start).commit(deleting: true)
       end
 
       def initialize(canonical_hash, uid:, ehr: nil, owner: nil, context_start_time: nil)
@@ -30,7 +34,10 @@ module OpenehrRails
         @context_start_time = context_start_time
       end
 
+      # A new commit must carry the mandatory date-times and the context's
+      # setting (#121); a logical delete re-commits the stored head as it is.
       def commit(deleting: false)
+        RequiredAttributes.check!(@canonical_hash, context_start_time: @context_start_time) unless deleting
         ActiveRecord::Base.transaction do
           previous = head_composition
           composition = create_composition
@@ -43,13 +50,28 @@ module OpenehrRails
 
       def create_composition
         builder = GraphBuilder.new(@canonical_hash)
-        # An explicit context_start_time (Storable passes the record's
-        # composed_at) wins; otherwise the hash's own context.start_time stays.
         attributes = builder.composition_attributes.merge(uid: @uid, owner: @owner, ehr: @ehr)
-        attributes[:context_start_time] = @context_start_time if @context_start_time
+        merge_context_start_time(attributes) if @context_start_time.present?
         composition = Composition.create!(attributes)
         builder.build!(composition)
         composition
+      end
+
+      # An explicit context_start_time wins over the hash's own
+      # context.start_time. Storable passes the record's composed_at (a Time);
+      # a String is a recorded value and is kept as written (#121), as the
+      # hash's own start_time is.
+      def merge_context_start_time(attributes)
+        extra = (attributes[:extra] || {}).except(RecordedTimes::KEYS[:start_time])
+        if @context_start_time.is_a?(String)
+          attributes[:context_start_time] = PartialTemporal.instant(@context_start_time) ||
+                                            Time.zone.parse(@context_start_time)
+          extra = extra.merge(RecordedTimes.extra_columns(Composition, start_time: @context_start_time)
+                                           .fetch(:extra, {}))
+        else
+          attributes[:context_start_time] = @context_start_time
+        end
+        attributes[:extra] = extra.presence if attributes.key?(:extra) || extra.present?
       end
 
       def head_composition
